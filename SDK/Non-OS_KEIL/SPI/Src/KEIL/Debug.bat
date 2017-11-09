@@ -1,0 +1,1 @@
+move .\dev_spi_Data\Debug\w55fa95_SPI.lib ..\..\Lib

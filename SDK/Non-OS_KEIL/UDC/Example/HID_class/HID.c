@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "usbd.h"
 #include "HID.h"
 
-#ifdef HID_KEYPAD  
-	#include "w55fa92_ts_adc.h"
+#ifdef HID_KEYPAD 
+	#include "w55fa95_kpi.h"
 #endif
 
 #define LEN_CONFIG_AND_SUBORDINATE      (LEN_CONFIG+LEN_INTERFACE+LEN_HID+LEN_ENDPOINT)
@@ -266,8 +266,8 @@ signed char buf[4];
     UINT32 u32KpiReport = 0x0;
     
 	 if (g_u8EPAReady) {       
-
-		DrvADC_KeyDetection(KEY_ADC_CHANNEL, &u32KpiReport);
+	 
+		u32KpiReport = kpi_read(KPI_NONBLOCK);
 		
 		u32KpiReport &= MASK_KEY;
 		if(u32KpiReport != 0)
@@ -369,7 +369,7 @@ void HID_SetInReport(void)
 	        
 #ifdef HID_KEYPAD
 
-		DrvADC_KeyDetection(KEY_ADC_CHANNEL, &u32KpiReport);
+		u32KpiReport = kpi_read(KPI_NONBLOCK);
 		
 	    if(u32KpiReport == 0) 
 		{
@@ -409,7 +409,13 @@ void HID_SetInReport(void)
 	    			break;	  
 				case ENTER_KEY:
 	    			buf[2] = 0x09;	// "F"
-	    			break;	  	    				    			
+	    			break;	  	
+				case VOLUP_KEY:
+	    			buf[2] = 0x0A;	// "G"
+	    			break;	  
+				case VOLDOWN_KEY:
+	    			buf[2] = 0x0B;	// "H"
+	    			break;	  	    			    				    			
 	    	}
 	   	    preKey = u32KpiReport;
 	   	   

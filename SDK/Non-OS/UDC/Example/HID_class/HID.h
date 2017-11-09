@@ -23,7 +23,7 @@ extern "C"
 
 /* Define the vendor id and product id */
 #define USB_VID			0x0416
-#define USB_PID			(0x9200 + HID_FUNCTION)
+#define USB_PID			(0x9500 + HID_FUNCTION)
 
 /*!<USB Descriptor Type */
 #define DESC_DEVICE         0x01
@@ -89,12 +89,14 @@ void hidInit(void);
 void HID_UpdateMouseData(void);
 void HID_SetInReport(void);
 
-#define ENTER_KEY			(1)
-#define HOME_KEY			(2)
-#define LEFT_KEY			(0x8)
-#define RIGHT_KEY			(0x4)
-#define UP_KEY				(0x10)
-#define DOWN_KEY			(0x20)
+#define ENTER_KEY			(0x40)
+#define HOME_KEY			(0x20)
+#define VOLUP_KEY			(0x80)
+#define VOLDOWN_KEY			(0x10)
+#define LEFT_KEY			(0x4)
+#define RIGHT_KEY			(0x8)
+#define UP_KEY				(0x1)
+#define DOWN_KEY			(0x2)
 #define MASK_KEY			(LEFT_KEY | RIGHT_KEY | UP_KEY | DOWN_KEY)
 
 #define KEY_ADC_CHANNEL	2

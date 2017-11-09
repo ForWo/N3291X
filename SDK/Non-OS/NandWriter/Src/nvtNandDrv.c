@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
@@ -427,8 +427,8 @@ INT nvtSM_Write_512(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32
     sicSMsetBCH(pSM, gbSystemImage);
     g_u32ExtraDataSize = inpw(REG_SMREAREA_CTL) & SMRE_REA128_EXT;
 
-    outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_REDUN_AUTO_WEN);    // enable Auto Write
-    outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_REDUN_REN);        // enable Read
+    outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_REDUN_AUTO_WEN);            // enable Auto Write
+    outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_REDUN_REN);                // enable Read
     /* enable DMAC */
     while(inpw(REG_DMACCSR) & FMI_BUSY);                // wait DMAC FMI ready;
     outpw(REG_DMACCSR, inpw(REG_DMACCSR) | DMAC_EN);
@@ -437,15 +437,15 @@ INT nvtSM_Write_512(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32
     outpw(REG_DMACSAR, uSAddr);
 
     /* set SM columm & page address */
-    outpw(REG_SMCMD, 0x80);                 // Program setup command
-    outpw(REG_SMADDR, ucColAddr & 0xFF);    // CA0 - CA7
-    outpw(REG_SMADDR, uSector & 0xFF);      // PA0 - PA7
+    outpw(REG_SMCMD, 0x80);                             // Program setup command
+    outpw(REG_SMADDR, ucColAddr & 0xFF);                // CA0 - CA7
+    outpw(REG_SMADDR, uSector & 0xFF);              // PA0 - PA7
 
     if (!pSM->bIsMulticycle)
         outpw(REG_SMADDR, ((uSector >> 8) & 0xFF) | EOA_SM);    // PA8 - PA15
     else
     {
-        outpw(REG_SMADDR, (uSector >> 8) & 0xFF);               // PA8 - PA15
+        outpw(REG_SMADDR, (uSector >> 8) & 0xFF);   // PA8 - PA15
         outpw(REG_SMADDR, ((uSector >> 16) & 0xFF) | EOA_SM);   // PA16 - PA17
     }
 
@@ -455,8 +455,8 @@ INT nvtSM_Write_512(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32
     outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_REDUN_AUTO_WEN);    // auto write redundancy data to NAND after page data written
     outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_DWR_EN);            // begin to write one page data to NAND flash
 
-    while(!(inpw(REG_SMISR) & SMISR_DMA_IF));   // wait to finish DMAC transfer.
-    outpw(REG_SMISR, SMISR_DMA_IF);             // clear DMA flag
+    while(!(inpw(REG_SMISR) & SMISR_DMA_IF));           // wait to finish DMAC transfer.
+    outpw(REG_SMISR, SMISR_DMA_IF);                     // clear DMA flag
 
     outpw(REG_SMCMD, 0x10);     // Program command
 
@@ -514,7 +514,7 @@ INT nvtSM_Write_2K(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32 
     /* Set DMA Transfer Starting Address */
     outpw(REG_DMACSAR, uSAddr);
 
-    outpw(REG_SMCMD, 0x80);     // Program setup command
+    outpw(REG_SMCMD, 0x80);                 // Program setup command
 
     outpw(REG_SMADDR, ucColAddr & 0xFF);
     outpw(REG_SMADDR, (ucColAddr >> 8) & 0xFF);
@@ -524,7 +524,7 @@ INT nvtSM_Write_2K(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32 
         outpw(REG_SMADDR, ((uSector >> 8) & 0xFF) | EOA_SM);    // PA8 - PA15
     else
     {
-        outpw(REG_SMADDR, (uSector >> 8) & 0xFF);               // PA8 - PA15
+        outpw(REG_SMADDR, (uSector >> 8) & 0xFF);                   // PA8 - PA15
         outpw(REG_SMADDR, ((uSector >> 16) & 0xFF) | EOA_SM);   // PA16 - PA17
     }
 
@@ -534,8 +534,8 @@ INT nvtSM_Write_2K(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32 
     outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_REDUN_AUTO_WEN);    // auto write redundancy data to NAND after page data written
     outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_DWR_EN);            // begin to write one page data to NAND flash
 
-    while(!(inpw(REG_SMISR) & SMISR_DMA_IF));   // wait to finish DMAC transfer.
-    outpw(REG_SMISR, SMISR_DMA_IF);             // clear DMA flag
+    while(!(inpw(REG_SMISR) & SMISR_DMA_IF));       // wait to finish DMAC transfer.
+    outpw(REG_SMISR, SMISR_DMA_IF);                 // clear DMA flag
 
     outpw(REG_SMCMD, 0x10);     // Program command
 
@@ -547,7 +547,7 @@ INT nvtSM_Write_2K(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32 
         PRINTF("nvtSM_Write_2K: data error [sector %d]!!\n", uSector);
         return -1;  // Program Fail
     }
-    return 0;       // Program Success
+    return 0;               // Program Success
 }
 
 
@@ -660,7 +660,7 @@ INT nvtSM_Write_8K(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32 
     sicSMsetBCH(pSM, gbSystemImage);
     g_u32ExtraDataSize = inpw(REG_SMREAREA_CTL) & SMRE_REA128_EXT;
 
-    outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_REDUN_AUTO_WEN);    // enable Auto Write
+    outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_REDUN_AUTO_WEN);            // enable Auto Write
 
     /* enable DMAC */
     while(inpw(REG_DMACCSR) & FMI_BUSY);    // wait DMAC FMI ready;
@@ -691,8 +691,8 @@ INT nvtSM_Write_8K(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 ucColAddr, UINT32 
     outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_REDUN_AUTO_WEN);    // auto write redundancy data to NAND after page data written
     outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_DWR_EN);            // begin to write one page data to NAND flash
 
-    while(!(inpw(REG_SMISR) & SMISR_DMA_IF));   // wait to finish DMAC transfer.
-    outpw(REG_SMISR, SMISR_DMA_IF);             // clear DMA flag
+    while(!(inpw(REG_SMISR) & SMISR_DMA_IF));         // wait to finish DMAC transfer.
+    outpw(REG_SMISR, SMISR_DMA_IF);                 // clear DMA flag
 
     outpw(REG_SMCMD, 0x10);     // auto program command
 
@@ -730,16 +730,22 @@ INT nvtSMInit(void)
         outpw(REG_SMCSR, (inpw(REG_SMCSR) & ~SMCR_PSIZE) | PSIZE_512);  // default is 512B page size
         outpw(REG_SMCSR, inpw(REG_SMCSR) | SMCR_ECC_EN | SMCR_ECC_CHK | SMCR_ECC_3B_PROTECT | SMCR_REDUN_AUTO_WEN); // enable ECC
 
-        outpw(REG_GPDFUN0, (inpw(REG_GPDFUN0) & (~0xF0F00000)) | 0x20200000);   // enable NRE/RB0 pins
-        outpw(REG_GPDFUN1, (inpw(REG_GPDFUN1) & (~0x0000000F)) | 0x00000002);   // enable NWR pins
-        outpw(REG_GPEFUN1, (inpw(REG_GPEFUN1) & (~0x000FFF0F)) | 0x00022202);   // enable CS0/ALE/CLE/ND3 pins
-        outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_CS0);                          // enable CS0
-        outpw(REG_SMCSR, inpw(REG_SMCSR) |  SMCR_CS1);                          // disable CS1
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN) | 0x0003CC00);       // enable GPIO pins for NAND NWR/NRD/RB0
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN) | 0x00F30000);       // enable GPIO pins for NAND ALE/CLE/CS0
+        outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_CS0);          // enable CS0
+        outpw(REG_SMCSR, inpw(REG_SMCSR) |  SMCR_CS1);          // disable CS1
 
         pNvtSMInfo = (FMI_SM_INFO_T *)malloc(sizeof(NVT_SM_INFO_T));
         memset((char *)pNvtSMInfo, 0, sizeof(NVT_SM_INFO_T));
         pSM0= pNvtSMInfo;
         pNvtSM0 = pSM0;
+
+#ifdef __KLE_DEMO__
+        PRINTF("nvtSMInit(): set GPA0 to 1 for write non-protect !\n");
+        outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA0);         // set GPA0 as GPIO pin
+        outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0001);   // output 1 to GPA0; initial to Write non-Protected mode
+        outpw(REG_GPIOA_OMD, inpw(REG_GPIOA_OMD) | 0x0001);     // set GPA0 to OUTPUT mode
+#endif
 
         if (nvtSM_ReadID(pNvtSM0) < 0)
             return -1;
@@ -767,8 +773,8 @@ INT nvtSMpwrite(INT PBA, INT page, UINT8 *buff)
         nIsSysImage = 0xFF;     // NOT System Image (Loader), write 0xFFFF0000 to Redundancy Area
     else
     {
-        if (page == 0)
-            gMarkCount = 0;     // Reset Sequence Mark (0xFF5Axx00) to 0 in Redundancy Area
+        if (page == 0)          // Reset Sequence Mark (0xFF5Axx00) to 0 in Redundancy Area
+            gMarkCount = 0;
         else if (page > pSM->uPagePerBlock)
         {
             gMarkCount = 0;
@@ -784,6 +790,15 @@ INT nvtSMpwrite(INT PBA, INT page, UINT8 *buff)
     pageNo = PBA * pSM->uPagePerBlock + page;
 
     outpw(REG_SMIER, inpw(REG_SMIER) & (~SMIER_DMA_IE));    // disable DMA interrupt
+
+#ifdef __KLE_DEMO__
+{
+    UINT32 volatile ii;
+
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0001);   // output 1 to GPA0 to non-PROTECTED mode
+    for (ii=0; ii<3000; ii++);
+}
+#endif
 
     if (pSM->nPageSize == NAND_PAGE_2KB)
         return (nvtSM_Write_2K(pSM, pageNo, 0, (UINT32)buff));
@@ -832,15 +847,15 @@ INT fmiMarkBadBlock(UINT32 block)
         else
             return -1;
 
-        outpw(REG_SMCMD, 0x80);         // serial data input command
-        outpw(REG_SMADDR, ucColAddr);       // CA0 - CA7
+        outpw(REG_SMCMD, 0x80);     // serial data input command
+        outpw(REG_SMADDR, ucColAddr);   // CA0 - CA7
         outpw(REG_SMADDR, (ucColAddr >> 8) & 0x1f);
         outpw(REG_SMADDR, uSector & 0xff);  // PA0 - PA7
         if (!pNvtSM0->bIsMulticycle)
             outpw(REG_SMADDR, ((uSector >> 8) & 0xff)|0x80000000);      // PA8 - PA15
         else
         {
-            outpw(REG_SMADDR, (uSector >> 8) & 0xff);                   // PA8 - PA15
+            outpw(REG_SMADDR, (uSector >> 8) & 0xff);       // PA8 - PA15
             outpw(REG_SMADDR, ((uSector >> 16) & 0xff)|0x80000000);     // PA16 - PA17
         }
     }
@@ -849,13 +864,13 @@ INT fmiMarkBadBlock(UINT32 block)
         ucColAddr = 0;
         outpw(REG_SMCMD, 0x50);     // read RA command
         outpw(REG_SMCMD, 0x80);     // serial data input command
-        outpw(REG_SMADDR, ucColAddr);       // CA0 - CA7
+        outpw(REG_SMADDR, ucColAddr);   // CA0 - CA7
         outpw(REG_SMADDR, uSector & 0xff);  // PA0 - PA7
         if (!pNvtSM0->bIsMulticycle)
             outpw(REG_SMADDR, ((uSector >> 8) & 0xff)|0x80000000);      // PA8 - PA15
         else
         {
-            outpw(REG_SMADDR, (uSector >> 8) & 0xff);                   // PA8 - PA15
+            outpw(REG_SMADDR, (uSector >> 8) & 0xff);       // PA8 - PA15
             outpw(REG_SMADDR, ((uSector >> 16) & 0xff)|0x80000000);     // PA16 - PA17
         }
     }

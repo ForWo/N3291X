@@ -3,7 +3,7 @@
  * Copyright (c) 2008 Nuvoton Technolog. All rights reserved.              *
  *                                                                         *
  ***************************************************************************/
- 
+
 /****************************************************************************
 * FILENAME
 *   wb_uart.c
@@ -25,11 +25,9 @@
 #include "wblib.h"
 
 #ifdef	__HW_SIM__
-#undef 	REG_UART_THR                       
+#undef 	REG_UART_THR
 #define	REG_UART_THR  	(0xFFF04400)		// TUBE ON
 #endif
-
-PFN_SYS_UART_CALLBACK (pfnUartIntHandlerTable)[2][2]={0};
 
 #define vaStart(list, param) list = (INT8*)((INT)&param + sizeof(param))
 #define vaArg(list, type) ((type *)(list += sizeof(type)))[-1]
@@ -40,12 +38,6 @@ BOOL volatile _sys_bIsUseUARTInt = TRUE;
 UINT32 _sys_uUARTClockRate = EXTERNAL_CRYSTAL_CLOCK;
 //UINT32 UART_BA = UART0_BA;
 
-#define RX_ARRAY_NUM 100
-UINT8 uart_rx[RX_ARRAY_NUM] = {0};
-
-VOID _PutChar_f(UINT8 ucCh);
-UINT32 volatile rx_cnt = 0;
-
 #define sysTxBufReadNextOne()	(((_sys_uUartTxHead+1)==UART_BUFFSIZE)? NULL: _sys_uUartTxHead+1)
 #define sysTxBufWriteNextOne()	(((_sys_uUartTxTail+1)==UART_BUFFSIZE)? NULL: _sys_uUartTxTail+1)
 #define UART_BUFFSIZE	256
@@ -54,159 +46,43 @@ UINT32 volatile _sys_uUartTxHead, _sys_uUartTxTail;
 PVOID  _sys_pvOldUartVect;
 UINT32 u32UartPort =0x100;
 
-
-INT32 i32UsedPort = 0;
 void sysUartPort(UINT32 u32Port)
 {
 	u32UartPort = (u32Port & 0x1)*0x100;
-/*
 	if(u32Port==0)
-	{//High Speed UART		
-		outp32(REG_CLKDIV3, (inp32(REG_CLKDIV3) & (~(UART0_N1| UART0_S| UART0_N0))) );
-		outp32(REG_GPDFUN0, (inp32(REG_GPDFUN0) & ~(MF_GPD1|MF_GPD2)) | 0x110);	
+	{//High Speed UART
+		outp32(REG_CLKDIV3, (inp32(REG_CLKDIV3) & (~0xFF)));
+		outp32(REG_GPDFUN, (inp32(REG_GPDFUN) & ~(MF_GPD2 | MF_GPD1)) | (0x5<<2) );
 		outp32(REG_APBCLK, inp32(REG_APBCLK) | UART0_CKE);
 	}
 	else if(u32Port==1)
-*/
 	{//Nornal Speed UART
-		outp32(REG_CLKDIV3, (inp32(REG_CLKDIV3) & (~(UART1_N1| UART1_S| UART1_N0))) );
-		outp32(REG_GPAFUN1, (inp32(REG_GPAFUN1) & ~(MF_GPA10 | MF_GPA11)) | 0x3300 );	
+		outp32(REG_CLKDIV3, (inp32(REG_CLKDIV3) & (~0xFF00)));
+		outp32(REG_GPAFUN, inp32(REG_GPAFUN) | (MF_GPA11 | MF_GPA10));
 		outp32(REG_APBCLK, inp32(REG_APBCLK) | UART1_CKE);
-		
+
 	}
-	i32UsedPort = u32Port;
-}
-#if 1
-void sysUartInstallcallback(UINT32 u32IntType, 
-					PFN_SYS_UART_CALLBACK pfnCallback)
-{
-	if(u32IntType>1)
-		return;
-	if(u32IntType == 0)
-	{
-		pfnUartIntHandlerTable[i32UsedPort][0] = (PFN_SYS_UART_CALLBACK)(pfnCallback);
-	}	
-	else if(u32IntType == 1)
-	{
-		pfnUartIntHandlerTable[i32UsedPort][1] = (PFN_SYS_UART_CALLBACK)(pfnCallback);
-	}	
 }
 
 VOID sysUartISR()
 {
+	UINT32 volatile regIIR, i;
 
-	UINT32 volatile regIIR,i;
-	UINT32 volatile regIER, u32EnableInt;		
-	//sysprintf("UART ISR\n");
-	regIIR = inpb(REG_UART_ISR + u32UartPort);
-	regIER =  inpb(REG_UART_IER + u32UartPort);
-	u32EnableInt = regIER & regIIR;
-	if (u32EnableInt & THRE_IF)
-	{// buffer empty
-		if (_sys_uUartTxHead == _sys_uUartTxTail) 
-		{
-			//Disable interrupt if no any request!  
-			outpb((REG_UART_IER+u32UartPort), inp32(REG_UART_IER+u32UartPort) & (~THRE_IEN));
-		} 
-		else
-		{
-			//Transmit data 
-			for (i=0; i<8; i++)
-			{
-				#ifdef __HW_SIM__
-				 
-				#else 
-					outpb(REG_UART_THR+u32UartPort, _sys_ucUartTxBuf[_sys_uUartTxHead]);
-				#endif 
-				_sys_uUartTxHead = sysTxBufReadNextOne();
-				if (_sys_uUartTxHead == _sys_uUartTxTail) // buffer empty
-					break;
-			}
-		}
-	}
-	if(u32EnableInt & RDA_IF)
-	{
-		UINT32 u32Count;		
-		u32Count = (inpw(REG_UART_FSR+u32UartPort) & Rx_Pointer) >> 8;	
-#if 0		
-		sysprintf("\nRx data available %d bytes\n",u32Count);
-#endif		
-		for(i=0;i<u32Count;i++)		
-		{	
-			if ( rx_cnt == RX_ARRAY_NUM ) 
-			{
-				rx_cnt = 0;
-			}			
-			uart_rx[rx_cnt] = (inpb(REG_UART_RBR+u32UartPort));
-#if 0			
-		//debug	_PutChar_f(uart_rx[rx_cnt + i]);		
-#endif					
-			rx_cnt++;			
-		}				
-#if 0		
-		sysprintf("\nRx array index %d\n",rx_cnt);	
-#else
-		//callback to uplayer(bufptr, len);
-		
-		if(pfnUartIntHandlerTable[i32UsedPort][0] !=0)
-			pfnUartIntHandlerTable[i32UsedPort][0](&(uart_rx[0]), u32Count);
-		rx_cnt = 0;	
-#endif		
-
-	}
-	if(u32EnableInt & Tout_IF)//½ÓÊÕ×´Ì¬·ÖÎö
-	{
-		UINT32 u32Count;		
-		u32Count = (inpw(REG_UART_FSR+u32UartPort) & Rx_Pointer) >> 8;	
-#if 0		
-		sysprintf("\nRx data time out %d bytes\n",u32Count);	
-#endif		
-		for(i=0;i<u32Count;i++)		
-		{	
-			if ( rx_cnt == RX_ARRAY_NUM ) 
-			{
-				rx_cnt = 0;
-			}			
-			uart_rx[rx_cnt ] = (inpb(REG_UART_RBR+u32UartPort));
-#if 0			
-			_PutChar_f(uart_rx[rx_cnt + i]);	
-#endif			
-			rx_cnt++;			
-
-		}				
-#if 0		
-		sysprintf("\nRx array index %d\n",rx_cnt);	
-#else
-		//callback to uplayer(bufptr, len);		
-		if(pfnUartIntHandlerTable[i32UsedPort][1] !=0)
-			pfnUartIntHandlerTable[i32UsedPort][1](&(uart_rx[0]), u32Count);
-		rx_cnt = 0;	
-#endif		
-	}		
-	//sysprintf("\n");
-} 
-
-#else
-VOID sysUartISR()
-{
-	UINT32 volatile regIIR, i;	
 	regIIR = inpb(REG_UART_ISR+u32UartPort*0x100);
 
 	if (regIIR & THRE_IF)
 	{// buffer empty
-		if (_sys_uUartTxHead == _sys_uUartTxTail)	
-		{//Disable interrupt if no any request!  
+		if (_sys_uUartTxHead == _sys_uUartTxTail)
+		{//Disable interrupt if no any request!
 			outpb((REG_UART_IER+u32UartPort), inp32(REG_UART_IER+u32UartPort) & (~THRE_IEN));
-		}	
+		}
 		else
-		{//Transmit data 
+		{//Transmit data
 			for (i=0; i<8; i++)
 			{
-#ifdef __HW_SIM__
-
-#else			
+#ifndef __HW_SIM__
 				outpb(REG_UART_THR+u32UartPort, _sys_ucUartTxBuf[_sys_uUartTxHead]);
-#endif								
+#endif
 				_sys_uUartTxHead = sysTxBufReadNextOne();
 				if (_sys_uUartTxHead == _sys_uUartTxTail)	// buffer empty
 					break;
@@ -214,53 +90,40 @@ VOID sysUartISR()
 		}
 	}
 }
-#endif
+
 static VOID sysSetBaudRate(UINT32 uBaudRate)
 {
 	UINT32 _mBaudValue;
 
 	/* First, compute the baudrate divisor. */
-#if 0		
+#if 0
 	// mode 0
 	_mBaudValue = (_sys_uUARTClockRate / (uBaudRate * 16));
 	if ((_sys_uUARTClockRate % (uBaudRate * 16)) > ((uBaudRate * 16) / 2))
 	  	_mBaudValue++;
 	_mBaudValue -= 2;
-	outpw(REG_UART_BAUD+u32UartPort, _mBaudValue);		
+	outpw(REG_UART_BAUD+u32UartPort, _mBaudValue);
 #else
 	// mode 3
 	_mBaudValue = (_sys_uUARTClockRate / uBaudRate)-2;
-	outpw(REG_UART_BAUD+u32UartPort,  ((0x30<<24)| _mBaudValue));	
-#endif	
+	outpw(REG_UART_BAUD+u32UartPort,  ((0x30<<24)| _mBaudValue));
+#endif
 }
 
-void sysUartEnableInt(INT32 eIntType)
-{
-	if(eIntType==UART_INT_RDA)
-		outp32(REG_UART_IER+u32UartPort, inp32(REG_UART_IER+u32UartPort) |RDA_IEN);
-	else if (eIntType==UART_INT_RDTO)	
-		outp32(REG_UART_IER+u32UartPort, inp32(REG_UART_IER+u32UartPort) |RTO_IEN |Time_out_EN);
-	else if (eIntType==UART_INT_NONE)		
-		outp32(REG_UART_IER+u32UartPort, 0x0);
-}
+
 INT32 sysInitializeUART(WB_UART_T *uart)
 {
 	/* Enable UART multi-function pins*/
 	//outpw(REG_PINFUN, inpw(REG_PINFUN) | 0x80);
-	//outpw(REG_GPAFUN, inpw(REG_GPAFUN) | 0x00F00000);	//Normal UART pin function 
-	static BOOL bIsResetFIFO = FALSE;
-//	if(uart->uart_no == 0)
-		sysUartPort(uart->uart_no);
-//	else
-//		sysUartPort(uart->uart_no);	
-#if 0	
+	outpw(REG_GPAFUN, inpw(REG_GPAFUN) | 0x00F00000);	//Normal UART pin function
+
 	/* Check the supplied parity */
 	if ((uart->uiParity != WB_PARITY_NONE) &&
 	    (uart->uiParity != WB_PARITY_EVEN) &&
 	    (uart->uiParity != WB_PARITY_ODD))
 
 	    	/* The supplied parity is not valid */
-	    	return WB_INVALID_PARITY;
+	    	return (INT32)WB_INVALID_PARITY;
 
 	/* Check the supplied number of data bits */
 	else if ((uart->uiDataBits != WB_DATA_BITS_5) &&
@@ -269,26 +132,23 @@ INT32 sysInitializeUART(WB_UART_T *uart)
 	         (uart->uiDataBits != WB_DATA_BITS_8))
 
 	    	/* The supplied data bits value is not valid */
-	    	return WB_INVALID_DATA_BITS;
+	    	return (INT32)WB_INVALID_DATA_BITS;
 
 	/* Check the supplied number of stop bits */
 	else if ((uart->uiStopBits != WB_STOP_BITS_1) &&
 	         (uart->uiStopBits != WB_STOP_BITS_2))
 
 	    	/* The supplied stop bits value is not valid */
-	    	return WB_INVALID_STOP_BITS;
+	    	return (INT32)WB_INVALID_STOP_BITS;
 
 	/* Verify the baud rate is within acceptable range */
 	else if (uart->uiBaudrate < 1200)
 	    	/* The baud rate is out of range */
-	    	return WB_INVALID_BAUD;
-#endif
+	    	return (INT32)WB_INVALID_BAUD;
+
 	/* Reset the TX/RX FIFOs */
-	if(bIsResetFIFO==FALSE)
-	{
-		outpw(REG_UART_FCR+u32UartPort, 0x07);
-		bIsResetFIFO=TRUE;
-	}
+	outpw(REG_UART_FCR+u32UartPort, 0x07);
+
 	/* Setup reference clock */
 	_sys_uUARTClockRate = uart->uiFreq;
 
@@ -296,8 +156,8 @@ INT32 sysInitializeUART(WB_UART_T *uart)
 	sysSetBaudRate(uart->uiBaudrate);
 
 	/* Set the modem control register. Set DTR, RTS to output to LOW,
-	and set INT output pin to normal operating mode */ 
-	//outpb(UART_MCR, (WB_DTR_Low | WB_RTS_Low | WB_MODEM_En)); 
+	and set INT output pin to normal operating mode */
+	//outpb(UART_MCR, (WB_DTR_Low | WB_RTS_Low | WB_MODEM_En));
 
 	/* Setup parity, data bits, and stop bits */
 	outpw(REG_UART_LCR+u32UartPort,(uart->uiParity | uart->uiDataBits | uart->uiStopBits));
@@ -306,40 +166,16 @@ INT32 sysInitializeUART(WB_UART_T *uart)
 	outpw(REG_UART_TOR+u32UartPort, 0x80+0x20);
 
 	/* Setup Fifo trigger level and enable FIFO */
-	outpw(REG_UART_FCR+u32UartPort, (uart->uiRxTriggerLevel << 4) | 0x01);
-
-	/* Enable HUART interrupt Only (Receive Data Available Interrupt & RX Time out Interrupt) */
-#if 0	
-#if 1 //Enable RX data time out	
-	outp32(REG_UART_IER+u32UartPort,inp32(REG_UART_IER+u32UartPort) |RDA_IEN |RTO_IEN |Time_out_EN);
-#else	
-	outp32(REG_UART_IER+u32UartPort,inp32(REG_UART_IER+u32UartPort) |RDA_IEN);
-#endif	
-#endif 
-
-	/* Timeout if more than ??? bits xfer time */
-	outpw(REG_UART_TOR+u32UartPort, 0x7F);
-
-
-
-	
-
+	outpw(REG_UART_FCR+u32UartPort, uart->uiRxTriggerLevel|0x01);
 
 	// hook UART interrupt service routine
-//	if (u32UartPort)
-	{//==1 NORMAL UART
+	if (uart->uart_no == WB_UART_0)
+	{
 		_sys_uUartTxHead = _sys_uUartTxTail = NULL;
 		_sys_pvOldUartVect = sysInstallISR(IRQ_LEVEL_1, IRQ_UART, (PVOID)sysUartISR);
-		sysEnableInterrupt(IRQ_UART);		
+		sysEnableInterrupt(IRQ_UART);
+		sysSetLocalInterrupt(ENABLE_IRQ);
 	}
-/*
-	else
-	{//==0 High SPEED
-		_sys_uUartTxHead = _sys_uUartTxTail = NULL;
-		_sys_pvOldUartVect = sysInstallISR(IRQ_LEVEL_1, IRQ_HUART, (PVOID)sysUartISR);
-		sysEnableInterrupt(IRQ_HUART);
-	}
-*/
 	_sys_bIsUARTInitial = TRUE;
 
 	return Successful;
@@ -368,7 +204,7 @@ VOID _PutChar_f(UINT8 ucCh)
 	}
 	else
 	{
-		/* Wait until the transmitter buffer is empty */		
+		/* Wait until the transmitter buffer is empty */
 		while (!(inpw(REG_UART_FSR+u32UartPort) & 0x400000));
 		/* Transmit the character */
 		outpb(REG_UART_THR+u32UartPort, ucCh);
@@ -579,16 +415,16 @@ VOID sysPrintf(PINT8 pcStr,...)
     	_sys_bIsUseUARTInt = TRUE;
 	if (!_sys_bIsUARTInitial)
 	{
-		uart.uart_no = WB_UART_1;
-		uart.uiFreq = sysGetExternalClock()*1000;
-		uart.uiBaudrate = 115200;		
+		uart.uart_no = WB_UART_0;
+		uart.uiFreq = sysGetExternalClock();
+		uart.uiBaudrate = 115200;
 		uart.uiDataBits = WB_DATA_BITS_8;
 		uart.uiStopBits = WB_STOP_BITS_1;
 		uart.uiParity = WB_PARITY_NONE;
 		uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-		sysInitializeUART(&uart);		
+		sysInitializeUART(&uart);
     	}
-    
+
 	vaStart(argP, pcStr);       /* point at the end of the format string */
 	while (*pcStr)
 	{                       /* this works because args are all ints */
@@ -602,23 +438,23 @@ VOID sysPrintf(PINT8 pcStr,...)
 
 VOID sysprintf(PINT8 pcStr,...)
 {
-//	WB_UART_T uart;
+	WB_UART_T uart;
 	INT8  *argP;
 
 	_sys_bIsUseUARTInt = FALSE;
-/*
 	if (!_sys_bIsUARTInitial)
-	{//Default use external clock 12MHz as source clock. 
-		uart.uart_no = WB_UART_1;
+	{//Default use external clock 12MHz as source clock.
+		uart.uart_no = WB_UART_0;
 		uart.uiFreq = sysGetExternalClock();
 		uart.uiBaudrate = 115200;
 		uart.uiDataBits = WB_DATA_BITS_8;
 		uart.uiStopBits = WB_STOP_BITS_1;
 		uart.uiParity = WB_PARITY_NONE;
 		uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-		sysInitializeUART(&uart);
+		//sysInitializeUART(&uart);
+        uart = uart;    // avoid compile warning message
 	}
-*/
+
 	vaStart(argP, pcStr);       /* point at the end of the format string */
 	while (*pcStr)
 	{                       /* this works because args are all ints */
@@ -634,26 +470,16 @@ INT8 sysGetChar()
 {
 	while (1)
 	{
-		if (inpw(REG_UART_ISR+u32UartPort) & 0x01)		
-			return (inpb(REG_UART_RBR+u32UartPort));	
+		if (inpw(REG_UART_ISR+u32UartPort) & 0x01)
+			return (inpb(REG_UART_RBR+u32UartPort));
 	}
 }
 
 VOID sysPutChar(UINT8 ucCh)
 {
-	/* Wait until the transmitter buffer is empty */		
+	/* Wait until the transmitter buffer is empty */
 		while (!(inpw(REG_UART_FSR+u32UartPort) & 0x400000));
 	/* Transmit the character */
-		outpb(REG_UART_THR+u32UartPort, ucCh); 	
+		outpb(REG_UART_THR+u32UartPort, ucCh);
 }
 
-void sysUartTransfer(char* pu8buf, UINT32 u32Len)
-{
-	do
-	{
-		if( (inp32(REG_UART_FSR+u32UartPort) & Tx_Full) ==0 ) {
-			outpb(REG_UART_THR+u32UartPort, *pu8buf++);
-			u32Len = u32Len-1;
-		}
-	}while(u32Len!=0) ;
-}

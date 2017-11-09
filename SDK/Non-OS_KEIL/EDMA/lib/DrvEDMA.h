@@ -14,7 +14,7 @@
 #define __DRVEDMA_H__
 
 #include "wbio.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 
 #ifdef  __cplusplus
 extern "C"
@@ -29,7 +29,7 @@ extern "C"
 #define MODE_SELECT_BIT             2
 
 #define MAX_TRANSFER_BYTE_COUNT     0x00FFFFFF
-#define MAX_CHANNEL_NUM   12
+#define MAX_CHANNEL_NUM   5
 
 #define 	ERR_EDMA				(0xFFFF0000 | ((EDMA_BA>>16) & 0xFF00) |((EDMA_BA>>8) & 0xFF))
 
@@ -54,12 +54,7 @@ typedef enum
 	eDRVEDMA_CHANNEL_2,
 	eDRVEDMA_CHANNEL_3,
 	eDRVEDMA_CHANNEL_4,
-	eDRVEDMA_CHANNEL_5,
-	eDRVEDMA_CHANNEL_8 = 8,
-	eDRVEDMA_CHANNEL_9,
-	eDRVEDMA_CHANNEL_10, 
-	eDRVEDMA_CHANNEL_11,
-	eDRVEDMA_CHANNEL_12
+	eDRVEDMA_CHANNEL_5	
 }E_DRVEDMA_CHANNEL_INDEX;
 
 typedef enum
@@ -126,9 +121,7 @@ typedef enum
 	eDRVEDMA_SPIMS1,  
 	eDRVEDMA_UART0,	  
 	eDRVEDMA_UART1,
-	eDRVEDMA_ADC,
-	eDRVEDMA_RF_CODEC,
-	eDRVEDMA_RS_CODEC
+	eDRVEDMA_ADC
 }E_DRVEDMA_APB_DEVICE;
 
 typedef enum
@@ -176,7 +169,7 @@ DrvEDMA_Open(void);
 
 void DrvEDMA_Close(void);
 
-ERRCODE  
+BOOL  
 DrvEDMA_IsCHBusy(
 	E_DRVEDMA_CHANNEL_INDEX eChannel
 );
@@ -186,7 +179,7 @@ void DrvEDMA_EnableCH(
 	E_DRVEDMA_OPERATION eOP
 );
 
-ERRCODE  
+BOOL  
 DrvEDMA_IsEnabledCH(
 	E_DRVEDMA_CHANNEL_INDEX eChannel
 );
@@ -223,11 +216,6 @@ ERRCODE
 DrvEDMA_GetAPBTransferWidth(
 	E_DRVEDMA_CHANNEL_INDEX eChannel, 
 	E_DRVEDMA_TRANSFER_WIDTH* peTransferWidth
-);
-
-ERRCODE  
-DrvEDMA_ClearCHForAPBDevice(
-    E_DRVEDMA_CHANNEL_INDEX eChannel
 );
 
 ERRCODE  

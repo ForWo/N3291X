@@ -16,7 +16,7 @@
 #include "string.h"
 #include "stdio.h"
 #include "wblib.h"
-#include "w55fa92_spi.h"
+#include "w55fa95_spi.h"
 
 void sha256(unsigned char *text1 ,unsigned char *output,unsigned int length) {
 	SHA256_CTX ctx;

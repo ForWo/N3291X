@@ -231,8 +231,8 @@ extern INT   fs_fat32_scan_disk(LDISK_T *ptLDisk);
 extern INT   fs_fat32_defragment_disk(LDISK_T *ptLDisk);
 
 /* Cache */
-extern VOID fs_fat_init_sector_cache(void);
-extern VOID fs_fat_debug_sector_cache(void);
+extern VOID fs_fat_init_sector_cache(VOID);
+extern VOID fs_fat_debug_sector_cache(VOID);
 
 extern INT  fs_fat_check_out_sec(LDISK_T *ptLDisk, UINT32 uSectorNo, INT nAccess, SEC_BUFF_T **ptSecBuff);
 extern VOID  fs_fat_check_in_sec(SEC_BUFF_T *ptSecBuff, INT nAccess, BOOL bIsDirty);

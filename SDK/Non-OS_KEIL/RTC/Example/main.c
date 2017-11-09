@@ -13,8 +13,8 @@
 /*---------------------------------------------------------------------------------------------------------*/
 UINT32 volatile g_u32TICK = 0;
 BOOL volatile g_bAlarm = FALSE;
-VOID Smpl_RTC_Powerdown_Wakeup(void);
-VOID Smpl_RTC_Powerdown_Wakeup_Relative(void);
+VOID Smpl_RTC_Powerdown_Wakeup(VOID);
+VOID Smpl_RTC_Powerdown_Wakeup_Relative(VOID);
 VOID Smpl_RTC_PowerOff_Control(UINT32 u32Mode);
 
 #define HW_POWER_OFF	0
@@ -23,7 +23,7 @@ VOID Smpl_RTC_PowerOff_Control(UINT32 u32Mode);
 /*---------------------------------------------------------------------------------------------------------*/
 /* RTC Tick Callback function                                                                             */
 /*---------------------------------------------------------------------------------------------------------*/
-VOID RTC_TickISR(void)
+VOID RTC_TickISR(VOID)
 {
 	RTC_TIME_DATA_T sCurTime;
 	
@@ -38,7 +38,7 @@ VOID RTC_TickISR(void)
 /*---------------------------------------------------------------------------------------------------------*/
 /* RTC Alarm Callback function                                                                             */
 /*---------------------------------------------------------------------------------------------------------*/
-VOID RTC_AlarmISR(void)
+VOID RTC_AlarmISR(VOID)
 {
 	
 	sysprintf("   Abolute Alarm!!\n");
@@ -46,7 +46,7 @@ VOID RTC_AlarmISR(void)
 	g_bAlarm = TRUE; 
 }
 
-VOID RTC_Releative_AlarmISR(void)
+VOID RTC_Releative_AlarmISR(VOID)
 {
 	
 	sysprintf("   Relative Alarm!!\n");
@@ -65,7 +65,6 @@ int main()
 	sysUartPort(1);
 	uart.uiFreq = u32ExtFreq;
 	uart.uiBaudrate = 115200;
-	uart.uart_no=WB_UART_1;
 	uart.uiDataBits = WB_DATA_BITS_8;
 	uart.uiStopBits = WB_STOP_BITS_1;
 	uart.uiParity = WB_PARITY_NONE;
@@ -91,19 +90,25 @@ int main()
 			
 	sysSetLocalInterrupt(ENABLE_IRQ);	
 	
+	/* Clock Test Mode PAD Control */
+	outp32(REG_GPBFUN, inp32(REG_GPBFUN) | MF_GPB0);
+	
+	/* Clock Test Mode to Monitor HCLK */
+	outp32(REG_CLK_TREG, 0x85);
+
 	sysprintf("Do RTC Calibration \n");	
-	RTC_Ioctl(0,RTC_IOC_SET_FREQUENCY, 0,0);	
+	RTC_Ioctl(0,RTC_IOC_SET_FREQUENCY, 0,0);
 	
 	do
 	{    	
 		sysprintf("=======================================\n");
-		sysprintf("             RTC Demo Code	          \n"); 	
+		sysprintf("             RTC Demo Code	          \n");		
 		sysprintf("=======================================\n");	
 		RTC_Ioctl(0,RTC_IOC_GET_CLOCK_SOURCE, (UINT32)&u32ClockSource,0);	
 		if(u32ClockSource == RTC_INTERANL)
 			sysprintf("         (Clock from Internal) 	      \n");  
 		else
-			sysprintf("         (Clock from External) 	      \n");  			
+			sysprintf("         (Clock from External) 	      \n");  
 		sysprintf("=======================================\n");	
 		sysprintf("Select Demo Item:\n");
 		sysprintf("0. Time Display Test\n");
@@ -113,10 +118,9 @@ int main()
 		sysprintf("4. Power down Wakeup Test (Relative)\n");
 		sysprintf("5. S/W Force to Power Off Test\n");
 		sysprintf("6. S/W Power Off (Normal Case) Control Flow Test\n");
-		sysprintf("7. H/W Power Off (System Crash) Control Flow Test\n");		
-		sysprintf("8. RTC Alarm Mask Test for Day\n");	
-		sysprintf("9. Change RTC Clock Source\n");
-		sysprintf("A. Do Calibration\n");
+		sysprintf("7. H/W Power Off (System Crash) Control Flow Test\n");			
+		sysprintf("8. Change RTC Clock Source\n");
+		sysprintf("9. Do Calibration\n");
 		sysprintf("Q. Exit\n");
 		u32Item = sysGetChar();			
 		
@@ -144,8 +148,6 @@ int main()
 				
 				while(g_u32TICK < 5);
 				
-				RTC_EnableClock(FALSE);
-
 				/* Disable RTC Tick Interrupt */
 				RTC_Ioctl(0,RTC_IOC_DISABLE_INT, (UINT32)RTC_TICK_INT,0);							
 				break;
@@ -163,18 +165,7 @@ int main()
 				
 				/* Set Alarm call back function */
 				sCurTime.pfnAlarmCallBack = RTC_AlarmISR;
-				
-				/* Disable Alarm Mask */
-				sCurTime.u32AlarmMaskSecond = 0;	
-				sCurTime.u32AlarmMaskMinute = 0;	
-				sCurTime.u32AlarmMaskHour = 0;	
-				sCurTime.u32AlarmMaskDay = 0;	
-				sCurTime.u32AlarmMaskMonth = 0;	
-				sCurTime.u32AlarmMaskYear = 0;	
-				sCurTime.u32AlarmMaskDayOfWeek = 0;
-				sCurTime.u32AlarmMaskSecond = 0; 	
-					
-					
+
 				sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
 				
 				/* The alarm time setting */	
@@ -205,14 +196,12 @@ int main()
 						
 				while(!g_bAlarm);
 				
-				RTC_EnableClock(FALSE);			
-			
+				RTC_EnableClock(FALSE);				
+
 				/* Get the currnet time */
-				RTC_Read(RTC_CURRENT_TIME, &sCurTime);	
+				RTC_Read(RTC_CURRENT_TIME, &sCurTime);				
 				
 				sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
-				
-				RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_ALARM_INT,0);
 							
 				break;				
 			}
@@ -236,15 +225,13 @@ int main()
 	
 				while(!g_bAlarm);			
 			
-				RTC_EnableClock(FALSE);
-				
+				RTC_EnableClock(FALSE);				
+
 				/* Get the currnet time */
-				RTC_Read(RTC_CURRENT_TIME, &sCurTime);
+				RTC_Read(RTC_CURRENT_TIME, &sCurTime);				
 	
 				sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
-				
-				RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_RELATIVE_ALARM_INT,0);
-								
+											
 				break;				
 			}			
 			case '3':
@@ -262,7 +249,7 @@ int main()
 				sysprintf("   Force to Power Off imediatedly\n");							
 				RTC_Ioctl(0, RTC_IOC_SET_POWER_OFF, 0, 0);
 				while(1);
-//				break;										
+				break;											
 			case '6':
 				sysprintf("\n6. S/W Power Off (Normal Case) Control Flow Test\n");
 				Smpl_RTC_PowerOff_Control(SW_POWER_OFF);
@@ -270,86 +257,8 @@ int main()
 			case '7':
 				sysprintf("\n7. H/W Power Off (System Crash!) Control Flow Test\n");
 				Smpl_RTC_PowerOff_Control(HW_POWER_OFF);
-				break;
+				break;	
 			case '8':
-			{			
-				int i;				
-				RTC_TIME_DATA_T sCurTime,sAlarmTime;	
-				
-				sysprintf("\n8. RTC Alarm Mask Test for Day\n");
-				
-				/* Time Setting */
-				sCurTime.u32Year = 2010;
-				sCurTime.u32cMonth = 1;	
-				sCurTime.u32cDay = 8;
-				sCurTime.u32cHour = 10;
-				sCurTime.u32cMinute = 13;
-				sCurTime.u32cSecond = 0;
-				sCurTime.u32cDayOfWeek = RTC_FRIDAY;
-				sCurTime.u8cClockDisplay = RTC_CLOCK_24;				
-			 	RTC_Write(RTC_CURRENT_TIME,&sCurTime);		
-				
-				/* Alarm Setting */
-				sAlarmTime.u32Year = 2010;
-				sAlarmTime.u32cMonth = 1;	
-				sAlarmTime.u32cDay = 8;
-				sAlarmTime.u32cHour = 10;
-				sAlarmTime.u32cMinute = 13;
-				sAlarmTime.u32cSecond = 10;
-				sAlarmTime.u32cDayOfWeek = RTC_FRIDAY;
-				sAlarmTime.u8cClockDisplay = RTC_CLOCK_24;		
-
-				/* Set Alarm call back function */
-				sAlarmTime.pfnAlarmCallBack = RTC_AlarmISR;		
-								
-				/* Enable Alarm Mask for Day */					
-				sAlarmTime.u32AlarmMaskSecond = 0;	
-				sAlarmTime.u32AlarmMaskMinute = 0;	
-				sAlarmTime.u32AlarmMaskHour = 0;	
-				sAlarmTime.u32AlarmMaskDay = 1;	
-				sAlarmTime.u32AlarmMaskMonth = 0;	
-				sAlarmTime.u32AlarmMaskYear = 0;	
-				sAlarmTime.u32AlarmMaskDayOfWeek = 1;
-				sAlarmTime.u32AlarmMaskSecond = 0; 	
-				
-				/* Set the alarm time (Install the call back function and enable the alarm interrupt)*/
-				RTC_Write(RTC_ALARM_TIME,&sAlarmTime);				
-		
-				sysprintf("Alarm should occur when %d/%02d/xx %02d:%02d:%02d\n",sAlarmTime.u32Year,sAlarmTime.u32cMonth,sAlarmTime.u32cHour,sAlarmTime.u32cMinute,sAlarmTime.u32cSecond);			
-		
-				for(i=0;i<5;i++)
-				{		
-					sysprintf("Test %d\n",i); 
-												
-					g_bAlarm = FALSE;		
-					
-					sCurTime.u32Year = 2010;
-					sCurTime.u32cMonth = 1;	
-					sCurTime.u32cDay++;		
-					sCurTime.u32cHour = 10;
-					sCurTime.u32cMinute = 13;
-					sCurTime.u32cSecond = 0;
-					sCurTime.u32cDayOfWeek = RTC_FRIDAY;
-					sCurTime.u8cClockDisplay = RTC_CLOCK_24;	
-					RTC_Write(RTC_CURRENT_TIME,&sCurTime);	
-					
-					sysprintf("   Change Current Time To:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
-					
-					RTC_EnableClock(TRUE);		
-					
-					while(!g_bAlarm);		
-					
-					/* Get the currnet time */
-					RTC_Read(RTC_CURRENT_TIME, &sCurTime);					
-
-					sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
-				}	
-				
-				RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_ALARM_INT,0);
-						
-				break;
-			}			
-			case '9':
 			{			
 				sysprintf("Change RTC Clock\n");	
 				u32ClockSource++;
@@ -366,13 +275,13 @@ int main()
 					sysprintf("->Clock from External now\n");  
 					
 				break;
-			}	
-			case 'A':case 'a':
-			{
+			}		
+			case '9':
+			{	
 				sysprintf("Do RTC Calibration\n");	
 				RTC_Ioctl(0,RTC_IOC_SET_FREQUENCY, 0,0);
-				break;	
-			}							
+				break;
+			}				
 			default:
 				sysprintf("Wrong Item\n");
 				break;			

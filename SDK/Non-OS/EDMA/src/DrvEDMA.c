@@ -15,14 +15,7 @@ static PFN_DRVEDMA_CALLBACK  g_pfnEDMACallback[MAX_CHANNEL_NUM+1][4]  = {
 								{0,0,0,0},
 								{0,0,0,0},
 								{0,0,0,0},
-								{0,0,0,0},	
-								{0,0,0,0},
-								{0,0,0,0},
-								{0,0,0,0},
-								{0,0,0,0},
-								{0,0,0,0},
-								{0,0,0,0},
-								{0,0,0,0}
+								{0,0,0,0}								
 };								
 
 
@@ -56,22 +49,19 @@ void DrvEDMA_Close(void)
 	// 1.Disable IP I/O pins
 	// 2.Disable IP¡¦s clock --> Disable Channel Clock in DrvEDMA_SetCHOperation( ) function
 	u32Mask = EDMA0_CKE | EDMA1_CKE | EDMA2_CKE | EDMA3_CKE | EDMA4_CKE;
-	outp32(REG_AHBCLK,inp32(REG_AHBCLK) & ~u32Mask);
-
-	u32Mask = EDMA5_CKE | EDMA20_CKE | EDMA21_CKE | EDMA22_CKE | EDMA23_CKE | EDMA24_CKE;
-	outp32(REG_AHBCLK2,inp32(REG_AHBCLK2) & ~u32Mask);
+	outp32(REG_AHBCLK,inp32(REG_AHBCLK) & ~u32Mask);					
 	
 }
 
 // Get Channel Enable/Disable status
-ERRCODE  
+BOOL  
 DrvEDMA_IsCHBusy(
 	E_DRVEDMA_CHANNEL_INDEX eChannel
 )
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT;    
     
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;
@@ -97,8 +87,8 @@ void DrvEDMA_EnableCH(
 
 		if (eOP == eDRVEDMA_DISABLE)
 		{
-			outp32(u32SFR, inp32(u32SFR) & ~EDMACEN);     
-			outp32(REG_AHBCLK,inp32(REG_AHBCLK) & ~u32Mask);					// Disable Channel Clock    			
+			outp32(u32SFR, inp32(u32SFR) & ~EDMACEN);    
+			outp32(REG_AHBCLK,inp32(REG_AHBCLK) & ~u32Mask);					// Disable Channel Clock
 		}    	
 		else 
 		{
@@ -108,17 +98,13 @@ void DrvEDMA_EnableCH(
 	}
 	else
 	{
-		if(eChannel == eDRVEDMA_CHANNEL_5)
-			u32Mask = 0x01;
-		else
-			u32Mask = 0x800 << (eChannel % eDRVEDMA_CHANNEL_8);
-		
+		u32Mask = 0x00000001 << (eChannel % eDRVEDMA_CHANNEL_5);
 		u32SFR = REG_VDMA_CSR + eChannel * 0x100;
 
 		if (eOP == eDRVEDMA_DISABLE)
-		{
-			outp32(u32SFR, inp32(u32SFR) & ~EDMACEN);
-			outp32(REG_AHBCLK2,inp32(REG_AHBCLK2) & ~u32Mask);					// Disable Channel Clock    			     
+		{			   
+			outp32(u32SFR, inp32(u32SFR) & ~EDMACEN);   
+			outp32(REG_AHBCLK2,inp32(REG_AHBCLK2) & ~u32Mask);					// Disable Channel Clock
 		}    	
 		else 
 		{
@@ -131,14 +117,14 @@ void DrvEDMA_EnableCH(
 
 
 // Get Channel Enable/Disable status
-ERRCODE  
+BOOL  
 DrvEDMA_IsEnabledCH(
 	E_DRVEDMA_CHANNEL_INDEX eChannel
 )
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT;    
     
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;
@@ -157,7 +143,7 @@ DrvEDMA_SetTransferSetting(
 {
     UINT32 u32SFR, u32Value; 
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT;    
     
     DrvEDMA_DisableScatterGather(eChannel);
@@ -192,7 +178,7 @@ DrvEDMA_GetTransferSetting(
 {
     UINT32 u32SFR, u32Value;
 
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT;     
     
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;
@@ -205,12 +191,12 @@ DrvEDMA_GetTransferSetting(
     if (eTarget == eDRVEDMA_TARGET_SOURCE)
     {
         *pu32Addr = inp32(REG_VDMA_SAR + eChannel * 0x100);
-        *peDirection = (E_DRVEDMA_DIRECTION_SELECT)((u32Value & SAD_SEL) >> SOURCE_DIRECTION_BIT);
+        *peDirection = (u32Value & SAD_SEL) >> SOURCE_DIRECTION_BIT;
     }
     else
     {
         *pu32Addr = inp32(REG_VDMA_DAR + eChannel * 0x100);
-        *peDirection = (E_DRVEDMA_DIRECTION_SELECT)((u32Value & DAD_SEL) >> DESTINATION_DIRECTION_BIT);        
+        *peDirection = (u32Value & DAD_SEL) >> DESTINATION_DIRECTION_BIT;        
     }
     
     return E_SUCCESS;     
@@ -225,7 +211,7 @@ DrvEDMA_GetTransferLength(
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT; 
             
     u32SFR = REG_VDMA_BCR + eChannel * 0x100;
@@ -245,7 +231,7 @@ DrvEDMA_SetAPBTransferWidth(
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5) || (eChannel >= 6 && eChannel <=8))
+    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5))
         return E_DRVEDMA_FALSE_INPUT; 
             
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;
@@ -263,38 +249,13 @@ DrvEDMA_GetAPBTransferWidth(
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5) || (eChannel >= 6 && eChannel <=8))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT; 
             
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;
-    *peTransferWidth = (E_DRVEDMA_TRANSFER_WIDTH)((inp32(u32SFR) & APB_TWS) >> TRANSFER_WIDTH_BIT);    
+    *peTransferWidth = (inp32(u32SFR) & APB_TWS) >> TRANSFER_WIDTH_BIT;    
     
     return E_SUCCESS;    
-}
-
-ERRCODE  
-DrvEDMA_ClearCHForAPBDevice(
-    E_DRVEDMA_CHANNEL_INDEX eChannel
-)
-{
-	UINT32 u32Mask;
-	if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5) || (eChannel >= 6 && eChannel <=8))
-        return E_DRVEDMA_FALSE_INPUT; 
-		
-	if(eChannel <= eDRVEDMA_CHANNEL_4)
-	{
-		u32Mask = 0x00070000 << ((eChannel-1)*4);
-		u32Mask = u32Mask |(0x00000007 << ((eChannel-1)*4));
-		outp32(REG_ED0SSR, inp32(REG_ED0SSR) | u32Mask);
-	}
-	else
-	{		
-		u32Mask = 0x00070000 << ((eChannel-9)*4);
-		u32Mask = u32Mask |(0x00000007 << ((eChannel-9)*4));
-		outp32(REG_ED1SSR, inp32(REG_ED1SSR) | u32Mask);
-	}
-
-	return E_SUCCESS; 
 }
 
 // Select EDMA channel for APB Device
@@ -308,166 +269,87 @@ DrvEDMA_SetCHForAPBDevice(
     UINT32 u32Value,u32Mask,i,u32OrMask; 
     UINT32 u32SFR;       
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5) || (eChannel >= 6 && eChannel <=8))
+    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5))
         return E_DRVEDMA_FALSE_INPUT; 
             
     if ((eRWAPB == eDRVEDMA_WRITE_APB) && (eDevice == eDRVEDMA_ADC))
         return E_DRVEDMA_FALSE_INPUT;
             	
-    u32SFR = REG_VDMA_CSR + eChannel * 0x100;        	          
+    u32SFR = REG_VDMA_CSR + eChannel * 0x100;
+                	
+    // Let Tx and Rx does not use the same channel         	
+    if (eRWAPB == eDRVEDMA_WRITE_APB)
+    {
+	    outp32(u32SFR,(inp32(u32SFR) & ~MODE_SEL) | (eDRVEDMA_MEMORY_TO_DEVICE << MODE_SELECT_BIT));    
+        u32Mask = 0x000F0000 << ((eChannel-1)*4);
+        u32OrMask = 0x0007 << ((eChannel-1)*4);
+	}        
+    else
+    {
+	    outp32(u32SFR,(inp32(u32SFR) & ~MODE_SEL) | (eDRVEDMA_DEVICE_TO_MEMORY << MODE_SELECT_BIT));      
+        u32Mask = 0x0000000F << ((eChannel-1)*4);
+        u32OrMask = 0x00070000 << ((eChannel-1)*4);        
+	}        
 
-	if(eChannel <= eDRVEDMA_CHANNEL_4)
-	{
-		// Let Tx and Rx does not use the same channel         	
-	    if (eRWAPB == eDRVEDMA_WRITE_APB)
-	    {
-		    outp32(u32SFR,(inp32(u32SFR) & ~MODE_SEL) | (eDRVEDMA_MEMORY_TO_DEVICE << MODE_SELECT_BIT));    
-	        u32Mask = 0x000F0000 << ((eChannel-1)*4);
-	        u32OrMask = 0x0007 << ((eChannel-1)*4);
+    u32Value = inp32(REG_EDSSR) & ~u32Mask;
+    
+    if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
+	    u32Value &= ~u32OrMask;    
+    else
+	    u32Value |= u32OrMask;
+
+	// let Tx or Rx does not use two channel concurrently    
+    if (eRWAPB == eDRVEDMA_WRITE_APB)
+    {
+	    u32Mask = 0x070000;
+       	for(i=1;i<=4;i++)
+       	{
+       		if (i != eChannel)
+       		{
+	       		if (((u32Value & u32Mask)>>((i-1)*4+16)) == eDevice)
+	       		{
+	       			u32Value |= u32Mask;
+	       			
+			   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
+			   			u32Value |=  0x07 << ((i-1)*4);	       			
+				}	       			
+			}       			
+       		u32Mask <<= 4;	
 		}        
-	    else
-	    {
-		    outp32(u32SFR,(inp32(u32SFR) & ~MODE_SEL) | (eDRVEDMA_DEVICE_TO_MEMORY << MODE_SELECT_BIT));      
-	        u32Mask = 0x0000000F << ((eChannel-1)*4);
-	        u32OrMask = 0x00070000 << ((eChannel-1)*4);        
-		} 
 		
-	    u32Value = inp32(REG_ED0SSR) & ~u32Mask;
-	    
-	    if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-		    u32Value &= ~u32OrMask;    
-	    else
-		    u32Value |= u32OrMask;
 
-		// let Tx or Rx does not use two channel concurrently    
-	    if (eRWAPB == eDRVEDMA_WRITE_APB)
-	    {
-		    u32Mask = 0x070000;
-	       	for(i=1;i<=4;i++)
-	       	{
-	       		if (i != eChannel)
-	       		{
-		       		if (((u32Value & u32Mask)>>((i-1)*4+16)) == eDevice)
-		       		{
-		       			u32Value |= u32Mask;
-		       			
-				   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-				   			u32Value |=  0x07 << ((i-1)*4);	       			
-					}	       			
-				}       			
-	       		u32Mask <<= 4;	
-			}        
-			
+   		u32Value |=  eDevice << ((eChannel-1)*4 + 16);
+   		
+   		// TX and RX use same channel for SPIM0 & 1 
+   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
+   			u32Value |=  eDevice << ((eChannel-1)*4);
+    }
+    else
+    {
+	    u32Mask = 0x07;
+       	for(i=1;i<=4;i++)
+       	{
+       		if (i != eChannel)
+       		{
+	      		if (((u32Value & u32Mask)>>(i-1)*4) == eDevice)
+	      		{
+	       			u32Value |= u32Mask;
+	       			
+			   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
+			   			u32Value |=  0x070000 << ((i-1)*4);	  	       			
+				}			   			
+       		}	
+       		u32Mask <<= 4;	
+		}  
+		    
+    	u32Value |=  eDevice << ((eChannel-1)*4);    
+    	
+    	// TX and RX use same channel for SPIM0 & 1 
+   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
+   			u32Value |=  eDevice << ((eChannel-1)*4+16);    	
+    }
 
-	   		u32Value |=  eDevice << ((eChannel-1)*4 + 16);
-	   		
-	   		// TX and RX use same channel for SPIM0 & 1 
-	   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-	   			u32Value |=  eDevice << ((eChannel-1)*4);
-	    }
-	    else
-	    {
-		    u32Mask = 0x07;
-	       	for(i=1;i<=4;i++)
-	       	{
-	       		if (i != eChannel)
-	       		{
-		      		if (((u32Value & u32Mask)>>(i-1)*4) == eDevice)
-		      		{
-		       			u32Value |= u32Mask;
-		       			
-				   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-				   			u32Value |=  0x070000 << ((i-1)*4);	  	       			
-					}			   			
-	       		}	
-	       		u32Mask <<= 4;	
-			}  
-			    
-	    	u32Value |=  eDevice << ((eChannel-1)*4);    
-	    	
-	    	// TX and RX use same channel for SPIM0 & 1 
-	   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-	   			u32Value |=  eDevice << ((eChannel-1)*4+16);    	
-	    }
-
-	    outp32(REG_ED0SSR,u32Value);
-	}
-	else
-	{
-		// Let Tx and Rx does not use the same channel         	
-	    if (eRWAPB == eDRVEDMA_WRITE_APB)
-	    {
-		    outp32(u32SFR,(inp32(u32SFR) & ~MODE_SEL) | (eDRVEDMA_MEMORY_TO_DEVICE << MODE_SELECT_BIT));    
-	        u32Mask = 0x000F0000 << ((eChannel-9)*4);
-	        u32OrMask = 0x0007 << ((eChannel-9)*4);
-		}        
-	    else
-	    {
-		    outp32(u32SFR,(inp32(u32SFR) & ~MODE_SEL) | (eDRVEDMA_DEVICE_TO_MEMORY << MODE_SELECT_BIT));      
-	        u32Mask = 0x0000000F << ((eChannel-9)*4);
-	        u32OrMask = 0x00070000 << ((eChannel-9)*4);        
-		} 
-	
-	    u32Value = inp32(REG_ED1SSR) & ~u32Mask;
-	    
-	    if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-		    u32Value &= ~u32OrMask;    
-	    else
-		    u32Value |= u32OrMask;
-
-		// let Tx or Rx does not use two channel concurrently    
-	    if (eRWAPB == eDRVEDMA_WRITE_APB)
-	    {
-		    u32Mask = 0x070000;
-	       	for(i=9;i<=12;i++)
-	       	{
-	       		if (i != eChannel)
-	       		{
-		       		if (((u32Value & u32Mask)>>((i-9)*4+16)) == eDevice)
-		       		{
-		       			u32Value |= u32Mask;
-		       			
-				   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-				   			u32Value |=  0x07 << ((i-9)*4);	       			
-					}	       			
-				}       			
-	       		u32Mask <<= 4;	
-			}        
-			
-
-	   		u32Value |=  eDevice << ((eChannel-9)*4 + 16);
-	   		
-	   		// TX and RX use same channel for SPIM0 & 1 
-	   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-	   			u32Value |=  eDevice << ((eChannel-9)*4);
-	    }
-	    else
-	    {
-		    u32Mask = 0x07;
-	       	for(i=9;i<=12;i++)
-	       	{
-	       		if (i != eChannel)
-	       		{
-		      		if (((u32Value & u32Mask)>>(i-9)*4) == eDevice)
-		      		{
-		       			u32Value |= u32Mask;
-		       			
-				   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-				   			u32Value |=  0x070000 << ((i-9)*4);	  	       			
-					}			   			
-	       		}	
-	       		u32Mask <<= 4;	
-			}  
-			    
-	    	u32Value |=  eDevice << ((eChannel-9)*4);    
-	    	
-	    	// TX and RX use same channel for SPIM0 & 1 
-	   		if ((eDevice == eDRVEDMA_SPIMS0) || (eDevice == eDRVEDMA_SPIMS1))
-	   			u32Value |=  eDevice << ((eChannel-9)*4+16);    	
-	    }
-
-	    outp32(REG_ED1SSR,u32Value);
-	}
+    outp32(REG_EDSSR,u32Value);
         
     return E_SUCCESS;     
 }
@@ -481,40 +363,25 @@ DrvEDMA_GetCHForAPBDevice(
 {
 	UINT32 u32Value,i;
 	
-    if ((eDevice < eDRVEDMA_SPIMS0) || (eDevice > eDRVEDMA_RS_CODEC))
-    	return (E_DRVEDMA_CHANNEL_INDEX)E_DRVEDMA_FALSE_INPUT;
+    if ((eDevice < eDRVEDMA_SPIMS0) || (eDevice > eDRVEDMA_ADC))
+    	return E_DRVEDMA_FALSE_INPUT;
     	
 	if (eRWAPB == eDRVEDMA_WRITE_APB)
 	{
-		u32Value = inp32(REG_ED0SSR)>>16;
+		u32Value = inp32(REG_EDSSR)>>16;
 	}
 	else
 	{
-		u32Value = inp32(REG_ED0SSR);
+		u32Value = inp32(REG_EDSSR);
 	}
 	
    	for(i=1;i<=4;i++)
    	{
    		if (((u32Value >> (i-1)*4) & 0x07) == eDevice)
-   			return (E_DRVEDMA_CHANNEL_INDEX)i;
-	} 
-
-	if (eRWAPB == eDRVEDMA_WRITE_APB)
-	{
-		u32Value = inp32(REG_ED1SSR)>>16;
-	}
-	else
-	{
-		u32Value = inp32(REG_ED1SSR);
-	}
+   			return i;
+	} 	
 	
-   	for(i=9;i<=12;i++)
-   	{
-   		if (((u32Value >> (i-9)*4) & 0x07) == eDevice)
-   			return (E_DRVEDMA_CHANNEL_INDEX)i;
-	} 
-	
-   	return (E_DRVEDMA_CHANNEL_INDEX)0;  
+   	return 0;  
 }
 
 // Set Wrap Around Transfer Byte count interrupt Select for Channelx
@@ -526,7 +393,7 @@ DrvEDMA_SetWrapIntType(
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5) || (eChannel >= 6 && eChannel <=8))
+    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel == 0) || (eChannel == 5))
         return E_DRVEDMA_FALSE_INPUT;
             
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;
@@ -547,12 +414,12 @@ DrvEDMA_GetWrapIntType(
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel ==0) || (eChannel ==5) || (eChannel >= 6 && eChannel <=8))
-        return (E_DRVEDMA_WRAPAROUND_SELECT)E_DRVEDMA_FALSE_INPUT;
+    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel == 0) || (eChannel == 5))
+        return E_DRVEDMA_FALSE_INPUT;
             
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;  
     
-    return (E_DRVEDMA_WRAPAROUND_SELECT)((inp32(u32SFR) & WAR_BCR_SEL )>> 12);  
+    return (inp32(u32SFR) & WAR_BCR_SEL )>> 12;  
 }
 
 // Software reset Channelx
@@ -563,7 +430,7 @@ DrvEDMA_CHSoftwareReset(
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT;
             
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;  
@@ -581,7 +448,7 @@ DrvEDMA_CHEnablelTransfer(
 {
     UINT32 u32SFR;
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT;
             
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;  
@@ -678,16 +545,16 @@ DrvEDMA_IsIntEnabled(
     {
     	case eDRVEDMA_TABORT:
 		    return inp32(u32SFR) & EDMATABORT_IE;     	
-//    		break;
+    		break;
     	case eDRVEDMA_BLKD:
 		    return inp32(u32SFR) & BLKD_IE;     	
-//    		break;
+    		break;
     	case eDRVEDMA_WAR:
 		    return inp32(u32SFR) & WAR_IE;     	
-//    		break;
+    		break;
     	case eDRVEDMA_SG:
 		    return inp32(u32SFR) & SG_IEN;     	
-//    		break;    		
+    		break;    		
 		default :
 	    	return E_DRVEDMA_FALSE_INPUT;		    		
 	}    
@@ -719,7 +586,7 @@ DrvEDMA_PollInt(
     return inp32(u32SFR) & eIntFlag;
 }
 
-// Set Color Format Transform for Channel0,5,8
+// Set Color Format Transform for Channel0,5
 ERRCODE  
 DrvEDMA_SetColorTransformFormat(
 	E_DRVEDMA_CHANNEL_INDEX eChannel,
@@ -729,7 +596,7 @@ DrvEDMA_SetColorTransformFormat(
 { 
 	UINT32 u32SFR;
 
-	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel != eDRVEDMA_CHANNEL_0 && eChannel != eDRVEDMA_CHANNEL_5 && eChannel != eDRVEDMA_CHANNEL_8))
+	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel == 1) || (eChannel == 2) || (eChannel == 3) || (eChannel == 4))
         	return E_DRVEDMA_FALSE_INPUT;
     
     	u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
@@ -738,7 +605,7 @@ DrvEDMA_SetColorTransformFormat(
 	return E_SUCCESS;  
 }
 
-// Get Color Format Transform from Channel0,5,8
+// Get Color Format Transform from Channel0,5
 void DrvEDMA_GetColorTransformFormat(
 	E_DRVEDMA_CHANNEL_INDEX eChannel,
 	E_DRVEDMA_COLOR_FORMAT* peSourceFormat,
@@ -749,8 +616,8 @@ void DrvEDMA_GetColorTransformFormat(
     
     	u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
 		
-	*peSourceFormat = (E_DRVEDMA_COLOR_FORMAT)((inp32(u32SFR) & SOUR_FORMAT) >> 24);
-	*peDestFormat = (E_DRVEDMA_COLOR_FORMAT)((inp32(u32SFR) & DEST_FORMAT) >> 16);	
+	*peSourceFormat = (inp32(u32SFR) & SOUR_FORMAT) >> 24;
+	*peDestFormat = (inp32(u32SFR) & DEST_FORMAT) >> 16;	
 }
 
 ERRCODE  
@@ -762,7 +629,7 @@ DrvEDMA_SetColorTransformOperation(
 { 
 	UINT32 u32SFR;
 
-	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel != eDRVEDMA_CHANNEL_0 && eChannel != eDRVEDMA_CHANNEL_5 && eChannel != eDRVEDMA_CHANNEL_8))
+	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel == 1) || (eChannel == 2) || (eChannel == 3) || (eChannel == 4))
         	return E_DRVEDMA_FALSE_INPUT;
     
     	u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
@@ -781,8 +648,8 @@ void DrvEDMA_GetColorTransformOperation(
     
     	u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
 	
-	*peColorSpaceTran = (E_DRVEDMA_OPERATION)((inp32(u32SFR) & COL_TRA_EN) >> 1);
-	*peStrideMode = (E_DRVEDMA_OPERATION)(inp32(u32SFR) & STRIDE_EN );	
+	*peColorSpaceTran = (inp32(u32SFR) & COL_TRA_EN) >> 1;
+	*peStrideMode = inp32(u32SFR) & STRIDE_EN ;	
 }
 
 
@@ -798,7 +665,7 @@ DrvEDMA_SetSourceStride(
 {
 	UINT32 u32SFR;
 
-	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel != eDRVEDMA_CHANNEL_0 && eChannel != eDRVEDMA_CHANNEL_5 && eChannel != eDRVEDMA_CHANNEL_8))
+	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel == 1) || (eChannel == 2) || (eChannel == 3) || (eChannel == 4))
         	return E_DRVEDMA_FALSE_INPUT;
     
     	u32SFR = REG_VDMA_SASOCR + eChannel * 0x100;
@@ -833,7 +700,7 @@ DrvEDMA_SetDestinationStrideOffset(
 {
 	UINT32 u32SFR;
 
-	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel != eDRVEDMA_CHANNEL_0 && eChannel != eDRVEDMA_CHANNEL_5 && eChannel != eDRVEDMA_CHANNEL_8))
+	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel == 1) || (eChannel == 2) || (eChannel == 3) || (eChannel == 4))
         	return E_DRVEDMA_FALSE_INPUT;
     
     	u32SFR = REG_VDMA_DASOCR + eChannel * 0x100;
@@ -865,7 +732,7 @@ DrvEDMA_SetClamping(
 {
 	UINT32 u32SFR;
 
-	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel != eDRVEDMA_CHANNEL_0 && eChannel != eDRVEDMA_CHANNEL_5 && eChannel != eDRVEDMA_CHANNEL_8))
+	 if ((eChannel > MAX_CHANNEL_NUM) || (eChannel == 1) || (eChannel == 2) || (eChannel == 3) || (eChannel == 4))
         	return E_DRVEDMA_FALSE_INPUT;
     
     	u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
@@ -888,7 +755,7 @@ E_DRVEDMA_CHANNEL_INDEX eChannel
     
     	u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
 		
-    return (E_DRVEDMA_OPERATION)((inp32(u32SFR) & CLAMPING_EN) >> 7);
+    return (inp32(u32SFR) & CLAMPING_EN) >> 7;
 }
 
 // Get Channel 1 ~ 4 Internal Buffer Pointer
@@ -950,9 +817,9 @@ void DrvEDMA_ISR(void)
 				}
 				else if (u32IntStatus & EDMASG_IF)
 				{
-				outp32(REG_VDMA_ISR,EDMASG_IF);	
+				outp32(REG_VDMA_ISR,EDMASG_IF);
 	    			if (g_pfnEDMACallback[0][3] != 0)
-		    			(*g_pfnEDMACallback[0][3])(0);	    							
+		    			(*g_pfnEDMACallback[0][3])(0);	    								
 				}
 					    			
     		}
@@ -1022,9 +889,9 @@ void DrvEDMA_ISR(void)
     		{
     			if (u32IntStatus & EDMABLKD_IF)
     			{
-    				outp32(REG_PDMA_ISR2,EDMABLKD_IF);	
+    				outp32(REG_PDMA_ISR2,EDMABLKD_IF);
 	    			if (g_pfnEDMACallback[2][1] != 0)    			
-		    			(*g_pfnEDMACallback[2][1])(0);	    			    			
+		    			(*g_pfnEDMACallback[2][1])(0);	    				    			
 				}	
 	    		else if (u32IntStatus & EDMASG_IF)
 	    		{
@@ -1070,9 +937,9 @@ void DrvEDMA_ISR(void)
     		{
     			if (u32IntStatus & EDMABLKD_IF)
     			{
-    				outp32(REG_PDMA_ISR3,EDMABLKD_IF);	
+    				outp32(REG_PDMA_ISR3,EDMABLKD_IF);
 	    			if (g_pfnEDMACallback[3][1] != 0)    			
-		    			(*g_pfnEDMACallback[3][1])(0);	    			    			
+		    			(*g_pfnEDMACallback[3][1])(0);	    				    			
 				}	    
 	    		else if (u32IntStatus & EDMASG_IF)
 	    		{
@@ -1142,9 +1009,9 @@ void DrvEDMA_ISR(void)
 		    			else		   
 		    				u32WraparoundStatus = 0x0100; 	
 
-					outp32(REG_PDMA_ISR4,u32WraparoundStatus);					
+					outp32(REG_PDMA_ISR4,u32WraparoundStatus);				
 		    			if (g_pfnEDMACallback[4][2] != 0)		    						
-			    			(*g_pfnEDMACallback[4][2])(u32WraparoundStatus); 		    				    			   			
+			    			(*g_pfnEDMACallback[4][2])(u32WraparoundStatus); 		    					    			   			
 	    			}
 				}	    			
     		}     	
@@ -1162,9 +1029,9 @@ void DrvEDMA_ISR(void)
     		{
     			if (u32IntStatus & EDMABLKD_IF)
     			{
-    				outp32(REG_VDMA_ISR5,EDMABLKD_IF);	
+    				outp32(REG_VDMA_ISR5,EDMABLKD_IF);
 	    			if (g_pfnEDMACallback[5][1] != 0)
-		    			(*g_pfnEDMACallback[5][1])(0);	    			    			
+		    			(*g_pfnEDMACallback[5][1])(0);	    				    			
 				}
 				else if (u32IntStatus & EDMASG_IF)
 				{
@@ -1175,235 +1042,6 @@ void DrvEDMA_ISR(void)
 					    			
     		}
     	}	
-	}
-}
-
-void DrvEDMA1_ISR(void)
-{
-    UINT32 u32IntStatus;
-    UINT32 u32WraparoundStatus;
-    
-    if (inp32(REG_VDMA_ISR8) & INTR)
-    {    
-    	if (inp32(REG_VDMA_ISR8) & INTR0)
-    	{
-	    	u32IntStatus = inp32(REG_VDMA_ISR8) & inp32(REG_VDMA_IER8);
-    		if (u32IntStatus & EDMATABORT_IF)
-    		{
-    			outp32(REG_VDMA_ISR8,EDMATABORT_IF);
-    			if (g_pfnEDMACallback[8][0] != 0)
-	    			(*g_pfnEDMACallback[8][0])(0);    			
-			}    			
-    		else 
-    		{
-    			if (u32IntStatus & EDMABLKD_IF)
-    			{
-    				outp32(REG_VDMA_ISR8,EDMABLKD_IF);
-	    			if (g_pfnEDMACallback[8][1] != 0)
-		    			(*g_pfnEDMACallback[8][1])(0);	    				    			
-				}
-				else if (u32IntStatus & EDMASG_IF)
-				{
-				outp32(REG_VDMA_ISR8,EDMASG_IF);	
-	    			if (g_pfnEDMACallback[8][3] != 0)
-		    			(*g_pfnEDMACallback[8][3])(0);	    							
-				}
-					    			
-    		}
-    	}
-    	else if (inp32(REG_VDMA_ISR8) & INTR1)
-    	{
-    		if (inp32(REG_PDMA_IER9) & WAR_IE)
-	    		u32IntStatus = inp32(REG_PDMA_ISR9) & (inp32(REG_PDMA_IER9) | 0x0F00);
-	    	else
-	    		u32IntStatus = inp32(REG_PDMA_ISR9) & inp32(REG_PDMA_IER9);	    	
-	    	
-    		if (u32IntStatus & EDMATABORT_IF)
-    		{
-    			outp32(REG_PDMA_ISR9,EDMATABORT_IF);
-    			if (g_pfnEDMACallback[9][0] != 0)    		
-	    			(*g_pfnEDMACallback[9][0])(0);    			
-			}    			
-    		else
-    		{
-    			if (u32IntStatus & EDMABLKD_IF)
-    			{
-    				outp32(REG_PDMA_ISR9,EDMABLKD_IF);
-	    			if (g_pfnEDMACallback[9][1] != 0)    			
-		    			(*g_pfnEDMACallback[9][1])(0);	    				    			
-				}	   
-	    		else if (u32IntStatus & EDMASG_IF)
-	    		{
-	    			outp32(REG_PDMA_ISR9,EDMASG_IF);
-	    			if (g_pfnEDMACallback[9][3] != 0)
-		    			(*g_pfnEDMACallback[9][3])(0);	    				    		
-	    		}				 			
-    			else
-    			{
-	    			u32WraparoundStatus = inp32(REG_PDMA_ISR9) & 0x0F00;
-	    			if (u32WraparoundStatus)
-	    			{
-		    			if (u32WraparoundStatus & 0x0200)
-		    				u32WraparoundStatus = 0x0200;
-		    			else if (u32WraparoundStatus & 0x0400)
-		    				u32WraparoundStatus = 0x0400;
-		    			else  if (u32WraparoundStatus & 0x0800)
-		    				u32WraparoundStatus = 0x0800;
-		    			else		   
-		    				u32WraparoundStatus = 0x0100; 	
-
-					outp32(REG_PDMA_ISR9,u32WraparoundStatus);				
-		    			if (g_pfnEDMACallback[9][2] != 0)		    						
-			    			(*g_pfnEDMACallback[9][2])(u32WraparoundStatus); 		    					    			   			
-	    			}
-				}	    			
-    		}    	
-    	}
-    	else if (inp32(REG_VDMA_ISR8) & INTR2)
-    	{
-    		if (inp32(REG_PDMA_IER10) & WAR_IE)
-	    		u32IntStatus = inp32(REG_PDMA_ISR10) & (inp32(REG_PDMA_IER10) | 0x0F00);
-	    	else
-	    		u32IntStatus = inp32(REG_PDMA_ISR10) & inp32(REG_PDMA_IER10);	    	
-	    	
-    		if (u32IntStatus & EDMATABORT_IF)
-    		{
-    			outp32(REG_PDMA_ISR10,EDMATABORT_IF);
-    			if (g_pfnEDMACallback[10][0] != 0)    		
-	    			(*g_pfnEDMACallback[10][0])(0);    			
-			}    			
-    		else 
-    		{
-    			if (u32IntStatus & EDMABLKD_IF)
-    			{
-    				outp32(REG_PDMA_ISR10,EDMABLKD_IF);	
-	    			if (g_pfnEDMACallback[10][1] != 0)    			
-		    			(*g_pfnEDMACallback[10][1])(0);	    			    			
-				}	
-	    		else if (u32IntStatus & EDMASG_IF)
-	    		{
-	    			outp32(REG_PDMA_ISR10,EDMASG_IF);
-	    			if (g_pfnEDMACallback[10][3] != 0)
-		    			(*g_pfnEDMACallback[10][3])(0);	    				    		
-	    		}					    			
-    			else
-    			{
-	    			u32WraparoundStatus = inp32(REG_PDMA_ISR10) & 0x0F00;
-	    			if (u32WraparoundStatus)
-	    			{
-		    			if (u32WraparoundStatus & 0x0200)
-		    				u32WraparoundStatus = 0x0200;
-		    			else if (u32WraparoundStatus & 0x0400)
-		    				u32WraparoundStatus = 0x0400;
-		    			else  if (u32WraparoundStatus & 0x0800)
-		    				u32WraparoundStatus = 0x0800;
-		    			else		   
-		    				u32WraparoundStatus = 0x0100; 	
-
-					outp32(REG_PDMA_ISR10,u32WraparoundStatus);		
-		    			if (g_pfnEDMACallback[10][2] != 0)		    						
-			    			(*g_pfnEDMACallback[10][2])(u32WraparoundStatus); 		    					    			   			
-	    			}
-				}	    			
-    		}     	
-    	}
-    	else if (inp32(REG_VDMA_ISR8) & INTR3)
-    	{
-    		if (inp32(REG_PDMA_IER11) & WAR_IE)
-	    		u32IntStatus = inp32(REG_PDMA_ISR11) & (inp32(REG_PDMA_IER11) | 0x0F00);
-	    	else
-	    		u32IntStatus = inp32(REG_PDMA_ISR11) & inp32(REG_PDMA_IER11);	    	
-	    	
-    		if (u32IntStatus & EDMATABORT_IF)
-    		{
-    			outp32(REG_PDMA_ISR11,EDMATABORT_IF);
-    			if (g_pfnEDMACallback[11][0] != 0)    		
-	    			(*g_pfnEDMACallback[11][0])(0);    			
-			}    			
-    		else 
-    		{
-    			if (u32IntStatus & EDMABLKD_IF)
-    			{
-    				outp32(REG_PDMA_ISR11,EDMABLKD_IF);	
-	    			if (g_pfnEDMACallback[11][1] != 0)    			
-		    			(*g_pfnEDMACallback[11][1])(0);	    			    			
-				}	    
-	    		else if (u32IntStatus & EDMASG_IF)
-	    		{
-	    			outp32(REG_PDMA_ISR11,EDMASG_IF);
-	    			if (g_pfnEDMACallback[11][3] != 0)
-		    			(*g_pfnEDMACallback[11][3])(0);	    				    		
-	    		}						
-    			else
-    			{
-	    			u32WraparoundStatus = inp32(REG_PDMA_ISR11) & 0x0F00;
-	    			if (u32WraparoundStatus)
-	    			{
-		    			if (u32WraparoundStatus & 0x0200)
-		    				u32WraparoundStatus = 0x0200;
-		    			else if (u32WraparoundStatus & 0x0400)
-		    				u32WraparoundStatus = 0x0400;
-		    			else  if (u32WraparoundStatus & 0x0800)
-		    				u32WraparoundStatus = 0x0800;
-		    			else		   
-		    				u32WraparoundStatus = 0x0100; 	
-
-					outp32(REG_PDMA_ISR11,u32WraparoundStatus);				
-		    			if (g_pfnEDMACallback[11][2] != 0)		    						
-			    			(*g_pfnEDMACallback[11][2])(u32WraparoundStatus); 		    					    			   			
-	    			}
-				}	    			
-    		}     	
-    	}
-    	else if (inp32(REG_VDMA_ISR8) & INTR4)
-    	{
-    		if (inp32(REG_PDMA_IER12) & WAR_IE)
-	    		u32IntStatus = inp32(REG_PDMA_ISR12) & (inp32(REG_PDMA_IER12) | 0x0F00);
-	    	else
-	    		u32IntStatus = inp32(REG_PDMA_ISR12) & inp32(REG_PDMA_IER12);	    	
-	    	
-    		if (u32IntStatus & EDMATABORT_IF)
-    		{
-    			outp32(REG_PDMA_ISR12,EDMATABORT_IF);
-    			if (g_pfnEDMACallback[12][0] != 0)    		
-	    			(*g_pfnEDMACallback[12][0])(0);    			
-			}    			
-    		else 
-    		{
-    			if (u32IntStatus & EDMABLKD_IF)
-    			{
-    				outp32(REG_PDMA_ISR12,EDMABLKD_IF);
-	    			if (g_pfnEDMACallback[12][1] != 0)    			
-		    			(*g_pfnEDMACallback[12][1])(0);	    				    			
-				}	
-	    		else if (u32IntStatus & EDMASG_IF)
-	    		{
-	    			outp32(REG_PDMA_ISR12,EDMASG_IF);
-	    			if (g_pfnEDMACallback[12][3] != 0)
-		    			(*g_pfnEDMACallback[12][3])(0);	    				    		
-	    		}						
-    			else
-    			{
-	    			u32WraparoundStatus = inp32(REG_PDMA_ISR12) & 0x0F00;
-	    			if (u32WraparoundStatus)
-	    			{
-		    			if (u32WraparoundStatus & 0x0200)
-		    				u32WraparoundStatus = 0x0200;
-		    			else if (u32WraparoundStatus & 0x0400)
-		    				u32WraparoundStatus = 0x0400;
-		    			else  if (u32WraparoundStatus & 0x0800)
-		    				u32WraparoundStatus = 0x0800;
-		    			else		   
-		    				u32WraparoundStatus = 0x0100; 	
-
-					outp32(REG_PDMA_ISR12,u32WraparoundStatus);					
-		    			if (g_pfnEDMACallback[12][2] != 0)		    						
-			    			(*g_pfnEDMACallback[12][2])(u32WraparoundStatus); 		    				    			   			
-	    			}
-				}	    			
-    		}     	
-    	}
-		
 	}
 }
 
@@ -1420,7 +1058,7 @@ DrvEDMA_InstallCallBack(
     
     u32SFR = REG_VDMA_IER + eChannel * 0x100;        
     
-    if ((eChannel > MAX_CHANNEL_NUM) || (eChannel >= 6 && eChannel <=7))
+    if (eChannel > MAX_CHANNEL_NUM)
         return E_DRVEDMA_FALSE_INPUT;
             
     if ((eIntSource !=1) && (eIntSource !=2) && (eIntSource !=4) && (eIntSource !=8)) 
@@ -1441,19 +1079,9 @@ DrvEDMA_InstallCallBack(
 	if (pfnOldcallback != NULL)
 		*pfnOldcallback = g_pfnEDMACallback[eChannel][index];
 	g_pfnEDMACallback[eChannel][index] = pfncallback;
-
-	if(eChannel <= eDRVEDMA_CHANNEL_5)
-	{
-		sysInstallISR(IRQ_LEVEL_7, IRQ_EDMA0, (PVOID)DrvEDMA_ISR);
-		sysSetInterruptType(IRQ_EDMA0, HIGH_LEVEL_SENSITIVE);
-		sysEnableInterrupt(IRQ_EDMA0);	
-	}
-	else
-	{
-		sysInstallISR(IRQ_LEVEL_7, IRQ_EDMA1, (PVOID)DrvEDMA1_ISR);
-		sysSetInterruptType(IRQ_EDMA1, HIGH_LEVEL_SENSITIVE);
-		sysEnableInterrupt(IRQ_EDMA1);
-	}
+	sysInstallISR(IRQ_LEVEL_7, IRQ_EDMA, (PVOID)DrvEDMA_ISR);
+	sysSetInterruptType(IRQ_EDMA, HIGH_LEVEL_SENSITIVE);
+	sysEnableInterrupt(IRQ_EDMA);	
 	    
     return E_SUCCESS;      
 }
@@ -1526,8 +1154,8 @@ DrvEDMA_SetScatterGatherSetting(
 	
 	u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
         
-    eSrcFormat = (E_DRVEDMA_COLOR_FORMAT)((inp32(u32SFR) & SOUR_FORMAT) >> 24);
-    eDestFormat = (E_DRVEDMA_COLOR_FORMAT)((inp32(u32SFR) & DEST_FORMAT) >> 16);        	
+    eSrcFormat = (inp32(u32SFR) & SOUR_FORMAT) >> 24;
+    eDestFormat = (inp32(u32SFR) & DEST_FORMAT) >> 16;        	
         
     u32SFR = REG_VDMA_CSR + eChannel * 0x100;
     u32Value = inp32(u32SFR);         
@@ -1600,7 +1228,7 @@ DrvEDMA_SetScatterGatherSetting(
 		
 		// Src/Dest format must be set before DrvEDMA_SetScatterGatterSetting() function to calcuate the next address
 		u32SFR = REG_VDMA_CTCSR + eChannel * 0x100;
-		if ((psDescript->u32Stride) && (inp32(u32SFR) & STRIDE_EN) && ((eChannel ==0) ||(eChannel ==5) ||(eChannel ==8)))
+		if ((psDescript->u32Stride) && (inp32(u32SFR) & STRIDE_EN) && ((eChannel ==0) ||(eChannel ==5)))
 		{   // Calculate the next Src/Destination for Stride mode
 		    u32AddSrcAddr = (u32TranferByte / psDescript->u32Stride) * (psDescript->u32SrcOffset + psDescript->u32Stride) + 
 		                    u32TranferByte % psDescript->u32Stride;
@@ -1629,7 +1257,7 @@ DrvEDMA_SetScatterGatherSetting(
 		{   // Calculate the next Src/Destination for non-Stride mode
 		    u32AddSrcAddr = u32TranferByte;
 		    
-		    if ((eChannel ==0) || (eChannel ==5) || (eChannel ==8))
+		    if ((eChannel ==0) || (eChannel ==5))
 		    {
 		    	if (eSrcFormat == eDRVEDMA_RGB888)
 		    	{

@@ -3,34 +3,36 @@
 #include <string.h>
 
 #include "wblib.h"
-#include "w55fa92_edma.h"
-#include "w55fa92_vpost.h"
+#include "w55fa95_edma.h"
+#include "w55fa95_vpost.h"
 
 __align(32) UINT8 LoadAddr[]=
 {
-	#include "..\..\..\VPOST\Example\ASIC\roof_320x240_rgb565.dat"
+	#include "..\..\..\VPOST\Example\ASIC\sea_800x480_RGB565.dat"
 };
 
 LCDFORMATEX lcdFormat;
 extern void TransferLengthTest(void);
 extern void ColorSpaceTransformTest(void);
 extern void SPIFlashTest(void);
-extern void SPIFlashQuadTest(void);
 extern void UARTTest(void);
 
 int main()
 {
 	WB_UART_T uart;
 	UINT32 u32ExtFreq, u32Item;
-/*
-	sysSetSystemClock(eSYS_UPLL, 	//E_SYS_SRC_CLK eSrcClk,
-						240000000,		//UINT32 u32PllKHz,
-						240000000);		//UINT32 u32SysKHz,									
-	sysSetCPUClock(240000000);
-	sysSetAPBClock(48000000);
-*/
-	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */
-	uart.uart_no = WB_UART_1; 
+	
+	sysSetSystemClock(eSYS_UPLL,
+	                300000000,      // Specified the APLL/UPLL clock, unit Hz
+	                300000000);     // Specified the system clock, unit Hz
+	sysSetCPUClock (300000000);     // Unit Hz
+	sysSetAPBClock ( 75000000);     // Unit Hz
+
+	outp32(REG_APBCLK, inp32(REG_APBCLK) | ADC_CKE);    // enable ADC clock in order to set register REG_AUDADC_CTL that belong to ADC.
+	outp32(REG_AUDADC_CTL, inp32(REG_AUDADC_CTL) | APB2AHB);
+	outp32(REG_APBCLK, inp32(REG_APBCLK) & ~ADC_CKE);   // disable ADC clock to save power.
+    
+	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */	
 	uart.uiFreq = u32ExtFreq;
 	uart.uiBaudrate = 115200;
 	uart.uiDataBits = WB_DATA_BITS_8;
@@ -43,15 +45,11 @@ int main()
 
 	sysSetLocalInterrupt(ENABLE_IRQ);
 
-	/* init timer */		
-	sysSetTimerReferenceClock (TIMER0, u32ExtFreq);	/* Hz unit */
-	sysStartTimer(TIMER0, 
-					100, 
-					PERIODIC_MODE);
-
-	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGB565;	
+	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGB565;
+	lcdFormat.nScreenWidth = 800;
+	lcdFormat.nScreenHeight = 480;	
 	vpostLCMInit(&lcdFormat, (UINT32*)LoadAddr);
-
+	
 	EDMA_Init();
 
 	do
@@ -60,9 +58,8 @@ int main()
 		sysprintf("[1] Transfer Length and Direction Test \n");
 		sysprintf("[2] Color Space Transform Test \n");			
 		sysprintf("[3] PDMA+SPIFlash Test \n");	
-		sysprintf("[4] PDMA+SPIFlash Quad Test \n");
-		sysprintf("[5] PDMA+UART Test \n");	
-		sysprintf("[6] PDMA+ADC Test \n");	
+		sysprintf("[4] PDMA+UART Test \n");	
+		sysprintf("[5] PDMA+ADC Test \n");
 		sysprintf("==================================================================\n");
 
 		u32Item = sysGetChar();
@@ -82,14 +79,10 @@ int main()
 				break;
 
 			case '4':
-				SPIFlashQuadTest();					
-				break;
-
-			case '5':
 				UARTTest();					
 				break;
 				
-			case '6':
+			case '5':
 				sysprintf("Please refer to adc sample code \n");											
 				break;
 				

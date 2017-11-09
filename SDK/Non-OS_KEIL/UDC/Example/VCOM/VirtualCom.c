@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "usbd.h"
 
 /* length of descriptors */

@@ -16,8 +16,6 @@
 #include "wbtypes.h"
 #include "RTC.h"
 
-
-//#define __FPGA__
 /*---------------------------------------------------------------------------------------------------------*/
 /* Macro, type and constant definitions                                                                    */
 /*---------------------------------------------------------------------------------------------------------*/
@@ -44,7 +42,7 @@ static UINT32 volatile g_u32Reg, g_u32Reg1,g_u32hiYear,g_u32loYear,g_u32hiMonth,
 static UINT32 volatile g_u32hiHour,g_u32loHour,g_u32hiMin,g_u32loMin,g_u32hiSec,g_u32loSec;
 UINT32 volatile i, Wait;
 
-VOID RTC_Check(void)
+VOID RTC_Check(VOID)
 {
     i =0;
     Wait = inp32(REG_FLAG) & RTC_REG_FLAG;
@@ -77,13 +75,12 @@ VOID RTC_Check(void)
 /*               Install ISR to handle interrupt event                                                     */
 /*---------------------------------------------------------------------------------------------------------*/
 
-static VOID RTC_ISR (void)
+static VOID RTC_ISR (VOID)
 { 
     UINT32 volatile u32RegRIIR;
-    
-#ifdef __LIBRARY__   
+
 	outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif	
+	
     u32RegRIIR = inp32(RIIR);
     if (u32RegRIIR & RTC_TICK_INT)                                     /* tick interrupt occurred */
     {
@@ -91,9 +88,8 @@ static VOID RTC_ISR (void)
 		RTC_Check(); 
 		
 		g_u32RTC_Count++;                                              /* maintain RTC tick count */
-#ifdef __LIBRARY__   		
+		
 		outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);	
-#endif
 
 		if (g_pfnRTCCallBack_Tick != NULL)                             /* execute tick callback function */
 		{
@@ -106,9 +102,9 @@ static VOID RTC_ISR (void)
 		outp32(RIIR, RTC_ALARM_INT);
 		RTC_Check(); 
 
-#ifdef __LIBRARY__   		
+		RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_ALARM_INT,0);
+		
 		outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);	
-#endif
 		
 		if (g_pfnRTCCallBack_Alarm != NULL)                           	/* execute absolute alarm callback function */
 		{
@@ -121,10 +117,8 @@ static VOID RTC_ISR (void)
 		RTC_Check(); 
 
 		RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_RELATIVE_ALARM_INT,0);
-
-#ifdef __LIBRARY__   		
+		
 		outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);	
-#endif
 		
 		if (g_pfnRTCCallBack_Relative_Alarm != NULL)               		/* execute relative alarm callback function */
 		{          
@@ -138,9 +132,7 @@ static VOID RTC_ISR (void)
 		outp32(RIIR, RTC_PSWI_INT);
 		RTC_Check(); 
 		
-#ifdef __LIBRARY__   		
 		outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);	
-#endif
 		//RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_PSWI_INT,0);
 
 		if (g_pfnRTCCallBack_PSWI != NULL)                            	/* execute power key callback function */
@@ -165,51 +157,44 @@ static VOID RTC_ISR (void)
 /*                                                                                                         */
 /*               Set Frequecy Compenation Data                                                             */
 /*---------------------------------------------------------------------------------------------------------*/
-UINT32 RTC_DoFrequencyCompensation(void)
+UINT32 RTC_DoFrequencyCompensation(VOID)
 {
-   	UINT32 u32Clock,integer, fraction,count;
-   	float  fTmp;
-#ifdef __LIBRARY__      	
+   	UINT32 u32Clock,count;
+   	
 	outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
-
-	outp32(RTC_FCR,inp32(RTC_FCR) | FC_EN);
-	RTC_Check();
-	while(inp32(RTC_FCR) & FC_EN);	
-
-#ifdef __FPGA__
-	u32Clock = 27000000;
-#else
-	u32Clock = sysGetAPBClock();
-#endif		
-	count = inp32(REG_1Hz_CNT);
-
-	//("\nOSC_32K_CNT (APB %d) 0x%X\n\n",u32Clock,count); 
 	
-	if(count > 0)
-	{
-		fTmp = ((float) u32Clock / count) * 32768;
+	if(inp32(REG_OSC_32K))
+	{		
+		u32Clock = sysGetAPBClock();
+again:		
+		count = inp32(REG_OSC_32K_CNT);
 		
-		integer = (UINT32) fTmp - 1;
-		
-		fraction = (UINT32)((fTmp - (integer + 1)) * 60) - 1;
-		
-		sysprintf("OSC_32K_CNT (APB %d) 0x%X 0x%X\n\n",u32Clock,integer,fraction); 
-		/*-----------------------------------------------------------------------------------------------------*/
-	    /* Judge Interger part is reasonable                                                                   */
-	    /*-----------------------------------------------------------------------------------------------------*/
+		if(count > 0)
+		{
+			count = u32Clock/count;
+			
+		    /*-----------------------------------------------------------------------------------------------------*/
+		    /* Judge Interger part is reasonable                                                                   */
+		    /*-----------------------------------------------------------------------------------------------------*/
 
-	  /*  if ((integer > 0xFFFF))
-	    {
-	        return E_RTC_ERR_FCR_VALUE ;
-	    }*/
+		    if ( (count > 0xFFFF) )
+		    {
+		        return E_RTC_ERR_FCR_VALUE ;
+		    }
+		}
+		RTCDEBUG("\nOSC_32K_CNT 0x%X\n\n",count); 
+	    if(count > 0xC000 || count < 0x4000)    			
+	        goto again;
+	        			
+		outp32(RTC_FCR, (inp32(RTC_FCR) & ~(INTEGER |FRACTION)) | (count << 8));
+		RTC_Check();
 	}
-        			
-	outp32(RTC_FCR, (inp32(RTC_FCR) & ~(INTEGER |FRACTION)) | (((integer & 0xFFFF) << 8) | (fraction & 0x3F)));
-	RTC_Check();
-#ifdef __LIBRARY__   
+	else
+	{
+		outp32(RTC_FCR, (inp32(RTC_FCR) & ~(INTEGER |FRACTION)) | 0x007FFF00);
+		RTC_Check();	
+	}	
 	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif	
     return E_RTC_SUCCESS;
 }
 
@@ -230,9 +215,8 @@ UINT32 RTC_DoFrequencyCompensation(void)
 UINT32 RTC_WriteEnable (BOOL bEnable)
 {
     INT32 volatile i32i;
-#ifdef __LIBRARY__   	
+	
 	outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif	
 	
 	if(!bEnable)
 		RTC_Check();
@@ -256,9 +240,7 @@ UINT32 RTC_WriteEnable (BOOL bEnable)
 	    if (i32i == RTC_WAIT_COUNT)
 	    {
 	        RTCDEBUG ("\nRTC: 3, set write enable FAILED!\n");
-#ifdef __LIBRARY__   	        
 	        outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
 	        return E_RTC_ERR_EIO;
 	    }
 	}
@@ -280,9 +262,9 @@ UINT32 RTC_WriteEnable (BOOL bEnable)
 		
 	}	
 	RTC_Check();
-#ifdef __LIBRARY__   	
+	
 	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif	
+	
     return E_RTC_SUCCESS;
 }
 
@@ -290,9 +272,8 @@ UINT32 RTC_WriteEnable (BOOL bEnable)
 UINT32 RTC_WriteEnabled (BOOL bEnable)
 {
     INT32 volatile i32i;
-#ifdef __LIBRARY__   	
+	
 	outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
 	
 	if(bEnable)
 	{
@@ -313,17 +294,15 @@ UINT32 RTC_WriteEnabled (BOOL bEnable)
 	    if (i32i == RTC_WAIT_COUNT)
 	    {
 	        RTCDEBUG ("\nRTC: 3, set write enable FAILED!\n");
-#ifdef __LIBRARY__   	        
 	        outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
 	        return E_RTC_ERR_EIO;
 	    }
 	}
 	else
 		outp32(AER, 0);	
-#ifdef __LIBRARY__   
+
 	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
+
     return E_RTC_SUCCESS;
 }
 /*---------------------------------------------------------------------------------------------------------*/
@@ -342,7 +321,7 @@ UINT32 RTC_WriteEnabled (BOOL bEnable)
 /*---------------------------------------------------------------------------------------------------------*/
 
 
-UINT32 RTC_Init (void)
+UINT32 RTC_Init (VOID)
 {
     INT32 i32i;
 
@@ -357,9 +336,7 @@ UINT32 RTC_Init (void)
     /*-----------------------------------------------------------------------------------------------------*/
     /* When RTC is power on, write 0xa5eb1357 to RTC_INIR to reset all logic.                              */
     /*-----------------------------------------------------------------------------------------------------*/
-#ifdef __LIBRARY__       
     outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
     
     outp32(INIR, RTC_INIT_KEY);
 
@@ -419,9 +396,7 @@ UINT32 RTC_Init (void)
 	    	 break;
 	   	}
     }  	 	       
-#ifdef __LIBRARY__   
     outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
     
 	sysInstallISR(IRQ_LEVEL_1, IRQ_RTC, (PVOID)RTC_ISR);	
 	sysSetLocalInterrupt(ENABLE_IRQ);
@@ -488,9 +463,7 @@ UINT32 RTC_Open (RTC_TIME_DATA_T *sPt)
     {
         return E_RTC_ERR_DWR_VALUE ;
     }
-#ifdef __LIBRARY__       
     outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
     
     /*-----------------------------------------------------------------------------------------------------*/
     /* Second, set RTC time data.                                                                          */
@@ -567,9 +540,7 @@ UINT32 RTC_Open (RTC_TIME_DATA_T *sPt)
     outp32(DWR, (UINT32)sPt->u32cDayOfWeek);
     
     RTC_Check();
-#ifdef __LIBRARY__ 
 	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
 	return E_RTC_SUCCESS;
 }
 
@@ -592,9 +563,8 @@ UINT32 RTC_Open (RTC_TIME_DATA_T *sPt)
 UINT32 RTC_Read (E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
 {
     UINT32 u32Tmp;
-#ifdef __LIBRARY__ 
+
 	outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
 
     sPt->u8cClockDisplay = inp32(TSSR);                               /* 12/24-hour */
     sPt->u32cDayOfWeek = inp32(DWR);                                   /* Day of week */
@@ -615,9 +585,7 @@ UINT32 RTC_Read (E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
         }
         default:
         {
-#ifdef __LIBRARY__ 
         	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
             return E_RTC_ERR_ENOTTY;
         }
     }
@@ -705,9 +673,9 @@ UINT32 RTC_Read (E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
         u32Tmp+= g_u32loSec;
         sPt->u32cSecond = u32Tmp;
     }
-#ifdef __LIBRARY__    
+    
 	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
+
     return E_RTC_SUCCESS;
 
 }
@@ -809,9 +777,8 @@ UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
             /*---------------------------------------------------------------------------------------------*/
             /* Second, set RTC time data.                                                                  */
             /*---------------------------------------------------------------------------------------------*/
-#ifdef __LIBRARY__ 
+
 			outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
 
             if (sPt->u8cClockDisplay == RTC_CLOCK_12)
             {
@@ -888,17 +855,13 @@ UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
     	              RTCDEBUG("After RTC_CURRENT_TIME %d\n", sPt->u32cHour);   	
     	        }
 			}	
-#ifdef __LIBRARY__ 			
 			outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
             return E_RTC_SUCCESS;
 
 		 }
          case RTC_ALARM_TIME:
          {
-  
-  			outp32(PWRON,inp32(PWRON) & ~ALARM_EN);
-			RTC_Check(); 
+
             g_pfnRTCCallBack_Alarm = NULL;                                         /* Initial call back function.*/
             /*---------------------------------------------------------------------------------------------*/
             /* Second, set alarm time data.                                                                */
@@ -910,22 +873,15 @@ UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
             g_u32hiDay = sPt->u32cDay / 10;
             g_u32loDay = sPt->u32cDay % 10;
             
-            u32Reg = ((sPt->u32AlarmMaskDayOfWeek & 0x1) << 31);
-            u32Reg|= ((sPt->u32cDayOfWeek & 0x7) << 28);
-            u32Reg|= ((sPt->u32AlarmMaskYear & 0x1) << 24);          
-            u32Reg|= (g_u32hiYear << 20);
+            u32Reg = (g_u32hiYear << 20);
             u32Reg|= (g_u32loYear << 16);
-            u32Reg|= ((sPt->u32AlarmMaskMonth & 0x1) << 15);     
             u32Reg|= (g_u32hiMonth << 12);
             u32Reg|= (g_u32loMonth << 8);
-            u32Reg|= ((sPt->u32AlarmMaskDay & 0x1) << 7);  
             u32Reg|= (g_u32hiDay << 4);
             u32Reg|= g_u32loDay;
-                        
             g_u32Reg = u32Reg;
-#ifdef __LIBRARY__             
-	        outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
+            
+            outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
             
             outp32(CAR, (UINT32)g_u32Reg);
 			RTC_Check();              
@@ -944,14 +900,11 @@ UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
             g_u32loMin  = sPt->u32cMinute % 10;
             g_u32hiSec  = sPt->u32cSecond / 10;
             g_u32loSec  = sPt->u32cSecond % 10;
-           
-           	u32Reg = ((sPt->u32AlarmMaskHour & 0x1) << 23); 
-            u32Reg|= (g_u32hiHour << 20);
+            
+            u32Reg = (g_u32hiHour << 20);
             u32Reg|= (g_u32loHour << 16);
-            u32Reg|= ((sPt->u32AlarmMaskMinute & 0x1) << 15); 
             u32Reg|= (g_u32hiMin << 12);
             u32Reg|= (g_u32loMin << 8);
-            u32Reg|= ((sPt->u32AlarmMaskSecond & 0x1) << 7); 
             u32Reg|= (g_u32hiSec << 4);
             u32Reg|= g_u32loSec;
             
@@ -959,8 +912,6 @@ UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
             
             outp32(TAR, (UINT32)g_u32Reg);               
 		    RTC_Check();                
-		    
-		    
 
             if (sPt->u8cClockDisplay == RTC_CLOCK_12)
             {
@@ -982,11 +933,7 @@ UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt)
 
             RTC_Ioctl(0,RTC_IOC_ENABLE_INT,RTC_ALARM_INT,0);
   
-  			outp32(PWRON,inp32(PWRON) | ALARM_EN);
-			RTC_Check(); 
-#ifdef __LIBRARY__ 			  
   			outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
             return E_RTC_SUCCESS;
 		}
 		default:
@@ -1026,9 +973,8 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
 	
     if (i32Num != 0)
         return E_RTC_ERR_ENODEV;
-#ifdef __LIBRARY__         
+        
 	outp32(REG_APBCLK,inp32(REG_APBCLK) | RTC_CKE);
-#endif
 
     switch (eCmd)
     {
@@ -1082,9 +1028,7 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
             {
 
                 RTC_Ioctl(0,RTC_IOC_ENABLE_INT,RTC_TICK_INT,0);
-#ifdef __LIBRARY__                 
                 outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
                 return E_RTC_SUCCESS;
             }
             break;
@@ -1248,9 +1192,7 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
                 }
                 default:
                 {
-#ifdef __LIBRARY__                 
                 	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
                     return E_RTC_ERR_ENOTTY;
                 }
             }
@@ -1264,9 +1206,7 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
             i32Ret= RTC_DoFrequencyCompensation() ;
             if (i32Ret != 0)
             {
-#ifdef __LIBRARY__             
             	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
                 return E_RTC_ERR_ENOTTY;
             }
             break;
@@ -1286,14 +1226,11 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
 		{
 		    outp32(PWRON, (inp32(PWRON) & ~0x01) | 2);		                        
 		    RTC_Check();
-#ifndef __FPGA__			    
+		    
 		    outp32(REG_AHBCLK,0);
-	    
 		    while(1);
-#else		    
 			while(inp32(PWRON) & 0x01);
-#endif
-//		    break;
+		    break;
 		}
 		case RTC_IOC_SET_POWER_OFF_PERIOD:
 		{		    
@@ -1392,13 +1329,13 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
 			if(u32Arg0 > 7)
 				  return E_RTC_ERR_ENOTTY; 
 				  
-			u32Tmp = inp32(RTC_FCR) & ~POWER_KEY_DURATION;
+			u32Tmp = inp32(RTC_FCR) & ~RPWR_DELAY;
  	  
 				  
-			outp32(RTC_FCR, u32Tmp | ((u32Arg0 & 0x07) << 24) ); 
+			outp32(RTC_FCR, u32Tmp | (u32Arg0 << 24) ); 
 			RTC_Check(); 
 			break;
-		}		
+		}
 		case RTC_IOC_SET_CLOCK_SOURCE:
 		{
 			if(u32Arg0 != RTC_INTERANL && u32Arg0 != RTC_EXTERNAL)
@@ -1406,31 +1343,24 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
  	  
 			outp32(REG_OSC_32K, u32Arg0); 
 			RTC_Check(); 
-			
 			RTC_DoFrequencyCompensation();
 			break;
 		}		
 		case RTC_IOC_GET_CLOCK_SOURCE:
 		{			
-			UINT32 u32Count = ((inp32(RTC_FCR) & INTEGER) >> 8);
-			
-			if((u32Count >= (0x7FFF - 10)) && (u32Count <= (0x7FFF + 10)))
-				*(PUINT32)u32Arg0 = RTC_EXTERNAL; 
+			if(inp32(REG_OSC_32K_CNT) == 0)
+				*(PUINT32)u32Arg0 = RTC_EXTERNAL;
 			else
-				*(PUINT32)u32Arg0 = RTC_INTERANL; 
+				*(PUINT32)u32Arg0 = inp32(REG_OSC_32K); 
 			break;
-		}				
+		}					
         default:
         {
-#ifdef __LIBRARY__         
         	outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
             return E_RTC_ERR_ENOTTY;
         }
     }
-#ifdef __LIBRARY__     
     outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
 
     return E_RTC_SUCCESS;
 }
@@ -1449,14 +1379,12 @@ UINT32 RTC_Ioctl (INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1)
 /*               Disable AIC channel of RTC and both tick and alarm interrupt..                             */
 /*---------------------------------------------------------------------------------------------------------*/
 
-UINT32 RTC_Close (void)
+UINT32 RTC_Close (VOID)
 {
 
     g_bIsEnableTickInt = FALSE;
         
-#ifdef __LIBRARY__         
     outp32(REG_APBCLK,inp32(REG_APBCLK) & ~RTC_CKE);
-#endif
     
    	sysDisableInterrupt(IRQ_RTC);
    
@@ -1476,12 +1404,12 @@ VOID RTC_EnableClock(BOOL bEnable)
 
 }
 
-extern UINT32 RTC_Init(void);
+extern UINT32 RTC_Init(VOID);
 extern UINT32 RTC_Open(RTC_TIME_DATA_T *sPt);
-extern UINT32 RTC_Ioctl(INT32 nNum, E_RTC_CMD uCmd, UINT32 uArg0, UINT32 u32Arg1);
+extern UINT32 RTC_Ioctl(INT32 nNum, E_RTC_CMD uCmd, UINT32 uArg0, UINT32 uArg1);
 extern UINT32 RTC_Read(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt);
 extern UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt);
-extern UINT32 RTC_Close(void);
+extern UINT32 RTC_Close(VOID);
 
 
 

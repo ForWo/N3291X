@@ -9,12 +9,12 @@
 #include "wblib.h"
 #include "string.h"
 #include "wbio.h"
-#include "w55fa92_reg.h"
-#include "w55fa92_spu.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_spu.h"
 #include "spu.h"
 
-//#define DBG_PRINTF(...)
-//#define DBG_PRINTF printf
+#define DBG_PRINTF(...)
+//#define DBG_PRINTF sprintf
 
 volatile S_CHANNEL_CTRL g_sChannelSettings;
 //volatile UINT32 g_ua32UserData[6];
@@ -26,6 +26,8 @@ PFN_DRVSPU_CB_FUNC	*g_pfnEndEventCallBack[32];
 PFN_DRVSPU_CB_FUNC	*g_pfnEndAddressEventCallBack[32];
 PFN_DRVSPU_CB_FUNC	*g_pfnThresholdAddressEventCallBack[32];
  
+//#define OPT_FPGA_DEBUG
+#define OPT_FA95_SPU
 #define	E_SUCCESS	0
 
 static void delay(UINT32 kk)
@@ -51,12 +53,12 @@ static void delay(UINT32 kk)
 /*      SPU volume level input is normalized to 32 levels                                                  */
 /*                                                                                                         */
 /*---------------------------------------------------------------------------------------------------------*/
-const int N_table[32] = {128,114,101,90,80,71,64,57,50,45,40,36,32,28,25,22,20,18,16,14,12,11,10,9,8,7,6,5,4,3,2,0};
+const N_table[32] = {128,114,101,90,80,71,64,57,50,45,40,36,32,28,25,22,20,18,16,14,12,11,10,9,8,7,6,5,4,3,2,0};
 
-const int sp_Digi_table[11] = {113,107,101,92,87,80,71,62,51,36,0};
-const int sp_Ana_table[11] = {4,4,4,4,4,4,4,4,4,4,4};
-const int ear_Digi_table[11] = {110,100,89,76,66,55,44,33,22,11,0};
-const int ear_Ana_table[11] = {4,4,4,4,4,4,4,4,4,4,4};
+const sp_Digi_table[11] = {113,107,101,92,87,80,71,62,51,36,0};
+const sp_Ana_table[11] = {4,4,4,4,4,4,4,4,4,4,4};
+const ear_Digi_table[11] = {110,100,89,76,66,55,44,33,22,11,0};
+const ear_Ana_table[11] = {4,4,4,4,4,4,4,4,4,4,4};
 
 
 int spuNormalizeVolume(int inputVolume)
@@ -184,7 +186,12 @@ DrvSPU_Open(void)
 	UINT8 ii;
 
 	// enable SPU engine clock 
+#ifdef OPT_FPGA_DEBUG
+	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | SD_CKE);
+	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | ADO_CKE | SPU_CKE);			// enable SPU engine clock 
+#else	
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | ADO_CKE | SPU_CKE | HCLK4_CKE);			// enable SPU engine clock 
+#endif	
 
 	// disable SPU engine 
 //	outp32(REG_SPU_CTRL, inp32(REG_SPU_CTRL) & ~SPU_EN);
@@ -201,15 +208,17 @@ DrvSPU_Open(void)
 	outp32(REG_SPU_CTRL, inp32(REG_SPU_CTRL) & ~SPU_SWRST);	
 
 	// enable I2S interface 
+#ifdef OPT_FA95_SPU
 	outp32(REG_SPU_CTRL, inp32(REG_SPU_CTRL) | SPU_I2S_EN);
+#endif	
 	
 	// disable all channels
 	outp32(REG_SPU_CH_EN, 0x00);		
 	
 	for (ii=0; ii<32; ii++)
 	{
-		DrvSPU_ClearInt((E_DRVSPU_CHANNEL)ii, DRVSPU_ALL_INT);
-		DrvSPU_DisableInt((E_DRVSPU_CHANNEL)ii, DRVSPU_ALL_INT);
+		DrvSPU_ClearInt(ii, DRVSPU_ALL_INT);
+		DrvSPU_DisableInt(ii, DRVSPU_ALL_INT);
 	}
 	
 	return E_SUCCESS;
@@ -331,9 +340,6 @@ DrvSPU_EnableInt(
 			outp32(REG_SPU_CH_EVENT, inp32(REG_SPU_CH_EVENT) | TH_EN);														
 			g_pfnThresholdAddressEventCallBack[eChannel] = pfnCallBack;													
 		}
-
-		outp32(REG_SPU_CH_EVENT, inp32(REG_SPU_CH_EVENT) & ~AT_CLR_EN);
-		
 		outp32(REG_SPU_CH_CTRL, inp32(REG_SPU_CH_CTRL) & ~DRVSPU_UPDATE_ALL_PARTIALS);		
 		outp32(REG_SPU_CH_CTRL, inp32(REG_SPU_CH_CTRL) | (DRVSPU_UPDATE_IRQ_PARTIAL + DRVSPU_UPDATE_PARTIAL_SETTINGS));				
 		while(inp32(REG_SPU_CH_CTRL) & CH_FN);		
@@ -501,7 +507,7 @@ DrvSPU_ClearInt(
 		}
 		
 		outp32(REG_SPU_CH_EVENT, inp32(REG_SPU_CH_EVENT) & ~AT_CLR_EN);			// clear Auto Clear Enable bit
-		
+				
 		outp32(REG_SPU_CH_CTRL, inp32(REG_SPU_CH_CTRL) & ~DRVSPU_UPDATE_ALL_PARTIALS);		
 		outp32(REG_SPU_CH_CTRL, inp32(REG_SPU_CH_CTRL) | (DRVSPU_UPDATE_IRQ_PARTIAL + DRVSPU_UPDATE_PARTIAL_SETTINGS));				
 		while(inp32(REG_SPU_CH_CTRL) & CH_FN);		
@@ -512,7 +518,7 @@ DrvSPU_ClearInt(
 		return -1;	   
 }
 
-ERRCODE 
+BOOL 
 DrvSPU_PollInt(
 	E_DRVSPU_CHANNEL eChannel, 
 	UINT32 u32InterruptFlag 
@@ -567,7 +573,7 @@ DrvSPU_PollInt(
 	else
 		return FALSE;
 
-//return FALSE;		
+return FALSE;		
 }
 
 ERRCODE 
@@ -1127,7 +1133,7 @@ DrvSPU_GetChannelVolume(
 	UINT8* pu8Volume
 )
 {
-	UINT32 u32PAN;
+	UINT16 u32PAN;
 	
 	if ( ((INT)eChannel >=eDRVSPU_CHANNEL_0) && ((INT)eChannel <=eDRVSPU_CHANNEL_31) )
 	{
@@ -1254,140 +1260,228 @@ DrvSPU_SetSampleRate (
 )
 {
 	UINT32 u32RealSampleRate;		
-//	UINT32 u32ClockIn, u32Divider, u32ExtClock, u32EngineClockKHz;
+	UINT32 u32ExternalClock, w55fa95_apll_clock, PllFreq, u32ClockDivider;
 
-	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | ADO_CKE | SPU_CKE);			// enable SPU engine clock 
-//	outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) & ~(ADO_N1 | ADO_S));	
 
-//	#define OPT_MCLK_FROM_UPLL
-	#ifdef OPT_MCLK_FROM_UPLL
 
-		u32ExtClock = sysGetExternalClock();
-		u32EngineClockKHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtClock);		// CLK_IN = 12 MHz
-//		u32EngineClockKHz /= 1000;
 
-		outp32(REG_SPU_DAC_PAR, inp32(REG_SPU_DAC_PAR) & ~PLLSELMOD);
-		u32Divider = u32EngineClockKHz / (256*eSampleRate);
-		u32Divider --;
+#ifdef OPT_SPU_FROM_APLL        // defined in "w55fa95_spu.h".
 
-		outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) & ~(ADO_N1 | ADO_S | ADO_N0));	// engine clcok fixed to 12 MHz		
-//		outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) | (0x03 << 19) );				// SPU clock from UPLL			
-		outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) | (u32Divider << 24));
-    	outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) | (0x03 << 19) );				// SPU clock from UPLL					
-		u32RealSampleRate = eSampleRate;
+	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | ADO_CKE | SPU_CKE | HCLK4_CKE);			// enable SPU engine clock 
+	outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) & ~(ADO_N1 | ADO_S));	
 
-	#else
+//  outp32(REG_SPU_CLK_PAR, inp32(REG_SPU_CLK_PAR) & ~DAC_RST);
+//  delay(1000);
+//  outp32(REG_SPU_CLK_PAR, inp32(REG_SPU_CLK_PAR) | DAC_RST);   	
+//  delay(1000);    
+	outp32(REG_SPU_CLK_PAR, inp32(REG_SPU_CLK_PAR) & ~PLLSELMOD);    
+    
+    
+    u32ExternalClock = sysGetExternalClock();
 
-		outp32(REG_SPU_DAC_PAR, inp32(REG_SPU_DAC_PAR) | PLLSELMOD);
-		outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) & ~(ADO_N1 | ADO_S | ADO_N0));	// engine clcok fixed to 12 MHz
-
-//  return;
+    if (u32ExternalClock == 12000000) 
+    {
 		switch(eSampleRate)
 		{
-			case  eDRVSPU_FREQ_48000: 
-				
-				DrvSPU_WriteDACReg(0x02, 0x00);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x14);
-				
-				DrvSPU_WriteDACReg(0x0C, 0x55);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_48000;
-				
-			        break;
-			case  eDRVSPU_FREQ_44100: 
-				
-			       DrvSPU_WriteDACReg(0x02, 0x00);		       
-
-				DrvSPU_WriteDACReg(0x0B, 0x10);
-				
-				DrvSPU_WriteDACReg(0x0C, 0x3F);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_44100;
-				
-			        break;	    
-			case  eDRVSPU_FREQ_32000: 
-				
-				DrvSPU_WriteDACReg(0x02, 0x04);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x14);			
-
-				DrvSPU_WriteDACReg(0x0C, 0x55);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_32000;
-			        						
-			        break;	
+		//	case  eDRVSPU_FREQ_192000: 			
+	//		case  eDRVSPU_FREQ_96000: 
+	//		case  eDRVSPU_FREQ_64000: 			
+			case  eDRVSPU_FREQ_48000: 			
+			case  eDRVSPU_FREQ_32000: 			
 			case  eDRVSPU_FREQ_24000: 
-
-				DrvSPU_WriteDACReg(0x02, 0x01);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x14);			
-
-				DrvSPU_WriteDACReg(0x0C, 0x55);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_24000;
-			        
-			        break;	
+			case  eDRVSPU_FREQ_12000:
+    			outp32(REG_APLLCON, 0x09D6);			
+				w55fa95_apll_clock = 344064;			
+		        break;
+		        
+			case  eDRVSPU_FREQ_16000: 				
+			case  eDRVSPU_FREQ_8000: 			 						
+    			outp32(REG_APLLCON, 0x09EB);			
+				w55fa95_apll_clock = 430080;			
+		        break;		        
+		        
+	//		case  eDRVSPU_FREQ_88200: 
+			case  eDRVSPU_FREQ_44100: 			
 			case  eDRVSPU_FREQ_22050: 
+    			outp32(REG_APLLCON, 0x0ADE);						
+				w55fa95_apll_clock = 225792;
+				break;
 
-				DrvSPU_WriteDACReg(0x02, 0x01);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x10);			
-
-				DrvSPU_WriteDACReg(0x0C, 0x3F);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_22050;
-			        
-			        break;	
-			case  eDRVSPU_FREQ_16000: 
-
-				DrvSPU_WriteDACReg(0x02, 0x05);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x14);			
-
-				DrvSPU_WriteDACReg(0x0C, 0x55);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_16000;
-			       
-			        break;	
-			case  eDRVSPU_FREQ_12000: 
-
-				DrvSPU_WriteDACReg(0x02, 0x02);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x14);			
-
-				DrvSPU_WriteDACReg(0x0C, 0x55);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_12000;
-			       
-			        break;	
-			case  eDRVSPU_FREQ_11025: 
-
-				DrvSPU_WriteDACReg(0x02, 0x02);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x10);			
-
-				DrvSPU_WriteDACReg(0x0C, 0x3F);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_11025;
-			       
-			        break;
-			case  eDRVSPU_FREQ_8000: 
-
-				DrvSPU_WriteDACReg(0x02, 0x06);			
-
-				DrvSPU_WriteDACReg(0x0B, 0x14);			
-
-				DrvSPU_WriteDACReg(0x0C, 0x55);	
-
-				u32RealSampleRate = eDRVSPU_FREQ_11025;
-			       
-			        break;	
-			default:	
-				u32RealSampleRate = 0;
+			case  eDRVSPU_FREQ_11025: 						
+    			outp32(REG_APLLCON, 0x0B7F);									
+				w55fa95_apll_clock = 254016;
+				break;
+	
+			default:		
+				DBG_PRINTF("SampleRate not support\n");
 				break;		        
 		}
-	#endif		
+	}		
+	else if (u32ExternalClock == 27000000) 
+	{
+		switch(eSampleRate)
+		{
+		//	case  eDRVSPU_FREQ_192000: 			
+	//		case  eDRVSPU_FREQ_96000: 
+	//		case  eDRVSPU_FREQ_64000: 			
+			case  eDRVSPU_FREQ_48000: 		
+			case  eDRVSPU_FREQ_32000: 			
+			case  eDRVSPU_FREQ_24000: 
+			case  eDRVSPU_FREQ_12000:
+    			outp32(REG_APLLCON, 0x1A74);						
+				w55fa95_apll_clock = 196608;			
+		        break;
+		        
+			case  eDRVSPU_FREQ_16000: 				
+			case  eDRVSPU_FREQ_8000: 			 						
+    			outp32(REG_APLLCON, 0x0BEF);			
+				w55fa95_apll_clock = 430080;
+		        break;		        
+		        
+	//		case  eDRVSPU_FREQ_88200: 
+			case  eDRVSPU_FREQ_44100: 			
+			case  eDRVSPU_FREQ_22050: 
+    			outp32(REG_APLLCON, 0x0DDC);						
+				w55fa95_apll_clock = 225792;
+				break;
+
+			case  eDRVSPU_FREQ_11025: 			
+    			outp32(REG_APLLCON, 0x0DDC);									
+				w55fa95_apll_clock = 225792;
+				break;
+	
+			default:		
+				DBG_PRINTF("SampleRate not support\n");
+				break;		        
+		}
+	}	
+	
+		PllFreq = w55fa95_apll_clock;
+		PllFreq *= 1000;
+
+		u32ClockDivider = (PllFreq / (256*eSampleRate));
+		outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) & (~ADO_N0));		
+		outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) & (~ADO_N1));		
+		u32ClockDivider &= 0xFF;
+		u32ClockDivider	--;
+		outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) | (u32ClockDivider<<24));	
+		outp32(REG_CLKDIV1, (inp32(REG_CLKDIV1) & (~ADO_S)) | (0x02 << 19) );	// SPU clock from APLL			
+
+#else
+
+	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | ADO_CKE | SPU_CKE);			// enable SPU engine clock 
+	outp32(REG_CLKDIV1, inp32(REG_CLKDIV1) & ~(ADO_N1 | ADO_S));	
+	outp32(REG_SPU_CLK_PAR, inp32(REG_SPU_CLK_PAR) | PLLSELMOD);
+
+	switch(eSampleRate)
+	{
+		case  eDRVSPU_FREQ_48000: 
+			
+			DrvSPU_WriteDACReg(0x02, 0x00);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x14);
+			
+			DrvSPU_WriteDACReg(0x0C, 0x55);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_48000;
+			
+		        break;
+		case  eDRVSPU_FREQ_44100: 
+			
+		       DrvSPU_WriteDACReg(0x02, 0x00);		       
+
+			DrvSPU_WriteDACReg(0x0B, 0x10);
+			
+			DrvSPU_WriteDACReg(0x0C, 0x3F);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_44100;
+			
+		        break;	    
+		case  eDRVSPU_FREQ_32000: 
+			
+			DrvSPU_WriteDACReg(0x02, 0x04);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x14);			
+
+			DrvSPU_WriteDACReg(0x0C, 0x55);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_32000;
+		        						
+		        break;	
+		case  eDRVSPU_FREQ_24000: 
+
+			DrvSPU_WriteDACReg(0x02, 0x01);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x14);			
+
+			DrvSPU_WriteDACReg(0x0C, 0x55);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_24000;
+		        
+		        break;	
+		case  eDRVSPU_FREQ_22050: 
+
+			DrvSPU_WriteDACReg(0x02, 0x01);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x10);			
+
+			DrvSPU_WriteDACReg(0x0C, 0x3F);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_22050;
+		        
+		        break;	
+		case  eDRVSPU_FREQ_16000: 
+
+			DrvSPU_WriteDACReg(0x02, 0x05);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x14);			
+
+			DrvSPU_WriteDACReg(0x0C, 0x55);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_16000;
+		       
+		        break;	
+		case  eDRVSPU_FREQ_12000: 
+
+			DrvSPU_WriteDACReg(0x02, 0x02);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x14);			
+
+			DrvSPU_WriteDACReg(0x0C, 0x55);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_12000;
+		       
+		        break;	
+		case  eDRVSPU_FREQ_11025: 
+
+			DrvSPU_WriteDACReg(0x02, 0x02);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x10);			
+
+			DrvSPU_WriteDACReg(0x0C, 0x3F);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_11025;
+		       
+		        break;
+		case  eDRVSPU_FREQ_8000: 
+
+			DrvSPU_WriteDACReg(0x02, 0x06);			
+
+			DrvSPU_WriteDACReg(0x0B, 0x14);			
+
+			DrvSPU_WriteDACReg(0x0C, 0x55);	
+
+			u32RealSampleRate = eDRVSPU_FREQ_11025;
+		       
+		        break;	
+
+		default:	
+			u32RealSampleRate = 0;
+			break;		        
+			
+	}	
+#endif
+
 
 	return u32RealSampleRate;
 }
@@ -1424,18 +1518,18 @@ DrvSPU_ChannelCtrl(
 	
 	if ( ((INT)u32Channel >=eDRVSPU_CHANNEL_0) && ((INT)u32Channel <=eDRVSPU_CHANNEL_31) )
 	{
-		DrvSPU_SetChannelVolume((E_DRVSPU_CHANNEL)u32Channel, psChannelCtrl->u8ChannelVolume);	
-		DrvSPU_SetPAN((E_DRVSPU_CHANNEL)u32Channel, psChannelCtrl->u16PAN);	
-		DrvSPU_SetSrcType((E_DRVSPU_CHANNEL)u32Channel, (E_DRVSPU_FORMAT)psChannelCtrl->u8DataFormat);
+		DrvSPU_SetChannelVolume(u32Channel, psChannelCtrl->u8ChannelVolume);	
+		DrvSPU_SetPAN(u32Channel, psChannelCtrl->u16PAN);	
+		DrvSPU_SetSrcType(u32Channel, psChannelCtrl->u8DataFormat);
 		
 #ifdef OPT_DIRECT_SET_DFA		
 //		DrvSPU_SetDFA(u32Channel, psChannelCtrl->u16DFA);		
 #else		
 //		DrvSPU_SetDFA(u32Channel, psChannelCtrl->u16SrcSampleRate, psChannelCtrl->u16OutputSampleRate);				
 #endif		
-		DrvSPU_SetBaseAddress((E_DRVSPU_CHANNEL)u32Channel, psChannelCtrl->u32SrcBaseAddr);		
-		DrvSPU_SetThresholdAddress((E_DRVSPU_CHANNEL)u32Channel, psChannelCtrl->u32SrcThresholdAddr);
-		DrvSPU_SetEndAddress((E_DRVSPU_CHANNEL)u32Channel, psChannelCtrl->u32SrcEndAddr);
+		DrvSPU_SetBaseAddress(u32Channel, psChannelCtrl->u32SrcBaseAddr);		
+		DrvSPU_SetThresholdAddress(u32Channel, psChannelCtrl->u32SrcThresholdAddr);
+		DrvSPU_SetEndAddress(u32Channel, psChannelCtrl->u32SrcEndAddr);
 		
 		return E_SUCCESS;
 	}

@@ -25,8 +25,8 @@
     #include "wblib.h"
 #endif
 
-#include "w55fa92_reg.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_sic.h"
 
 #include "fmi.h"
 #include "nvtfat.h"
@@ -249,7 +249,7 @@ INT  fmiSD_CardSel(INT cardSel)
         if (inpw(REG_SDCR) & (SDCR_SDPORT) == SDCR_SDPORT_0)
             return 0;   // don't need to change value and wait for stable
 
-        outpw(REG_GPEFUN0, (inpw(REG_GPEFUN0) & (~0xFFFFFF00)) | 0x22222200);   // SD0_CLK/CMD/DAT0_3 pins selected
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN)&(~0x0000FFF0) | 0x0000aaa0); // SD0_CLK/CMD/DAT0_3 pins selected
         outpw(REG_SDCR, inpw(REG_SDCR) & (~SDCR_SDPORT));               // SD_0 port selected
         pSD = pSD0;
     }
@@ -258,18 +258,18 @@ INT  fmiSD_CardSel(INT cardSel)
         if (inpw(REG_SDCR) & (SDCR_SDPORT) == SDCR_SDPORT_1)
             return 0;   // don't need to change value and wait for stable
 
-        outpw(REG_GPBFUN0, (inpw(REG_GPBFUN0) & (~0x00FFFFFF)) | 0x00222222);   // SD2_CLK/CMD/DAT0_3 pins selected
+        outpw(REG_GPBFUN, inpw(REG_GPBFUN)&(~0x00000FFF) | 0x00000AAA);
         outpw(REG_SDCR, inpw(REG_SDCR) & (~SDCR_SDPORT) | SDCR_SDPORT_1);   // SD_1 port selected
         pSD = pSD1;
     }
     else if (cardSel==2)
     {
+        // for new FA95 GPIO mapping at 2011/9/14
         if (inpw(REG_SDCR) & (SDCR_SDPORT) == SDCR_SDPORT_2)
             return 0;   // don't need to change value and wait for stable
 
-        outpw(REG_GPDFUN0, (inpw(REG_GPDFUN0) & (~0xF0F00000)) | 0x10100000);   // SD2_DAT2/SD2_CLK pins selected
-        outpw(REG_GPDFUN1, (inpw(REG_GPDFUN1) & (~0x0000000F)) | 0x00000001);   // SD2_CMD pins selected
-        outpw(REG_GPEFUN1, (inpw(REG_GPEFUN1) & (~0x000FFF00)) | 0x00011100);   // SD2_DAT0_1_3 pins selected
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN)&(~0x03F00000) | 0x01500000);     // SD2_DAT0_1_3 pins selected
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN)&(~0x0003CC00) | 0x00014400);     // SD2_DAT2/SD2_CLK/CMD pins selected
         outpw(REG_SDCR, inpw(REG_SDCR) & (~SDCR_SDPORT) | SDCR_SDPORT_2);   // SD_2 port selected
         pSD = pSD2;
     }
@@ -346,10 +346,7 @@ INT  fmiInitSDDevice(INT cardSel)
     DISK_DATA_T* pSDDisk;
     FMI_SD_INFO_T *pSD_temp = NULL;
 
-    // Enable AHB clock for SD. MUST also enable SIC clock for SIC/SD engine.
-    outpw(REG_AHBCLK, inpw(REG_AHBCLK) | SD_CKE | SIC_CKE);
-
-    // Reset FMI
+    //Reset FMI
     outpw(REG_FMICR, FMI_SWRST);        // Start reset FMI controller.
     while(inpw(REG_FMICR)&FMI_SWRST);
 
@@ -389,7 +386,7 @@ INT  fmiInitSDDevice(INT cardSel)
     if (cardSel==0)
     {
          if (g_SD0_card_detect)
-            outpw(REG_GPAFUN0, (inpw(REG_GPAFUN0) & (~MF_GPA1)) | 0x00000020);  // set GPA1 to 0010b for SD0 card detection
+            outpw(REG_GPAFUN, inpw(REG_GPAFUN) | 0x00000008);   // set GPA1 to 10b for SD0 card detection
         outpw(REG_SDIER, inpw(REG_SDIER) | SDIER_CDSRC);    // SD card detection source from GPIO but not DAT3
     }
 

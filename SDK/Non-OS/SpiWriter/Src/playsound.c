@@ -30,7 +30,7 @@
 
 #include "wblib.h"
 #include "pcm.h"
-#include "w55fa92_spu.h"
+#include "w55fa95_spu.h"
 #include "spu.h"
 
 static UINT16 u16IntCount = 2;
@@ -44,7 +44,6 @@ UINT32 volatile u32PcmLen;
 #define BURN_PASS		1
 #define BURN_FAIL		2
 
-extern ERRCODE DrvSPU_SetPauseAddress_PCM16(E_DRVSPU_CHANNEL eChannel, UINT32 u32Address);
 int playCallBack(UINT8 * pu8Buffer)
 {	
 #if 1
@@ -62,7 +61,7 @@ int playCallBack(UINT8 * pu8Buffer)
     	    len -= u32Offset;
     	}
     	
-        DrvSPU_SetPauseAddress_PCM16((E_DRVSPU_CHANNEL)0, (UINT32)pu8Buffer + len);    	
+        DrvSPU_SetPauseAddress_PCM16(0, (UINT32)pu8Buffer + len);    	
 		u16IntCount = 2;        
     }    	
     else

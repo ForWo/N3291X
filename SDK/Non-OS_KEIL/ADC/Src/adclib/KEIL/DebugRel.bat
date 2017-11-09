@@ -1,0 +1,1 @@
+move .\adclib_Data\DebugRel\W55FA95_adc.lib ..\..\..\Lib

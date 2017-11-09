@@ -1,0 +1,1 @@
+move .\RTCLib_Data\DebugRel\w55fa95_RTClib.lib ..\..\..\Lib

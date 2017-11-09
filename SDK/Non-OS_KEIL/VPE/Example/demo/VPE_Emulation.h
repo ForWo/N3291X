@@ -18,10 +18,7 @@
 	#define PANEL_WIDTH 	480
 	#define PANEL_HEIGHT	272
 #endif
-#ifdef LCM_320X240
-	#define PANEL_WIDTH 	320
-	#define PANEL_HEIGHT	240
-#endif
+
 
 /* Common API */
 INT32 FileSize(char* szAsciiName);

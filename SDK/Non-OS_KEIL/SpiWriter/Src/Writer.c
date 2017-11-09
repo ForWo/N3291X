@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
@@ -89,8 +89,7 @@ void nvtWriteSpi(UINT32 len)
 
     gCurBlock += block_count;
 }
-#define __UPLL_240__
-//#define __UPLL_NOT_SET__
+#define __UPLL_NOT_SET__
 #define __DDR2__
 // Clock Skew for FA95 MCP version C
 #define E_CLKSKEW   0x0088ff00
@@ -149,7 +148,6 @@ void initClock(void)
 	uart.uiFreq = u32ExtFreq;
     uart.uiBaudrate = 115200;
     uart.uiDataBits = WB_DATA_BITS_8;    
-	uart.uart_no=WB_UART_1;
     uart.uiStopBits = WB_STOP_BITS_1;
     uart.uiParity = WB_PARITY_NONE;
     uart.uiRxTriggerLevel = LEVEL_1_BYTE;
@@ -200,7 +198,7 @@ int main()
     sysSetTimerReferenceClock(TIMER0, 12000000);    // External Crystal
     sysStartTimer(TIMER0, 100, PERIODIC_MODE);      // 100 ticks/per sec ==> 1tick/10ms
 
-	sysprintf("=====> W55FA92 SpiWriter (v%d.%d) Begin [%d] <=====\n", MAJOR_VERSION_NUM, MINOR_VERSION_NUM, sysGetTicks(0));
+	sysprintf("=====> W55FA95 SpiWriter (v%d.%d) Begin [%d] <=====\n", MAJOR_VERSION_NUM, MINOR_VERSION_NUM, sysGetTicks(0));
 
 	ltime.year = 2013;
 	ltime.mon  = 8;
@@ -334,7 +332,7 @@ int main()
 		   
 		    if (hNvtFile < 0)
 		    {      
-		        sysprintf("===> 1.2.1 open file name [%s], return = 0x%x\n", suNvtFullName, hNvtFile);
+		        sysprintf("===> 1.1.1 open file name [%s], return = 0x%x\n", suNvtFullName, hNvtFile);
 #ifndef __NoLCM__
 			 	sprintf(Array1, "Open Sound File <Start> Fail");
 				Draw_Clear(2,_LCM_HEIGHT_ - g_Font_Height+1,_LCM_WIDTH_-3, _LCM_HEIGHT_-3, 0);   
@@ -400,7 +398,7 @@ _SoundOpenEnd01_:
 			outp32(u32GpioPort_Start,inp32(u32GpioPort_Start) | u32GpioPin_Start);
 		else
 			outp32(u32GpioPort_Start,inp32(u32GpioPort_Start) & ~u32GpioPin_Start);	
-	}			   	
+	}			   
 	
 #ifdef __Security__
 	if(Ini_Writer.RootKey >= 1 && Ini_Writer.RootKey <= 4)
@@ -484,18 +482,17 @@ _SoundOpenEnd01_:
 #ifndef __NoLCM__   
 	    Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Spi Chip Erase:");
 	    u32SkipX = 15; 
-#endif	    
-	    sysDelay(10);
+#endif	  
+		sysDelay(10);  
 	    usiEraseAll();
 	    sysDelay(10);
 	    while(usiWaitEraseReady())
-	    {
-#ifndef __NoLCM__	    
+		{
+#ifndef __NoLCM__   			    
 			Draw_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
 #endif			
-			sysDelay(30);
-	    }
-#ifndef __NoLCM__	    
+		}
+#ifndef __NoLCM__   	    
 	    Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
            
    		Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
@@ -556,7 +553,6 @@ _SoundOpenEnd01_:
 		    }
 			if(Ini_Writer.DataVerify)
 			{
-				
 				sysprintf("=====> 2.1 Verify Raw Data [%d] <=====\n", sysGetTicks(0));
 			    /* verify raw data */
 			    fsFileSeek(hNvtFile, 0, SEEK_SET);
@@ -610,7 +606,7 @@ _SoundOpenEnd01_:
     if (strlen(Ini_Writer.SpiLoader.FileName) ==0)
         goto WriteLogo;
        
-    sysprintf("=====> 2.0 Copy SpiLoader [%d] <=====\n", sysGetTicks(0));
+    sysprintf("=====> 2.0 copy SpiLoader [%d] <=====\n", sysGetTicks(0));
 #ifndef __NoLCM__   
     Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Writing SpiLoader:");
     u32SkipX = 18;
@@ -1206,7 +1202,7 @@ WriteSysteInfo:
     Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Writing Image List:");
 #endif    
     u32SkipX = 19; 
-  
+   
     /* set information to Block 63 */
     {
         unsigned int *ptr;
@@ -1244,7 +1240,7 @@ WriteSysteInfo:
 	        {
 	            sysprintf("===> 6.2 System Info write fail on Block 0.\n");
 				sprintf(Array1, "Image List:Verify Fail"); 			
-#ifndef __NoLCM__ 				
+#ifndef __NoLCM__   	
 				Draw_Clear(2,_LCM_HEIGHT_ - g_Font_Height+1,_LCM_WIDTH_-3, _LCM_HEIGHT_-3, 0);
 				Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, 0,  _LCM_HEIGHT_ -1-g_Font_Height,Array1);    			   	            
 #endif				
@@ -1259,11 +1255,12 @@ _end_:
 	if(g_4byte_adderss)
 	{
 		Exit4ByteMode();
+		Reset();
 		g_4byte_adderss = FALSE;
 		sysprintf("SPI 4 Byte Address Mode Disable\n");	
-		
-		Reset();
 	}
+	
+	
     sysprintf("=====> Finish [%d] <=====\n", sysGetTicks(0));
     if(bIsAbort)
     {

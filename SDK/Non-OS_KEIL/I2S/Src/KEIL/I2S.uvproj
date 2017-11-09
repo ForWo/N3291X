@@ -44,7 +44,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\I2S_Data\DebugRel\</OutputDirectory>
-          <OutputName>w55fa92_i2s</OutputName>
+          <OutputName>w55fa95_i2s</OutputName>
           <CreateExecutable>0</CreateExecutable>
           <CreateLib>1</CreateLib>
           <CreateHexFile>0</CreateHexFile>

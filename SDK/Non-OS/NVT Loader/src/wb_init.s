@@ -40,22 +40,22 @@ Reset_Go
 ; Initial Stack Pointer register, keep them here to make .axf work if NAND loader not execute first
 ;--------------------------------
 ;INIT_STACK 
- MSR	CPSR_c, #UDF_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #UDF_MODE | I_BIT | F_BIT
  LDR     SP, =UND_Stack
 
- MSR	CPSR_c, #ABT_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #ABT_MODE | I_BIT | F_BIT
  LDR     SP, =Abort_Stack
 
- MSR	CPSR_c, #IRQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #IRQ_MODE | I_BIT | F_BIT
  LDR     SP, =IRQ_Stack
 
- MSR	CPSR_c, #FIQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #FIQ_MODE | I_BIT | F_BIT
  LDR     SP, =FIQ_Stack
 
- MSR	CPSR_c, #SYS_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SYS_MODE | I_BIT | F_BIT
  LDR     SP, =USR_Stack
 
- MSR	CPSR_c, #SVC_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SVC_MODE | I_BIT | F_BIT
  LDR     SP, =SVC_Stack
 
 
@@ -66,16 +66,10 @@ Reset_Go
 	BIC r0, r0, #0x2000		; Clear bit13 in r1
 	MCR p15, 0, r0 , c1, c0     ; cp15 register 1 := r0 
 
-
 	IMPORT	__main
 ;-----------------------------
 ;	enter the C code
 ;-----------------------------	
 	B   __main
- 	DCD	0x55AA55AA, 0xAA55AA55, 0x4F56554E, 0x2E4E4F54
-	DCD	0x55AA55AA, 0xAA55AA55, 0x4F56554E, 0x2E4E4F54
-	DCD	0x55AA55AA, 0xAA55AA55, 0x4F56554E, 0x2E4E4F54
-	DCD	0x55AA55AA, 0xAA55AA55, 0x4F56554E, 0x2E4E4F54
-	DCD	0x55AA55AA, 0xAA55AA55, 0x4F56554E, 0x2E4E4F54
-	DCD	0x55AA55AA, 0xAA55AA55, 0x4F56554E, 0x2E4E4F54
+
 	END

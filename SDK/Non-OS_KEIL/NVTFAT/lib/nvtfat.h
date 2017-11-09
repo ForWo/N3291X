@@ -516,7 +516,7 @@ typedef VOID (FS_UNMOUNT_CB_T)(LDISK_T *);
 
 /*===================================================== Exported Functions ==*/
 /* NVTFAT File System APIs */
-extern INT  fsInitFileSystem(void);
+extern INT  fsInitFileSystem(VOID);
 extern INT  fsAssignDriveNumber(INT nDriveNo, INT disk_type, INT instance, INT partition);
 extern VOID fsInstallIoWriteCallBack(FS_DW_CB *cb_func);
 extern VOID fsInstallFileDelCallBack(FS_DEL_CB_T *cb_func);
@@ -526,7 +526,7 @@ extern INT  fsUnmountPhysicalDisk(PDISK_T *ptPDisk);
 extern INT  fsMountLogicalDisk(LDISK_T *ptLDisk);
 extern INT  fsUnmountLogicalDisk(LDISK_T *ptLDisk);
 extern INT  fsDiskFreeSpace(INT nDriveNo, UINT32 *puBlockSize, UINT32 *puFreeSize, UINT32 *puDiskSize);
-extern PDISK_T  *fsGetFullDiskInfomation(void);
+extern PDISK_T  *fsGetFullDiskInfomation(VOID);
 extern VOID fsReleaseDiskInformation(PDISK_T *ptPDiskList);
 extern INT  fsScanDisk(INT nDriveNo);
 extern INT  fsFormatFlashMemoryCard(PDISK_T *ptPDisk);
@@ -608,7 +608,7 @@ extern VOID fsDumpSectorHex(INT uSectorNo, UINT8 *pucBuff, INT nSize);
 extern INT  fsDumpDiskSector(UINT32 uSectorNo, INT nSecNum);
 
 extern LDISK_T *fsAllocateDisk(PDISK_T *ptPDisk, PARTITION_T *ptPartition);
-extern UINT8 *fsAllocateSector(void);
+extern UINT8 *fsAllocateSector(VOID);
 extern INT  fsFreeSector(UINT8 *pucSecAddr);
 
 extern CHAR  *fsDebugUniStr(CHAR *suStr);
@@ -617,11 +617,11 @@ extern CHAR  *fsDebugUniStr(CHAR *suStr);
 
 extern VOID  lname_to_sname(CHAR *szAsciiName, INT nTildeNum, CHAR *szShortName);
 
-extern INT  fsFlushIOCache(void);
+extern INT  fsFlushIOCache(VOID);
 extern INT  fsIOWrite(PDISK_T *ptPDisk, UINT32 uStartSecNo, INT nCount, UINT8 *pucOutBuff);
 extern INT  fsIORead(PDISK_T *ptPDisk, UINT32 uStartSecNo, INT nCount, UINT8 *in_buf);
-extern VOID fs_enable_iow_cache(void);
-extern INT  fs_flush_iow_cache(void);
+extern VOID fs_enable_iow_cache(VOID);
+extern INT  fs_flush_iow_cache(VOID);
 extern VOID *fsCheckDriverPointer(VOID *pvDrive);
 
 #endif  /* _NVTFAT_H_ */

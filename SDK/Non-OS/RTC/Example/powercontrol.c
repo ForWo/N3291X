@@ -3,8 +3,8 @@
 #include "wblib.h"
 #include "RTC.h"
 
-extern VOID RTC_Releative_AlarmISR(void);
-extern VOID RTC_AlarmISR(void);
+extern VOID RTC_Releative_AlarmISR(VOID);
+extern VOID RTC_AlarmISR(VOID);
 extern BOOL volatile g_bAlarm;
 BOOL volatile g_bPowerKeyPress = FALSE;
 
@@ -45,15 +45,13 @@ void Smpl_RTC_Powerdown_Wakeup_Relative(void)
 			
 	RTC_EnableClock(TRUE);
 			
-	while(!g_bAlarm);
-	
+	while(!g_bAlarm);	
+
 	/* Get the currnet time */
-	RTC_Read(RTC_CURRENT_TIME, &sCurTime);	
+	RTC_Read(RTC_CURRENT_TIME, &sCurTime);		
 	
 	sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
-	
-	RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_RELATIVE_ALARM_INT,0);
-				
+
 }	
 
 void Smpl_RTC_Powerdown_Wakeup(void)
@@ -68,17 +66,7 @@ void Smpl_RTC_Powerdown_Wakeup(void)
 	RTC_Read(RTC_CURRENT_TIME, &sCurTime);
 	
 	/* Set Alarm call back function */
-	sCurTime.pfnAlarmCallBack = RTC_AlarmISR;
-	
-	/* Disable Alarm Mask */
-	sCurTime.u32AlarmMaskSecond = 0;	
-	sCurTime.u32AlarmMaskMinute = 0;	
-	sCurTime.u32AlarmMaskHour = 0;	
-	sCurTime.u32AlarmMaskDay = 0;	
-	sCurTime.u32AlarmMaskMonth = 0;	
-	sCurTime.u32AlarmMaskYear = 0;	
-	sCurTime.u32AlarmMaskDayOfWeek = 0;
-	sCurTime.u32AlarmMaskSecond = 0; 			
+	sCurTime.pfnAlarmCallBack = RTC_AlarmISR;	
 	
 	sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
 	
@@ -125,14 +113,15 @@ void Smpl_RTC_Powerdown_Wakeup(void)
 	
 	RTC_EnableClock(FALSE);
 	
-	sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
+	/* Get the currnet time */
+	RTC_Read(RTC_CURRENT_TIME, &sCurTime);	
 	
-	RTC_Ioctl(0,RTC_IOC_DISABLE_INT,RTC_ALARM_INT,0);
-}	
+	sysprintf("   Current Time:%d/%02d/%02d %02d:%02d:%02d\n",sCurTime.u32Year,sCurTime.u32cMonth,sCurTime.u32cDay,sCurTime.u32cHour,sCurTime.u32cMinute,sCurTime.u32cSecond);
 
-VOID PowerKeyPress(void)
+}	
+VOID PowerKeyPress(VOID)
 {
-	sysprintf("\nPower Key Press!!\n");	
+	sysprintf("\nPower Key Press (ISR)!!\n");	
 	g_bPowerKeyPress = TRUE;
 	return;
 }
@@ -156,14 +145,17 @@ VOID Smpl_RTC_PowerOff_Control(UINT32 u32Mode)
 	
 	/* Install the callback function for Power Key Press */
 	RTC_Ioctl(0, RTC_IOC_SET_PSWI_CALLBACK, (UINT32)PowerKeyPress, 0);
-	  	  	
-	/* Enable Hardware Power off */	  	  	
-	RTC_Ioctl(0, RTC_IOC_ENABLE_HW_POWEROFF, 0, 0);  	  	
-	  	 	  	
+	if(u32Mode == HW_POWER_OFF)  	  	
+	{
+		/* Enable Hardware Power off */	  	  	
+		RTC_Ioctl(0, RTC_IOC_ENABLE_HW_POWEROFF, 0, 0);  	  	
+		
+		RTC_Ioctl(0, RTC_IOC_SET_POWER_OFF_PERIOD, 5, 0); 		
+	}  	 	  	
 	/* Wait Key Press */  	
 	sysprintf("Wait for Key Press\n");
 	
-	RTC_EnableClock(TRUE);
+	RTC_EnableClock(TRUE);	
 	
  	while(!g_bPowerKeyPress);
 
@@ -181,6 +173,8 @@ VOID Smpl_RTC_PowerOff_Control(UINT32 u32Mode)
 		{
 			sysprintf("	Power Key Release\n");
 			sysprintf("	Power Off Flow Stop\n");
+			
+			RTC_EnableClock(FALSE);	
 			return;
 		}
 		else
@@ -211,7 +205,7 @@ VOID Smpl_RTC_PowerOff_Control(UINT32 u32Mode)
 	i = 0;
 	while(1)
 	{
-		if((i%50000) == 0)
+		if((i%100000) == 0)
 			sysprintf(".");
 		i++;	
 	}

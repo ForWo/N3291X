@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_sic.h"
-#include "w55fa92_gnand.h"
+#include "w55fa95_sic.h"
+#include "w55fa95_gnand.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
@@ -20,6 +20,11 @@
 
 extern INT fmiMarkBadBlock(UINT32 block);
 extern INT fmiCheckInvalidBlock(FMI_SM_INFO_T *pSM, UINT32 BlockNo);
+
+#ifdef __KLE_DEMO__
+    extern void LcmBacklightInit(void);
+    extern void LcmBacklightEnable(void);
+#endif
 
 extern UINT16 FrameBuffer[];
 extern S_DEMO_FONT s_sDemo_Font;
@@ -68,6 +73,21 @@ NDRV_T _nandDiskDriver1 =
     0
 };
 
+#ifdef _KLE_MUL2_
+//--- SIC API for CS0 2nd on board NAND
+NDRV_T _nandDiskDriver2 =
+{
+    nandInit2,
+    nandpread2,
+    nandpwrite2,
+    nand_is_page_dirty2,
+    nand_is_valid_block2,
+    nand_ioctl,
+    nand_block_erase2,
+    nand_chip_erase2,
+    0
+};
+#endif
 
 /**********************************/
 #define COMPARE_LEN     128*1024
@@ -455,6 +475,18 @@ int nandCopyContent(CHAR *suDirName, CHAR *suTargetName)
 }
 
 
+#ifdef __KLE_DEMO__
+UINT32 u32TimerChannel = 0;         /* For back light */
+void Timer0_300msCallback(void)
+{
+    LcmBacklightInit();
+    LcmBacklightEnable();
+    DBG_PRINTF("T300ms callback\n");
+    sysClearTimerEvent(TIMER0, u32TimerChannel);
+}
+#endif
+
+
 /**********************************/
 int main()
 {
@@ -493,6 +525,15 @@ int main()
     extern IBR_BOOT_OPTIONAL_STRUCT_T optional_ini_file;
 #endif
 
+#ifdef _KLE_MUL2_
+    //--- for CS0 2nd on board NAND programming
+    NDISK_T *ptNDisk2;
+    PDISK_T *pDisk_nand2 = NULL;
+    LDISK_T *ptLDisk2;
+    PDISK_T *ptPDisk2;
+    int LogicSectorG=-1, LogicSectorH=-1;
+#endif
+
 #if 0
     // show clock setting
     DBG_PRINTF("NandWriter extry.\n");
@@ -506,8 +547,8 @@ int main()
 
     //--- Reset SIC engine to make sure it under normal status.
     outp32(REG_AHBCLK, inp32(REG_AHBCLK) | (SIC_CKE | NAND_CKE | SD_CKE));
-    outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) | SIC_RST);    // SIC engine reset is avtive
-    outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) & ~SIC_RST);   // SIC engine reset is no active. Reset completed.
+    outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) | SICRST);     // SIC engine reset is avtive
+    outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) & ~SICRST);    // SIC engine reset is no active. Reset completed.
 
     //--- initial UART
     u32ExtFreq = sysGetExternalClock();     // KHz unit
@@ -518,7 +559,7 @@ int main()
     uart.uiStopBits = WB_STOP_BITS_1;
     uart.uiParity = WB_PARITY_NONE;
     uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-    uart.uart_no = WB_UART_1;
+    uart.uart_no = WB_UART_0;
     sysInitializeUART(&uart);
     sysSetLocalInterrupt(ENABLE_FIQ_IRQ);
 
@@ -539,7 +580,11 @@ int main()
     sysSetTimerReferenceClock(TIMER0, 12000000);
     sysStartTimer(TIMER0, 100, PERIODIC_MODE);
 
-    sysprintf("\n=====> W55FA92 NandWriter (v%d.%d) Begin [%d] <=====\n", MAJOR_VERSION_NUM, MINOR_VERSION_NUM, sysGetTicks(0));
+#ifdef __KLE_DEMO__
+    u32TimerChannel = sysSetTimerEvent(TIMER0, 30, (PVOID)Timer0_300msCallback);
+#endif
+
+    sysprintf("\n=====> W55FA95 NandWriter (v%d.%d) Begin [%d] <=====\n", MAJOR_VERSION_NUM, MINOR_VERSION_NUM, sysGetTicks(0));
 
     ltime.year = 2012;
     ltime.mon  = 04;
@@ -1371,7 +1416,7 @@ WriteNandCard:
 
         sysprintf("\n=====> Create GNAND for NAND on CS1 [%d] <=====\n", sysGetTicks(0));
         Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Mount GNAND CS1:");
-        u32SkipX = 16;
+    	u32SkipX = 16;
 
         ptNDisk1 = (NDISK_T *)malloc(sizeof(NDISK_T));
 
@@ -1530,6 +1575,270 @@ WriteNandCard:
             font_y += Next_Font_Height;
         }
     }   // end of Ini_Writer.NANDCARD_FAT != FAT_MODE_SKIP
+
+
+#ifdef _KLE_MUL2_
+    /************************************/
+    /* Program 2nd on board NAND on CS0 */
+    /************************************/
+    if (Ini_Writer.NAND2_FAT != FAT_MODE_SKIP)
+    {
+        fsAssignDriveNumber('G', DISK_TYPE_SMART_MEDIA, 2, 1);      // NAND2-1 partitions on CS0
+        fsAssignDriveNumber('H', DISK_TYPE_SMART_MEDIA, 2, 2);      // NAND2-2 partitions on CS0
+
+        sysprintf("\n=====> Create GNAND for NAND2 on CS0 [%d] <=====\n", sysGetTicks(0));
+        Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Mount GNAND 2 CS0:");
+    	u32SkipX = 18;
+
+        ptNDisk2 = (NDISK_T *)malloc(sizeof(NDISK_T));
+        
+        //--- erase GNAND P2LN table to force GNAND_InitNAND() to erase whole NAND
+        nandInit2(ptNDisk2);
+        for (i=0; i<8; i++)
+            nand_block_erase2(i);
+        fmiSMClose(2);
+        
+        if (GNAND_InitNAND(&_nandDiskDriver2, ptNDisk2, TRUE))
+        {
+            sysprintf("ERROR: GNAND 2 initial fail for CS0 !!\n");
+            return -1;
+        }
+
+        status = GNAND_MountNandDisk(ptNDisk2);
+        if (status)
+        {
+            Draw_CurrentOperation("Mount GNAND 2 CS0", status);
+            Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+        }
+        else
+            Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
+        font_y += Next_Font_Height;
+
+        pDisk_nand2 = (PDISK_T *)ptNDisk2->pDisk;
+
+        if ((Ini_Writer.NAND2_FAT == FAT_MODE_IMAGE_NO_MBR) || (Ini_Writer.NAND2_FAT == FAT_MODE_FILE))
+        {
+            // partition and format Nandcard
+            sysprintf("=====> partition and format [%d] <=====\n", sysGetTicks(0));
+            Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Format Nand2:");
+            u32SkipX = 13;
+            fsSetReservedArea(0x3F);    // Set start sector as default
+            // for _KLE_MUL2_, first partition MUST be 512MB
+            status = fsTwoPartAndFormatAll((PDISK_T *)pDisk_nand2, 512*1024, pDisk_nand2->uDiskSize - 512*1024);
+            if (status < 0)
+            {
+                Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+                sysprintf("===> 5 (Format NAND2 fail)\n");
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+            else
+                Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
+            font_y += Next_Font_Height;
+
+            fsSetVolumeLabel('G', "NAND2-1\n", strlen("NAND2-1"));
+            fsSetVolumeLabel('H', "NAND2-2\n", strlen("NAND2-2"));
+
+            // Get disk information
+            uBlockSize=0, uFreeSize=0, uDiskSize=0;
+            fsDiskFreeSpace('G', &uBlockSize, &uFreeSize, &uDiskSize);
+            sysprintf("Disk G Size: %d Kbytes, Free Space: %d KBytes\n", (INT)uDiskSize, (INT)uFreeSize);
+
+            uBlockSize=0, uFreeSize=0, uDiskSize=0;
+            fsDiskFreeSpace('H', &uBlockSize, &uFreeSize, &uDiskSize);
+            sysprintf("Disk H Size: %d Kbytes, Free Space: %d KBytes\n", (INT)uDiskSize, (INT)uFreeSize);
+
+            // Get the Start sector for G & H partition
+            ptLDisk2 = (LDISK_T *)malloc(sizeof(LDISK_T));
+            if (get_vdisk('G', &ptLDisk2) <0)
+            {
+                sysprintf(" ===> 6 (vdisk fail)\n");
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+            ptPDisk2 = ptLDisk2->ptPDisk;   // get the physical disk structure pointer of NAND disk
+            ptPart = ptPDisk2->ptPartList;  // Get the partition of NAND disk
+            while (ptPart != NULL)
+            {
+        #if 1
+                sysprintf("Driver %c -- Start sector : %d, Total sector : %d\n",
+                        ptPart->ptLDisk->nDriveNo, ptPart->uStartSecN, ptPart->uTotalSecN);
+        #endif
+                if  (ptPart->ptLDisk->nDriveNo == 'G')
+                    LogicSectorG = ptPart->uStartSecN;
+
+                if  (ptPart->ptLDisk->nDriveNo == 'H')
+                    LogicSectorH = ptPart->uStartSecN;
+                ptPart = ptPart->ptNextPart;
+            }
+        }
+        else if (Ini_Writer.NAND2_FAT == FAT_MODE_IMAGE_WITH_MBR)   // don't need partition disk since image with MBR
+        {
+            LogicSectorG = 0;   // write image with MBR to sector 0
+        }
+
+        /*********************************/
+        /* copy first partition content  */
+        /*********************************/
+        sysprintf("\n=====> copy Partition Content [%d] <=====\n", sysGetTicks(0));
+        if ((Ini_Writer.NAND2_FAT == FAT_MODE_IMAGE_NO_MBR) || (Ini_Writer.NAND2_FAT == FAT_MODE_IMAGE_WITH_MBR))
+        {
+            // Copy File Through FAT like Binary ISO
+            // Copy files for NAND2-1
+            sysprintf("Copying partition NAND2-1...\n");
+            Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Copying NAND2-1:");
+            u32SkipX = 16;
+
+            if (LogicSectorG == -1)
+            {
+                Draw_CurrentOperation("LogicSectorG :", hNvtFile);
+                sysprintf("===> 7.1 (Wrong start sector for NAND2-1)\n");
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+
+            strcpy(szNvtFullName, "X:\\NAND2-1\\content.bin");
+            fsAsciiToUnicode(szNvtFullName, suNvtFullName, TRUE);
+            hNvtFile = fsOpenFile(suNvtFullName, NULL, O_RDONLY);
+            sysprintf("Copying file %s\n", szNvtFullName);
+            sprintf(Array1, "Open %s", szNvtFullName);
+            if (hNvtFile < 0)
+            {
+                Draw_CurrentOperation("Open X:\\NAND2-1\\content.bin", hNvtFile);
+                Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+                sysprintf("===> 7.2 (Open content.bin fail)\n");
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+            else
+                Draw_CurrentOperation(Array1, hNvtFile);
+
+            while(1)
+            {
+                sysprintf(".");
+                Draw_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+                status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, BufferSize, &nReadLen);
+                GNAND_write(ptNDisk2, LogicSectorG, nReadLen/512, (UINT8 *)StorageBuffer);
+                LogicSectorG += nReadLen/512;
+                if (status == ERR_FILE_EOF)
+                    break;
+                else if (status < 0)
+                {
+                    Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+                    Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+                    sysprintf("\n===> 7.3 (Read content.bin fail) [0x%x]\n", status);
+                    bIsAbort = TRUE;
+                    goto _end_;
+                }
+            }
+            sysprintf("\n");
+            Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+            Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
+            font_y += Next_Font_Height;
+
+            // Don't program NAND2-2 if NAND2-1 is writing image with MBR.
+            if (Ini_Writer.NAND2_FAT == FAT_MODE_IMAGE_WITH_MBR)
+                goto _end_;
+
+            // Copy files for NAND2-2
+            sysprintf("Copying partition NAND2-2...\n");
+            Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Copying NAND2-2:");
+            u32SkipX = 16;
+
+            if (LogicSectorH == -1)
+            {
+                Draw_CurrentOperation("LogicSectorH :", hNvtFile);
+                sysprintf("===> 7.1 (Wrong start sector for NAND2-2)\n");
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+
+            strcpy(szNvtFullName, "X:\\NAND2-2\\content.bin");
+            fsAsciiToUnicode(szNvtFullName, suNvtFullName, TRUE);
+            hNvtFile = fsOpenFile(suNvtFullName, NULL, O_RDONLY);
+            sysprintf("Copying file %s\n", szNvtFullName);
+            sprintf(Array1, "Open %s", szNvtFullName);
+            if (hNvtFile < 0)
+            {
+                Draw_CurrentOperation("Open X:\\NAND2-2\\content.bin", hNvtFile);
+                Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+                sysprintf("===> 7.2 (Open content.bin fail)\n");
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+            else
+                Draw_CurrentOperation(Array1, hNvtFile);
+
+            while(1)
+            {
+                sysprintf(".");
+                Draw_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+                status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, BufferSize, &nReadLen);
+                GNAND_write(ptNDisk2, LogicSectorH, nReadLen/512, (UINT8 *)StorageBuffer);
+                LogicSectorH += nReadLen/512;
+                if (status == ERR_FILE_EOF)
+                    break;
+                else if (status < 0)
+                {
+                    Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+                    Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+                    sysprintf("\n===> 7.3 (Read content.bin fail) [0x%x]\n", status);
+                    bIsAbort = TRUE;
+                    goto _end_;
+                }
+            }
+            sysprintf("\n");
+            Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+            Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
+            font_y += Next_Font_Height;
+        }
+        else if (Ini_Writer.NAND2_FAT == FAT_MODE_FILE)
+        {
+            // Copy File through FAT
+            // Copy files for NAND2-1
+            sysprintf("Copying partition NAND2-1...\n");
+            Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Copying NAND2-1:");
+            u32SkipX = 16;
+
+            strcpy(szNvtFullName, "G:");
+            fsAsciiToUnicode(szNvtFullName, suNvtTargetFullName, TRUE);
+            strcpy(szNvtFullName, "X:\\NAND2-1");
+            fsAsciiToUnicode(szNvtFullName, suNvtFullName, TRUE);
+            status = nandCopyContent(suNvtFullName, suNvtTargetFullName);
+            Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+            if (status < 0)
+            {
+                Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+                sysprintf("===> 7.4 (Copy files in NAND2-1 fail) [0x%x]\n", status);
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+            Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
+            font_y += Next_Font_Height;
+
+            // Copy files for NAND2-2
+            sysprintf("Copying partition NAND2-2...\n");
+            Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Copying NAND2-2:");
+            u32SkipX = 16;
+
+            strcpy(szNvtFullName, "H:");
+            fsAsciiToUnicode(szNvtFullName, suNvtTargetFullName, TRUE);
+            strcpy(szNvtFullName, "X:\\NAND2-2");
+            fsAsciiToUnicode(szNvtFullName, suNvtFullName, TRUE);
+            status = nandCopyContent(suNvtFullName, suNvtTargetFullName);
+            Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
+            if (status < 0)
+            {
+                Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
+                sysprintf("===> 7.5 (Copy files in NAND2-2 fail) [0x%x]\n", status);
+                bIsAbort = TRUE;
+                goto _end_;
+            }
+            Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
+            font_y += Next_Font_Height;
+        }
+    }   // end of Ini_Writer.NAND2_FAT != FAT_MODE_SKIP
+#endif  // end of _KLE_MUL2_
 
 _end_:
 

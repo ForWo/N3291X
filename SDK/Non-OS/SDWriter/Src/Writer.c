@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------------*/
-/* Copyright (c) 2013 by Nuvoton Technology Corporation.  All rights reserved.      */
+/* Copyright (c) 2012 by Nuvoton Technology Corporation.  All rights reserved.      */
 /*                                                                                  */
 /* Description: The main program of SDWriter.                                       */
 /*----------------------------------------------------------------------------------*/
@@ -7,10 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_sic.h"
-#include "w55fa92_sdio.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
@@ -35,13 +34,10 @@ UINT32 u32SkipX;
 // show error message
 #define ERR_PRINTF  sysprintf
 
-//--- global variables defined at SD driver (SDGlue.c) and SDIO driver (sdioGlue.c)
+//--- global variables defined at SD driver (SDGlue.c)
 extern PDISK_T *pDisk_SD0;
 extern PDISK_T *pDisk_SD1;
 extern PDISK_T *pDisk_SD2;
-extern PDISK_T *pDisk_SDIO0;
-extern PDISK_T *pDisk_SDIO1;
-PDISK_T *pDisk_target;
 
 /**********************************/
 __align(32) UINT8 infoBufArray[0x50000];
@@ -239,70 +235,18 @@ int copyContent(CHAR *suDirName, CHAR *suTargetName)
 
 
 /*-----------------------------------------------------------------------------
- * Read data from SD card
- *---------------------------------------------------------------------------*/
-int ReadSD(int target_port, INT32 sdSectorNo, INT32 sdSectorCount, INT32 sdTargetAddr)
-{
-    int volatile status = 0;
-
-    switch (target_port)
-    {
-        case 1:
-            status = sicSdRead1(sdSectorNo, sdSectorCount, sdTargetAddr);   break;
-        case 2:
-            status = sicSdRead2(sdSectorNo, sdSectorCount, sdTargetAddr);   break;
-        case 3:
-            status = sdioSdRead0(sdSectorNo, sdSectorCount, sdTargetAddr);  break;
-        case 4:
-            status = sdioSdRead1(sdSectorNo, sdSectorCount, sdTargetAddr);  break;
-    }
-    if (status < 0)
-    {
-        ERR_PRINTF("ERROR in ReadSD(): Read SD error ! Return = 0x%x !!\n", status);
-    }
-    return status;
-}
-
-
-/*-----------------------------------------------------------------------------
- * Write data to SD card
- *---------------------------------------------------------------------------*/
-int WriteSD(int target_port, INT32 sdSectorNo, INT32 sdSectorCount, INT32 sdSrcAddr)
-{
-    int volatile status = 0;
-
-    switch (target_port)
-    {
-        case 1:
-            status = sicSdWrite1(sdSectorNo, sdSectorCount, sdSrcAddr);     break;
-        case 2:
-            status = sicSdWrite2(sdSectorNo, sdSectorCount, sdSrcAddr);     break;
-        case 3:
-            status = sdioSdWrite0(sdSectorNo, sdSectorCount, sdSrcAddr);    break;
-        case 4:
-            status = sdioSdWrite1(sdSectorNo, sdSectorCount, sdSrcAddr);    break;
-    }
-    if (status < 0)
-    {
-        ERR_PRINTF("ERROR in WriteSD(): Write SD error ! Return = 0x%x !!\n", status);
-    }
-    return status;
-}
-
-
-/*-----------------------------------------------------------------------------
  * Write StorageBuffer to sector gCurSector in SD card 1.
  *---------------------------------------------------------------------------*/
-void nvtWriteSD(int target_port, UINT32 len)
+void nvtWriteSD(UINT32 len)
 {
     int volatile status = 0;
     int volatile sector_count;
 
-    sector_count = len / pDisk_target->nSectorSize;
-    if ((len % pDisk_target->nSectorSize) != 0)
+    sector_count = len / pDisk_SD1->nSectorSize;
+    if ((len % pDisk_SD1->nSectorSize) != 0)
         sector_count++;
 
-    status = WriteSD(target_port, gCurSector, sector_count, (INT32)StorageBuffer);
+    status = sicSdWrite1(gCurSector, sector_count, (INT32)StorageBuffer);
     if (status < 0)
     {
         ERR_PRINTF("ERROR in nvtWriteSD(): Write SD error ! Return = 0x%x !!\n", status);
@@ -310,16 +254,11 @@ void nvtWriteSD(int target_port, UINT32 len)
 
 #if 0
     // read data back to comfirm it
-    status = ReadSD(target_port, gCurSector, sector_count, (INT32)CompareBuffer);
-    if (status < 0)
-    {
-        ERR_PRINTF("ERROR in nvtWriteSD(): Read SD error ! Return = 0x%x !!\n", status);
-    }
-
+    status = sicSdRead1(gCurSector, sector_count, (INT32)CompareBuffer);
     if (memcmp((UINT8 *)StorageBuffer, (UINT8 *)CompareBuffer, len)==0)
-        DBG_PRINTF("SD write OK from sector %d, count %d.\n", gCurSector, sector_count);
+        DBG_PRINTF("SD1 write OK from sector %d, count %d.\n", gCurSector, sector_count);
     else
-        ERR_PRINTF("SD write FAIL from sector %d, count %d.\n", gCurSector, sector_count);
+        ERR_PRINTF("SD1 write FAIL from sector %d, count %d.\n", gCurSector, sector_count);
 #endif
 
     gCurSector += sector_count;
@@ -327,34 +266,33 @@ void nvtWriteSD(int target_port, UINT32 len)
 
 
 /*-----------------------------------------------------------------------------
- * Initial UART.
+ * Write StorageBuffer to sector gCurSector in SD card 2.
  *---------------------------------------------------------------------------*/
-void init_UART()
+void nvtWriteSD2(UINT32 len)
 {
-    UINT32 u32ExtFreq;
-    WB_UART_T uart;
+    int volatile status = 0;
+    int volatile sector_count;
 
-    u32ExtFreq = sysGetExternalClock();
-    sysUartPort(1);
-    uart.uiFreq = u32ExtFreq;   //use APB clock
-    uart.uiBaudrate = 115200;
-    uart.uiDataBits = WB_DATA_BITS_8;
-    uart.uiStopBits = WB_STOP_BITS_1;
-    uart.uiParity = WB_PARITY_NONE;
-    uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-    uart.uart_no = WB_UART_1;
-    sysInitializeUART(&uart);
-}
+    sector_count = len / pDisk_SD2->nSectorSize;
+    if ((len % pDisk_SD2->nSectorSize) != 0)
+        sector_count++;
 
+    status = sicSdWrite2(gCurSector, sector_count, (INT32)StorageBuffer);
+    if (status < 0)
+    {
+        ERR_PRINTF("ERROR in nvtWriteSD2(): Write SD error ! Return = 0x%x !!\n", status);
+    }
 
-/*-----------------------------------------------------------------------------
- * Initial Timer0 interrupt for system tick.
- *---------------------------------------------------------------------------*/
-void init_timer()
-{
-    sysSetTimerReferenceClock(TIMER0, sysGetExternalClock());   // External Crystal
-    sysStartTimer(TIMER0, 100, PERIODIC_MODE);                  // 100 ticks/per sec ==> 1tick/10ms
-    sysSetLocalInterrupt(ENABLE_IRQ);
+#if 0
+    // read data back to comfirm it
+    status = sicSdRead2(gCurSector, sector_count, (INT32)CompareBuffer);
+    if (memcmp((UINT8 *)StorageBuffer, (UINT8 *)CompareBuffer, len)==0)
+        DBG_PRINTF("SD2 write OK from sector %d, count %d.\n", gCurSector, sector_count);
+    else
+        ERR_PRINTF("SD2 write FAIL from sector %d, count %d.\n", gCurSector, sector_count);
+#endif
+
+    gCurSector += sector_count;
 }
 
 
@@ -368,8 +306,7 @@ int main()
     PARTITION_T *ptPart;
     int LogicSector1=-1, LogicSector2=-1;
     int BootCodeMarkFlag, i;
-    int dstDrive1 = 0, dstDrive2 = 0;   // the disk drive number for src and dst SD card
-    //int srcDrive1 = 0;                // the disk drive number for src and dst SD card
+    int srcDrive1 = 0, dstDrive1 = 0, dstDrive2 = 0;    // the disk drive number for src and dst SD card
     int driveNumber;
     UINT32 uBlockSize, uFreeSize, uDiskSize;
 
@@ -378,17 +315,33 @@ int main()
     INT  Disk1Size, FileInfoIdx=0;
     int  partition_size, sector_size;
 
+    UINT32 u32ExtFreq;
     UINT32 u32PllOutHz;
+    WB_UART_T uart;
 
 #ifdef UPDATE_BOOT_CODE_OPTIONAL_SETTING
     int optional_ini_size;
     extern IBR_BOOT_OPTIONAL_STRUCT_T optional_ini_file;
 #endif
 
-    init_UART();
-    init_timer();
+    //--- initial UART
+    u32ExtFreq = sysGetExternalClock();
+    sysUartPort(1);
+    uart.uiFreq = u32ExtFreq;       // Use external clock, unit Hz
+    uart.uiBaudrate = 115200;
+    uart.uiDataBits = WB_DATA_BITS_8;
+    uart.uiStopBits = WB_STOP_BITS_1;
+    uart.uiParity = WB_PARITY_NONE;
+    uart.uiRxTriggerLevel = LEVEL_1_BYTE;
+    uart.uart_no = WB_UART_0;
+    sysInitializeUART(&uart);
 
-    u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, sysGetExternalClock());
+    /* configure Timer0 for FMI library */
+    sysSetTimerReferenceClock(TIMER0, u32ExtFreq);  // External Crystal
+    sysStartTimer(TIMER0, 100, PERIODIC_MODE);      // 100 ticks/per sec ==> 1tick/10ms
+    sysSetLocalInterrupt(ENABLE_IRQ);
+
+    u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);
     DBG_PRINTF("PLL out frequency %d Hz\n", u32PllOutHz);
 
     /* enable cache */
@@ -402,9 +355,9 @@ int main()
     CompareBuffer = (UINT32)&CompareBufferArray[0] | 0x80000000;
     pInfo = (UINT8 *)((UINT32)infoBuf | 0x80000000);
 
-    INF_PRINTF("\n=====> W55FA92 SDWriter (v%d.%d) Begin [%d] <=====\n", MAJOR_VERSION_NUM, MINOR_VERSION_NUM, sysGetTicks(0));
+    INF_PRINTF("\n=====> W55FA95 SDWriter (v%d.%d) Begin [%d] <=====\n", MAJOR_VERSION_NUM, MINOR_VERSION_NUM, sysGetTicks(0));
 
-    ltime.year = 2013;
+    ltime.year = 2012;
     ltime.mon  = 7;
     ltime.day  = 31;
     ltime.hour = 8;
@@ -472,69 +425,44 @@ int main()
 #endif
 
     //--- mount SD card on port 1 or 2
-    switch (Ini_Writer.Target_SD_Port)
+    if (Ini_Writer.Target_SD_Port == 2)
     {
-        case 1:     // SD 1
-            Draw_Font(COLOR_RGB16_WHITE,  &s_sDemo_Font, font_x, font_y, "Mount SD Card 1:");
-            u32SkipX = 16;
-            status = sicSdOpen1();
-            pDisk_target = pDisk_SD1;
-            break;
-        case 2:     // SD 2
-            Draw_Font(COLOR_RGB16_WHITE,  &s_sDemo_Font, font_x, font_y, "Mount SD Card 2:");
-            u32SkipX = 16;
-            status = sicSdOpen2();
-            pDisk_target = pDisk_SD2;
-            break;
-        case 3:     // SDIO 0
-            sdioIoctl(SDIO_SET_CLOCK, u32PllOutHz/1000, 0, 0);  // clock from PLL
-            sdioOpen();
-            Draw_Font(COLOR_RGB16_WHITE,  &s_sDemo_Font, font_x, font_y, "Mount SDIO Card 0:");
-            u32SkipX = 18;
-            status = sdioSdOpen0();
-            pDisk_target = pDisk_SDIO0;
-            break;
-        case 4:     // SDIO 1
-            sdioIoctl(SDIO_SET_CLOCK, u32PllOutHz/1000, 0, 0);  // clock from PLL
-            sdioOpen();
-            Draw_Font(COLOR_RGB16_WHITE,  &s_sDemo_Font, font_x, font_y, "Mount SDIO Card 1:");
-            u32SkipX = 18;
-            status = sdioSdOpen1();
-            pDisk_target = pDisk_SDIO1;
-            break;
-        default:
-            ERR_PRINTF("===> 1.3 (Wrong target SD port %d that defined in SDWriter.ini)\n", Ini_Writer.Target_SD_Port);
-            bIsAbort = TRUE;
-            goto _end_;
+        Draw_Font(COLOR_RGB16_WHITE,  &s_sDemo_Font, font_x, font_y, "Mount SD Card 2:");
+        status = sicSdOpen2();
     }
+    else
+    {
+        Draw_Font(COLOR_RGB16_WHITE,  &s_sDemo_Font, font_x, font_y, "Mount SD Card 1:");
+        status = sicSdOpen1();
+    }
+    u32SkipX = 16;
     if (status < 0)
     {
         Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
-        switch (Ini_Writer.Target_SD_Port)
-        {
-            case 1:
-                ERR_PRINTF("===> 1.2 (No destination SD Card on SD port 1)\n");
-                break;
-            case 2:
-                ERR_PRINTF("===> 1.2 (No destination SD Card on SD port 2)\n");
-                break;
-            case 3:
-                ERR_PRINTF("===> 1.2 (No destination SD Card on SDIO port 0)\n");
-                break;
-            case 4:
-                ERR_PRINTF("===> 1.2 (No destination SD Card on SDIO port 1)\n");
-                break;
-        }
+        if (Ini_Writer.Target_SD_Port == 2)
+            ERR_PRINTF("===> 1.2 (No destination SD Card on port 2)\n");
+        else
+            ERR_PRINTF("===> 1.2 (No destination SD Card on port 1)\n");
         bIsAbort = TRUE;
         goto _end_;
     }
     Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Successful);
     font_y += Next_Font_Height;
 
-    INF_PRINTF("Detect SD: %d sectors * %d Bytes = %d KBytes\n",
-                pDisk_target->uTotalSectorN, pDisk_target->nSectorSize, pDisk_target->uDiskSize);
-    sprintf(Array1, "SD:%d(Sec)*%dB=%dMB",
-            pDisk_target->uTotalSectorN, pDisk_target->nSectorSize, pDisk_target->uDiskSize/1024);
+    if (Ini_Writer.Target_SD_Port == 2)
+    {
+        INF_PRINTF("Detect SD2: %d sectors * %d Bytes = %d KBytes\n",
+                    pDisk_SD2->uTotalSectorN, pDisk_SD2->nSectorSize, pDisk_SD2->uDiskSize);
+        sprintf(Array1, "SD2:%d(Sec)*%dB=%dMB",
+                pDisk_SD2->uTotalSectorN, pDisk_SD2->nSectorSize, pDisk_SD2->uDiskSize/1024);
+    }
+    else
+    {
+        INF_PRINTF("Detect SD1: %d sectors * %d Bytes = %d KBytes\n",
+                    pDisk_SD1->uTotalSectorN, pDisk_SD1->nSectorSize, pDisk_SD1->uDiskSize);
+        sprintf(Array1, "SD1:%d(Sec)*%dB=%dMB",
+                pDisk_SD1->uTotalSectorN, pDisk_SD1->nSectorSize, pDisk_SD1->uDiskSize/1024);
+    }
     Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, 0,  _LCM_HEIGHT_ -1-g_Font_Height,Array1);
 
     BufferSize = pDisk_SD0->nSectorSize * 128;
@@ -576,7 +504,7 @@ int main()
     FWInfo[FileInfoIdx].executeAddr = 0x900000;
     FWInfo[FileInfoIdx].fileLen = (UINT32)fsGetFileSize(hNvtFile);
     gSDLoaderSize = FWInfo[FileInfoIdx].fileLen;
-    memcpy(&FWInfo[FileInfoIdx].imageName[0], Ini_Writer.SDLoader, 32);
+    memcpy(&FWInfo[FileInfoIdx].imageName[0], Ini_Writer.SDLoader, 512);
 
     // initial Boot Code Mark for SDLoader
     BootCodeMark.BootCodeMarker = 0x57425AA5;
@@ -598,13 +526,21 @@ int main()
             memcpy((UINT8 *)(StorageBuffer+sizeof(IBR_BOOT_STRUCT_T)), (UINT8 *)&optional_ini_file, optional_ini_size);
             status = fsReadFile(hNvtFile, (UINT8 *)(StorageBuffer+sizeof(IBR_BOOT_STRUCT_T)+optional_ini_size),
                                 BufferSize - sizeof(IBR_BOOT_STRUCT_T) - optional_ini_size, &nReadLen);
-            nvtWriteSD(Ini_Writer.Target_SD_Port, nReadLen+sizeof(IBR_BOOT_STRUCT_T)+optional_ini_size);
+
+            if (Ini_Writer.Target_SD_Port == 2)
+                nvtWriteSD2(nReadLen+sizeof(IBR_BOOT_STRUCT_T)+optional_ini_size);
+            else
+                nvtWriteSD(nReadLen+sizeof(IBR_BOOT_STRUCT_T)+optional_ini_size);
 #else
             // write 1st sector with Boot Code Mark for SD
             memcpy((UINT8 *)StorageBuffer, (UINT8 *)&BootCodeMark, sizeof(IBR_BOOT_STRUCT_T));
             status = fsReadFile(hNvtFile, (UINT8 *)(StorageBuffer+sizeof(IBR_BOOT_STRUCT_T)),
                                 BufferSize - sizeof(IBR_BOOT_STRUCT_T), &nReadLen);
-            nvtWriteSD(Ini_Writer.Target_SD_Port, nReadLen+sizeof(IBR_BOOT_STRUCT_T));
+
+            if (Ini_Writer.Target_SD_Port == 2)
+                nvtWriteSD2(nReadLen+sizeof(IBR_BOOT_STRUCT_T));
+            else
+                nvtWriteSD(nReadLen+sizeof(IBR_BOOT_STRUCT_T));
 #endif
             BootCodeMarkFlag = 0;   // boot code mark had written
         }
@@ -613,7 +549,10 @@ int main()
             status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, BufferSize, &nReadLen);
             if (status == ERR_FILE_EOF)
                 break;
-            nvtWriteSD(Ini_Writer.Target_SD_Port, nReadLen);    // write StorageBuffer to SD card
+            if (Ini_Writer.Target_SD_Port == 2)
+                nvtWriteSD2(nReadLen);  // write StorageBuffer to SD card
+            else
+                nvtWriteSD(nReadLen);   // write StorageBuffer to SD card
         }
         if (status == ERR_FILE_EOF)
             break;
@@ -671,7 +610,7 @@ WriteLogo:
     FWInfo[FileInfoIdx].startBlock = gCurSector;
     FWInfo[FileInfoIdx].executeAddr = 0x500000;
     FWInfo[FileInfoIdx].fileLen = (UINT32)fsGetFileSize(hNvtFile);
-    memcpy(&FWInfo[FileInfoIdx].imageName[0], Ini_Writer.Logo, 32);
+    memcpy(&FWInfo[FileInfoIdx].imageName[0], Ini_Writer.Logo, 512);
 
     while(1)
     {
@@ -685,7 +624,10 @@ WriteLogo:
             bIsAbort = TRUE;
             goto _end_;
         }
-        nvtWriteSD(Ini_Writer.Target_SD_Port, nReadLen);   // write StorageBuffer to SD card
+        if (Ini_Writer.Target_SD_Port == 2)
+            nvtWriteSD2(nReadLen);   // write StorageBuffer to SD card
+        else
+            nvtWriteSD(nReadLen);   // write StorageBuffer to SD card
     }
 
     /* verify logo */
@@ -693,8 +635,16 @@ WriteLogo:
     i = FWInfo[FileInfoIdx].startBlock;
     while(1)
     {
-        status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, pDisk_target->nSectorSize, &nReadLen);
-        ReadSD(Ini_Writer.Target_SD_Port, i, 1, (INT32)CompareBuffer);
+        if (Ini_Writer.Target_SD_Port == 2)
+        {
+            status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, pDisk_SD2->nSectorSize, &nReadLen);
+            sicSdRead2(i, 1, (INT32)CompareBuffer);
+        }
+        else
+        {
+            status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, pDisk_SD1->nSectorSize, &nReadLen);
+            sicSdRead1(i, 1, (INT32)CompareBuffer);
+        }
         i++;
 
         if (memcmp((UINT8 *)StorageBuffer, (UINT8 *)CompareBuffer, nReadLen))
@@ -759,7 +709,7 @@ WriteNVTLoader:
     FWInfo[FileInfoIdx].startBlock = gCurSector;
     FWInfo[FileInfoIdx].executeAddr = 0x800000;
     FWInfo[FileInfoIdx].fileLen = (UINT32)fsGetFileSize(hNvtFile);
-    memcpy(&FWInfo[FileInfoIdx].imageName[0], Ini_Writer.NVTLoader, 32);
+    memcpy(&FWInfo[FileInfoIdx].imageName[0], Ini_Writer.NVTLoader, 512);
 
     while(1)
     {
@@ -773,7 +723,10 @@ WriteNVTLoader:
             bIsAbort = TRUE;
             goto _end_;
         }
-        nvtWriteSD(Ini_Writer.Target_SD_Port, nReadLen);
+        if (Ini_Writer.Target_SD_Port == 2)
+            nvtWriteSD2(nReadLen);
+        else
+            nvtWriteSD(nReadLen);
     }
 
     /* verify nvtloader */
@@ -781,8 +734,16 @@ WriteNVTLoader:
     i = FWInfo[FileInfoIdx].startBlock;
     while(1)
     {
-        status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, pDisk_target->nSectorSize, &nReadLen);
-        ReadSD(Ini_Writer.Target_SD_Port, i, 1, (INT32)CompareBuffer);
+        if (Ini_Writer.Target_SD_Port == 2)
+        {
+            status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, pDisk_SD2->nSectorSize, &nReadLen);
+            sicSdRead2(i, 1, (INT32)CompareBuffer);
+        }
+        else
+        {
+            status = fsReadFile(hNvtFile, (UINT8 *)StorageBuffer, pDisk_SD1->nSectorSize, &nReadLen);
+            sicSdRead1(i, 1, (INT32)CompareBuffer);
+        }
         i++;
         if (memcmp((UINT8 *)StorageBuffer, (UINT8 *)CompareBuffer, nReadLen))
         {
@@ -815,7 +776,10 @@ WriteNVTLoader:
 WriteSysteInfo:
 
     /* set system reserved area */
-    partition_size = pDisk_target->uDiskSize/1024;
+    if (Ini_Writer.Target_SD_Port == 2)
+        partition_size = pDisk_SD2->uDiskSize/1024;
+    else
+        partition_size = pDisk_SD1->uDiskSize/1024;
 
     if ((Ini_Writer.SystemReservedMegaByte > partition_size) || (Ini_Writer.SystemReservedMegaByte < 0))
         Ini_Writer.SystemReservedMegaByte = 8;  // default is 8MBytes for system area
@@ -827,7 +791,10 @@ WriteSysteInfo:
         pInfo = (UINT8 *)((UINT32)infoBuf | 0x80000000);
         ptr = (unsigned int *)((UINT32)infoBuf | 0x80000000);
 
-        memset(pInfo, 0xff,  pDisk_target->nSectorSize);
+        if (Ini_Writer.Target_SD_Port == 2)
+            memset(pInfo, 0xff,  pDisk_SD2->nSectorSize);
+        else
+            memset(pInfo, 0xff,  pDisk_SD1->nSectorSize);
 
         /* update image information for SD card */
         *(ptr+0) = 0x574255AA;      // magic number
@@ -835,16 +802,32 @@ WriteSysteInfo:
         *(ptr+2) = Ini_Writer.SystemReservedMegaByte * 1024 * 2;    // sector number for systeam area
         *(ptr+3) = 0x57425963;      // magic number
 
-        memcpy(pInfo+16, (char *)&FWInfo, pDisk_target->nSectorSize - 16);
-        status = WriteSD(Ini_Writer.Target_SD_Port, 0x21, 1, (INT32)pInfo);
+        if (Ini_Writer.Target_SD_Port == 2)
+        {
+            memcpy(pInfo+16, (char *)&FWInfo, pDisk_SD2->nSectorSize - 16);
+            status = sicSdWrite2(0x21, 1, (INT32)pInfo);
+        }
+        else
+        {
+            memcpy(pInfo+16, (char *)&FWInfo, pDisk_SD1->nSectorSize - 16);
+            status = sicSdWrite1(0x21, 1, (INT32)pInfo);
+        }
         if (status < 0)
         {
             ERR_PRINTF("ERROR(): Write System Info to SD card error ! Return = 0x%x !!\n", status);
         }
 
         /* Verify information */
-        status = ReadSD(Ini_Writer.Target_SD_Port, 0x21, 1, (INT32)CompareBuffer);
-        sector_size = pDisk_target->nSectorSize;
+        if (Ini_Writer.Target_SD_Port == 2)
+        {
+            status = sicSdRead2(0x21, 1, (INT32)CompareBuffer);
+            sector_size = pDisk_SD2->nSectorSize;
+        }
+        else
+        {
+            status = sicSdRead1(0x21, 1, (INT32)CompareBuffer);
+            sector_size = pDisk_SD1->nSectorSize;
+        }
         if (memcmp((UINT8 *)pInfo, (UINT8 *)CompareBuffer, sector_size)==0)
             INF_PRINTF("System Info write OK on sector 33.\n");
         else
@@ -859,18 +842,36 @@ WriteSysteInfo:
     INF_PRINTF("\n=====> partition and format [%d] <=====\n", sysGetTicks(0));
 
     /* partition and format SD1-1 and SD1-2 */
-    Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Format SD Card:");
-    u32SkipX = 15;
+    if (Ini_Writer.Target_SD_Port == 2)
+    {
+        Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Format SD Card 2:");
+        u32SkipX = 17;
 
-    if ((Ini_Writer.SD1_1_SIZE < pDisk_target->uDiskSize/1024) && (Ini_Writer.SD1_1_SIZE > 0))
-        Disk1Size = Ini_Writer.SD1_1_SIZE;
+        if ((Ini_Writer.SD1_1_SIZE < pDisk_SD2->uDiskSize/1024) && (Ini_Writer.SD1_1_SIZE > 0))
+            Disk1Size = Ini_Writer.SD1_1_SIZE;
+        else
+            Disk1Size = 16;     // default is 16MBytes for first partition
+        INF_PRINTF("Set SD 2 Partition 1 Size = %d MBytes\n", Disk1Size);
+
+        fsSetReservedArea(Ini_Writer.SystemReservedMegaByte*1024*2);    // set reserved sector number for fsTwoPartAndFormatAll()
+        status = fsTwoPartAndFormatAll(pDisk_SD2, Disk1Size*1024,
+                                       pDisk_SD2->uDiskSize - (Disk1Size + Ini_Writer.SystemReservedMegaByte)*1024);
+    }
     else
-        Disk1Size = 16;     // default is 16MBytes for first partition
-    INF_PRINTF("Set SD1-1 Partition 1 Size = %d MBytes\n", Disk1Size);
+    {
+        Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font, font_x, font_y, "Format SD Card 1:");
+        u32SkipX = 17;
 
-    fsSetReservedArea(Ini_Writer.SystemReservedMegaByte*1024*2);    // set reserved sector number for fsTwoPartAndFormatAll()
-    status = fsTwoPartAndFormatAll(pDisk_target, Disk1Size*1024,
-                                   pDisk_target->uDiskSize - (Disk1Size + Ini_Writer.SystemReservedMegaByte)*1024);
+        if ((Ini_Writer.SD1_1_SIZE < pDisk_SD1->uDiskSize/1024) && (Ini_Writer.SD1_1_SIZE > 0))
+            Disk1Size = Ini_Writer.SD1_1_SIZE;
+        else
+            Disk1Size = 16;     // default is 16MBytes for first partition
+        INF_PRINTF("Set SD 1 Partition 1 Size = %d MBytes\n", Disk1Size);
+
+        fsSetReservedArea(Ini_Writer.SystemReservedMegaByte*1024*2);    // set reserved sector number for fsTwoPartAndFormatAll()
+        status = fsTwoPartAndFormatAll(pDisk_SD1, Disk1Size*1024,
+                                       pDisk_SD1->uDiskSize - (Disk1Size + Ini_Writer.SystemReservedMegaByte)*1024);
+    }
     if (status < 0)
     {
         Draw_Status(font_x+ u32SkipX*g_Font_Step, font_y, Fail);
@@ -890,8 +891,8 @@ WriteSysteInfo:
     while (ptPart != NULL)
     {
         driveNumber = ptPart->ptLDisk->nDriveNo;
-        //if (i == 0)
-        //    srcDrive1 = driveNumber;
+        if (i == 0)
+            srcDrive1 = driveNumber;
         fsDiskFreeSpace(driveNumber, &uBlockSize, &uFreeSize, &uDiskSize);
         INF_PRINTF("Source disk %c Size: %d Kbytes, Free Space: %d KBytes\n", driveNumber, (INT)uDiskSize, (INT)uFreeSize);
         ptPart = ptPart->ptNextPart;
@@ -899,7 +900,10 @@ WriteSysteInfo:
     }
 
     // scan dest disk and get disk information
-    ptPart = pDisk_target->ptPartList;
+    if (Ini_Writer.Target_SD_Port == 2)
+        ptPart = pDisk_SD2->ptPartList;
+    else
+        ptPart = pDisk_SD1->ptPartList;
     i = 0;
     while (ptPart != NULL)
     {
@@ -983,8 +987,10 @@ WriteSysteInfo:
                     bIsAbort = TRUE;
                     goto _end_;
                 }
-
-                WriteSD(Ini_Writer.Target_SD_Port, LogicSector1, nReadLen/512, (INT32)StorageBuffer);
+                if (Ini_Writer.Target_SD_Port == 2)
+                    sicSdWrite2(LogicSector1, nReadLen/512, (INT32)StorageBuffer);
+                else
+                    sicSdWrite1(LogicSector1, nReadLen/512, (INT32)StorageBuffer);
                 LogicSector1 += nReadLen/512;
             }
             Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);
@@ -1091,7 +1097,10 @@ WriteSysteInfo:
                     bIsAbort = TRUE;
                     goto _end_;
                 }
-                WriteSD(Ini_Writer.Target_SD_Port, LogicSector2, nReadLen/512, (INT32)StorageBuffer);
+                if (Ini_Writer.Target_SD_Port == 2)
+                    sicSdWrite2(LogicSector2, nReadLen/512, (INT32)StorageBuffer);
+                else
+                    sicSdWrite1(LogicSector2, nReadLen/512, (INT32)StorageBuffer);
                 LogicSector2 += nReadLen/512;
             }
             Draw_Clear_Wait_Status(font_x+ u32SkipX*g_Font_Step, font_y);

@@ -3,9 +3,9 @@
 #include <string.h>
 #include "wblib.h"
 //#include "nvtloader.h"
-#include "w55fa92_gpio.h"
+#include "w55fa95_gpio.h"
 //#include "w55fa95_kpi.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 /*
 	Mute Control : 
 	LGE: LCM power : GPA5   = 1 (Enable LCM power)

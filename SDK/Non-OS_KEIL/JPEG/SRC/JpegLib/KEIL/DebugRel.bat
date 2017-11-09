@@ -1,0 +1,1 @@
+move .\JpegLib_Data\DebugRel\w55fa95_jpeglib.lib ..\..\..\Lib

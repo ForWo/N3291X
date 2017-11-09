@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "usbd.h"
 #include "videoclass.h"
 
@@ -14,7 +14,7 @@
 #define DATA_CODE	"20141217"
 
 #define USB_VID		0x0416		/* Vendor ID */ 
-#define USB_PID		0x9292		/* Product ID */
+#define USB_PID		0x9595		/* Product ID */
 
 #ifdef HSHB_MODE
 	#define	MAX_PACKET_SIZE_HS     	0x384
@@ -967,7 +967,7 @@ __align(4) UINT8 UAVC_StringDescriptor1[] =
 __align(4) UINT8 UAVC_StringDescriptor2[] = 
 {
 	0x2E, 0x03,
-	'W', 0x00, '5', 0x00, '5', 0x00, 'F', 0x00, 'A', 0x00, '9', 0x00, '2', 0x00, ' ', 0x00,
+	'W', 0x00, '5', 0x00, '5', 0x00, 'F', 0x00, 'A', 0x00, '9', 0x00, '5', 0x00, ' ', 0x00,
 	'U', 0x00, 'S', 0x00, 'B', 0x00, ' ', 0x00, 'U', 0x00, 'A', 0x00, 'V', 0x00, 'C', 0x00, ' ', 0x00,
 	'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00
 };
@@ -976,7 +976,7 @@ __align(4) UINT8 UAVC_StringDescriptor3[] =
 {
 	0x16, 0x03,
 	'0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '5', 0x00, '5', 0x00, 'F', 0x00, 'A', 0x00,
-	'9', 0x00, '2', 0x00				
+	'9', 0x00, '5', 0x00				
 };
 
 
@@ -1783,7 +1783,8 @@ VOID uavcdFullSpeedInit(void)
 
 VOID uavcdInit(PFN_UVCD_PUCONTROL_CALLBACK* callback_func,PFN_UAVCD_ISOINT_CALLBACK VideoCallback, PFN_UAVCD_ISOINT_CALLBACK *IsoInt_callback)
 {
-	sysprintf("N3292 UAVC Library (%s)\n",DATA_CODE);
+	sysprintf("N3291 UAVC Library (%s)\n",DATA_CODE);
+	
 	usbdInfo.u32UVC = 1;
 	usbdInfo.pu32DevDescriptor = (PUINT32) &UAVC_DeviceDescriptor;
 	usbdInfo.pu32QulDescriptor = (PUINT32) &UAVC_QualifierDescriptor;
@@ -1940,6 +1941,7 @@ BOOL uavcdIsReady(void)
 				//sysprintf("Reset DMA \n");
 	            outp32(DMA_CTRL_STS, inp32(DMA_CTRL_STS)|0x00000080);
 		    	outp32(DMA_CTRL_STS, 0x000000);     
+		    	outp32(EPA_RSP_SC,BUF_FLUSH );
 		    }
 	   
 		    uvcStatus.bReady =TRUE; 			

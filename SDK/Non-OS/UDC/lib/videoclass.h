@@ -723,14 +723,14 @@ extern  volatile UVC_STATUS_T uvcStatus;
 extern  volatile UVC_PU_INFO_T	uvcPuInfo;
 VOID uvcdInit(PFN_UVCD_PUCONTROL_CALLBACK* callback_func);
 BOOL uvcdSendImage(UINT32 u32Addr, UINT32 u32transferSize, BOOL bStillImage);
-BOOL uvcdIsReady(void);
+BOOL uvcdIsReady(VOID);
 BOOL uvcdSendAudio(UINT32 u32Addr, UINT32 u32transferSize, BOOL bStillImage);
 
 VOID uavcdInit(PFN_UVCD_PUCONTROL_CALLBACK* callback_func,PFN_UAVCD_ISOINT_CALLBACK VideoCallback, PFN_UAVCD_ISOINT_CALLBACK *IsoInt_callback);
 BOOL uavcdSendImage(UINT32 u32Addr, UINT32 u32transferSize, BOOL bStillImage);
-BOOL uavcdIsReady(void);
+BOOL uavcdIsReady(VOID);
 BOOL uavcdSendAudio(UINT32 u32Addr, UINT32 u32transferSize, BOOL bStillImage);
-BOOL uacdIsReady(void);
+BOOL uacdIsReady(VOID);
 
 /* Feature Unit Control Selectors for Audio*/
 #define FU_MUTE_MIN					0

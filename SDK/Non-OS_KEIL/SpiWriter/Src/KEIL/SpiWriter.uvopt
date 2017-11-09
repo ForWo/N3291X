@@ -21,7 +21,7 @@
   </DaveTm>
 
   <Target>
-    <TargetName>N32926_QVGA</TargetName>
+    <TargetName>N32915_WSVGA</TargetName>
     <ToolsetNumber>0x4</ToolsetNumber>
     <ToolsetName>ARM-ADS</ToolsetName>
     <TargetOption>
@@ -43,7 +43,7 @@
         <PageWidth>79</PageWidth>
         <PageLength>66</PageLength>
         <TabStop>8</TabStop>
-        <ListingPath>.\SpiWriter_Data\N32926_QVGA\</ListingPath>
+        <ListingPath>.\SpiWriter_Data\N32915_WSVGA\</ListingPath>
       </OPTLEX>
       <ListingPage>
         <CreateCListing>1</CreateCListing>
@@ -115,7 +115,7 @@
         <tDllPa></tDllPa>
         <tDlgDll></tDlgDll>
         <tDlgPa></tDlgPa>
-        <tIfile>..\..\..\N32926\N32926.ini</tIfile>
+        <tIfile>..\..\..\N32916\N32916.ini</tIfile>
         <pMon>Segger\JLTAgdi.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
@@ -158,7 +158,7 @@
   </Target>
 
   <Target>
-    <TargetName>N32926_NoLCM</TargetName>
+    <TargetName>N32915_NoLCM</TargetName>
     <ToolsetNumber>0x4</ToolsetNumber>
     <ToolsetName>ARM-ADS</ToolsetName>
     <TargetOption>
@@ -180,7 +180,7 @@
         <PageWidth>79</PageWidth>
         <PageLength>66</PageLength>
         <TabStop>8</TabStop>
-        <ListingPath>.\SpiWriter_Data\N32926_QVGA\</ListingPath>
+        <ListingPath>.\SpiWriter_Data\N32915_WSVGA\</ListingPath>
       </OPTLEX>
       <ListingPage>
         <CreateCListing>1</CreateCListing>
@@ -252,7 +252,7 @@
         <tDllPa></tDllPa>
         <tDlgDll></tDlgDll>
         <tDlgPa></tDlgPa>
-        <tIfile>..\..\..\N32926\N32926.ini</tIfile>
+        <tIfile>..\..\..\N32916\N32916.ini</tIfile>
         <pMon>Segger\JLTAgdi.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
@@ -305,10 +305,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>7</TopLine>
+      <CurrentLine>18</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\DrawFont.c</PathWithFileName>
       <FilenameWithoutPath>DrawFont.c</FilenameWithoutPath>
@@ -319,10 +319,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\playsound.c</PathWithFileName>
       <FilenameWithoutPath>playsound.c</FilenameWithoutPath>
@@ -333,10 +333,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\ProcessIni.c</PathWithFileName>
       <FilenameWithoutPath>ProcessIni.c</FilenameWithoutPath>
@@ -347,10 +347,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\ProcessOptionalIni.c</PathWithFileName>
       <FilenameWithoutPath>ProcessOptionalIni.c</FilenameWithoutPath>
@@ -361,10 +361,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\spiflash.c</PathWithFileName>
       <FilenameWithoutPath>spiflash.c</FilenameWithoutPath>
@@ -375,10 +375,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\standalone.c</PathWithFileName>
       <FilenameWithoutPath>standalone.c</FilenameWithoutPath>
@@ -389,10 +389,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>25</ColumnNumber>
+      <ColumnNumber>17</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
       <TopLine>223</TopLine>
-      <CurrentLine>233</CurrentLine>
+      <CurrentLine>226</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\Writer.c</PathWithFileName>
       <FilenameWithoutPath>Writer.c</FilenameWithoutPath>
@@ -403,10 +403,10 @@
       <FileType>2</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\wb_init.s</PathWithFileName>
       <FilenameWithoutPath>wb_init.s</FilenameWithoutPath>
@@ -417,13 +417,13 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_syslib.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SIC\Lib\W55FA95_SIC.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_SIC.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -431,13 +431,13 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SIC\Lib\W55FA92_SIC.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_SIC.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\NVTFAT\lib\W55FA95_nvtfat.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_nvtfat.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -445,13 +445,13 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\NVTFAT\lib\W55FA92_nvtfat.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_nvtfat.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\GPIO\lib\w55fa95_gpio.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_gpio.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -459,13 +459,13 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\GPIO\lib\w55fa92_gpio.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_gpio.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SPU\Lib\w55fa95_spu.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_spu.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -473,13 +473,13 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SPU\Lib\w55fa92_spu.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_spu.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\VPOST\Lib\W55FA95_VPOST.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_VPOST.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -487,13 +487,13 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_GIANTPLUS_GPM1006D.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_syslib.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -501,10 +501,10 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\Font\Lib\Font_QVGA.lib</PathWithFileName>
       <FilenameWithoutPath>Font_QVGA.lib</FilenameWithoutPath>
@@ -515,10 +515,10 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\Font\Lib\Font_SVGA.lib</PathWithFileName>
       <FilenameWithoutPath>Font_SVGA.lib</FilenameWithoutPath>
@@ -529,10 +529,10 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>107325456</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>22131292</TopLine>
+      <CurrentLine>2494712</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\Font\Lib\Font_WSVGA.lib</PathWithFileName>
       <FilenameWithoutPath>Font_WSVGA.lib</FilenameWithoutPath>
@@ -543,10 +543,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\Rootkey.c</PathWithFileName>
       <FilenameWithoutPath>Rootkey.c</FilenameWithoutPath>
@@ -557,13 +557,13 @@
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>107115576</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>19903068</TopLine>
-      <CurrentLine>1315588</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SPI\Lib\w55fa92_Secureic.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_Secureic.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SPI\Lib\w55fa95_Secureic.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_Secureic.lib</FilenameWithoutPath>
     </File>
   </Group>
 

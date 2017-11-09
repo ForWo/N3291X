@@ -11,7 +11,7 @@
 /* Includes of system headers                                                                              */
 /*---------------------------------------------------------------------------------------------------------*/
 #include "wbio.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 
 
 #ifdef  __cplusplus
@@ -120,7 +120,7 @@ typedef enum
 	RTC_IOC_SET_RELEATIVE_ALARM		=  18,
 	RTC_IOC_SET_POWER_KEY_DELAY		=  19,
 	RTC_IOC_SET_CLOCK_SOURCE		=  20,	
-	RTC_IOC_GET_CLOCK_SOURCE		=  21			 
+	RTC_IOC_GET_CLOCK_SOURCE		=  21	 
 }E_RTC_CMD;
 
 /*---------------------------------------------------------------------------------------------------------*/
@@ -148,7 +148,6 @@ typedef enum
 	RTC_CURRENT_TIME    =    0,
 	RTC_ALARM_TIME      =    1 
 }E_RTC_TIME_SELECT;
-
 
 typedef enum
 {
@@ -183,13 +182,6 @@ typedef struct
     UINT32 u32cDay;
     UINT32 u32cMonth;
     UINT32 u32Year;
-    UINT32 u32AlarmMaskDayOfWeek;
-    UINT32 u32AlarmMaskSecond;    
-    UINT32 u32AlarmMaskMinute; 
-    UINT32 u32AlarmMaskHour; 
-    UINT32 u32AlarmMaskDay; 
-    UINT32 u32AlarmMaskMonth; 
-    UINT32 u32AlarmMaskYear;             
     PFN_RTC_CALLBACK *pfnAlarmCallBack;    
 }RTC_TIME_DATA_T;
 
@@ -205,15 +197,16 @@ typedef struct
 /*---------------------------------------------------------------------------------------------------------*/
 /* Define Function Prototype                                                                               */
 /*---------------------------------------------------------------------------------------------------------*/
-UINT32 RTC_Init(void);   
+UINT32 RTC_Init(VOID);   
 UINT32 RTC_Open(RTC_TIME_DATA_T *sPt);
 UINT32 RTC_Ioctl(INT32 i32Num, E_RTC_CMD eCmd, UINT32 u32Arg0, UINT32 u32Arg1);
 UINT32 RTC_Read(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt);
 UINT32 RTC_Write(E_RTC_TIME_SELECT eTime, RTC_TIME_DATA_T *sPt);
-UINT32 RTC_DoFrequencyCompensation(void);
+UINT32 RTC_DoFrequencyCompensation(VOID);
 UINT32 RTC_WriteEnable (BOOL bEnable);
-UINT32 RTC_Close(void);
+UINT32 RTC_Close(VOID);
 VOID RTC_EnableClock(BOOL bEnable);
+
 #ifdef  __cplusplus
 }
 #endif

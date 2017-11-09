@@ -1,5 +1,5 @@
-#ifndef _W55FA92_USBD_H_
-#define _W55FA92_USBD_H_
+#ifndef _W55FA93_USBD_H_
+#define _W55FA93_USBD_H_
 
 /*
  * Standard requests
@@ -143,8 +143,8 @@ typedef struct usb_cmd
 }	USB_CMD_T;
 
 
-typedef void (*PFN_USBD_CALLBACK)(void);
-typedef BOOL (PFN_USBD_EXIT_CALLBACK)(void);
+typedef void (*PFN_USBD_CALLBACK)(VOID);
+typedef BOOL (PFN_USBD_EXIT_CALLBACK)(VOID);
 typedef void (*PFN_USBD_EP_CALLBACK)(UINT32 u32IntEn,UINT32 u32IntStatus);
 
 __packed  typedef struct{
@@ -269,11 +269,11 @@ typedef struct
 }	USB_EP_Inf_T;
 
 
-VOID udcOpen(void);
-VOID udcClose(void);
-VOID udcInit(void);
-VOID udcDeinit(void);
-BOOL udcIsAttached(void);
-BOOL udcIsAttachedToHost(void);
+VOID udcOpen(VOID);
+VOID udcClose(VOID);
+VOID udcInit(VOID);
+VOID udcDeinit(VOID);
+BOOL udcIsAttached(VOID);
+BOOL udcIsAttachedToHost(VOID);
 
 #endif

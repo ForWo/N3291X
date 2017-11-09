@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "usbd.h"
 #include "mass_storage_class.h"
 #include "ImageISO.h"
@@ -46,7 +46,7 @@ VOID CDROM_Read(PUINT32 pu32address, UINT32 u32Offset, UINT32 u32LengthInByte)
 }
 
 /* Plug detection for mscdMassEvent callback function (Retrun vale - TRUE:Run MSC;FALSE:Exit MSC) */
-BOOL PlugDetection(void)
+BOOL PlugDetection(VOID)
 {
 #ifdef DETECT_USBD_PLUG		/* Check plug status */
 	return udcIsAttached();
@@ -94,8 +94,8 @@ BOOL PlugDetection(void)
 
 #ifndef __RAM_DISK_ONLY__
 	#include "nvtfat.h"
-	#include "w55fa92_sic.h"
-	#include "w55fa92_gnand.h"
+	#include "w55fa95_sic.h"
+	#include "w55fa95_gnand.h"
 
 #ifdef __NAND__
 NDISK_T MassNDisk;
@@ -112,10 +112,39 @@ NDRV_T _nandDiskDriver0 =
 	nand_chip_erase0,
 	0
 };
+	#ifdef __TWO_NAND__
+	NDISK_T MassNDisk1;
+	NDRV_T _nandDiskDriver1 =
+	{
+	    nandInit1,
+	    nandpread1,
+	    nandpwrite1,
+	    nand_is_page_dirty1,
+	    nand_is_valid_block1,
+	    nand_ioctl,
+	    nand_block_erase1,
+	    nand_chip_erase1,
+	    0
+	};
+
+	NDISK_T MassNDisk2;
+	NDRV_T _nandDiskDriver2 =
+	{
+	    nandInit2,
+	    nandpread2,
+	    nandpwrite2,
+	    nand_is_page_dirty2,
+	    nand_is_valid_block2,
+	    nand_ioctl,
+	    nand_block_erase2,
+	    nand_chip_erase2,
+	    0
+	};
+	#endif
 #endif
 
 #endif
-INT main(void)
+INT main(VOID)
 {
 	UINT32 u32CdromSize;
 #ifdef __NAND__
@@ -130,9 +159,11 @@ INT main(void)
 	UINT32 u32SicRef;
 	INT32 status0 = 0,status1 = 0,status2 = 0;	
 #endif
+
 #ifdef __SPI_ONLY__	
 	INT32 status0 = 0;	
 #endif
+
 	UINT32 u32ExtFreq;
 	WB_UART_T uart;
 
@@ -140,75 +171,117 @@ INT main(void)
 	sysFlushCache(I_D_CACHE);		
 		
 	/* Enable USB */
-	udcOpen();				
+	udcOpen();			
 	
-	sysUartPort(1);
 	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */		
 	uart.uiFreq = u32ExtFreq;
     uart.uiBaudrate = 115200;
-    uart.uiDataBits = WB_DATA_BITS_8;    
-	uart.uart_no=WB_UART_1;
+    uart.uiDataBits = WB_DATA_BITS_8;
     uart.uiStopBits = WB_STOP_BITS_1;
     uart.uiParity = WB_PARITY_NONE;
     uart.uiRxTriggerLevel = LEVEL_1_BYTE;
     sysInitializeUART(&uart);
-	    
+    
 	sysEnableCache(CACHE_WRITE_BACK);  
-
-    sysSetTimerReferenceClock (TIMER0, u32ExtFreq);
-	sysStartTimer(TIMER0, 100, PERIODIC_MODE);
-			
-	sysprintf("<MSC>\n");	 		
+		
+	 		
 #if !defined(__RAM_DISK_ONLY__)	&& !defined (__SPI_ONLY__)
 
-
-	u32SicRef = sysGetHCLK1Clock();	
-		
-	sicIoctl(SIC_SET_CLOCK, u32SicRef / 1000, 0, 0);
-
     sicOpen();
+	/* initialize FMI (Flash memory interface controller) */
+	u32SicRef = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);	
+	sicIoctl(SIC_SET_CLOCK, u32SicRef / 1000, 0, 0);     
+	
 	/* initial nuvoton file system */
 	fsInitFileSystem();	
 		
 	#ifdef __NAND__
-		sysprintf("<NAND>\n");		
-
-		fsAssignDriveNumber('C', DISK_TYPE_SMART_MEDIA, 0, 1);     // NAND 0, 2 partitions
-		fsAssignDriveNumber('D', DISK_TYPE_SMART_MEDIA, 0, 2);     // NAND 0, 2 partitions
-
-		if(GNAND_InitNAND(&_nandDiskDriver0, &MassNDisk, TRUE) < 0) 
-		{
-			sysprintf("GNAND_InitNAND error\n");
-			return 0;		
-		}	
-		
-		if(GNAND_MountNandDisk(&MassNDisk) < 0) 
-		{
-			sysprintf("GNAND_MountNandDisk error\n");
-			return 0;	
-		}
-
-		fsSetVolumeLabel('C', "NAND1-1\n", strlen("NAND1-1"));
-		fsSetVolumeLabel('D', "NAND1-2\n", strlen("NAND1-2"));
-
-		u32TotalSize = MassNDisk.nZone* MassNDisk.nLBPerZone*MassNDisk.nPagePerBlock*MassNDisk.nPageSize;
-		
-		if(u32TotalSize > 32 * 0x100000)
-			u32NANDsize1 = 32 * 1024;
-		else
-			u32NANDsize1 = u32TotalSize / 1024 / 5;
+		sysprintf("<NAND>\n");
+		#ifdef __TWO_NAND__
 			
-		/* Format NAND if necessery */
-		if ((fsDiskFreeSpace('C', &block_size, &free_size, &disk_size) < 0) || 
-		    (fsDiskFreeSpace('D', &block_size, &free_size, &disk_size) < 0)) 			    
-		    	{   
-			    	if (fsTwoPartAndFormatAll((PDISK_T *)MassNDisk.pDisk, u32NANDsize1, (u32TotalSize - u32NANDsize1)) < 0) {
-					sysprintf("Format failed\n");	
-				fsSetVolumeLabel('C', "NAND1-1\n", strlen("NAND1-1"));
-				fsSetVolumeLabel('D', "NAND1-2\n", strlen("NAND1-2"));	
+			if(GNAND_InitNAND(&_nandDiskDriver0, &MassNDisk, TRUE) < 0) 
+			{
+				sysprintf("GNAND_InitNAND0 error\n");
+				return 0;		
+			}			
+			
+			if(GNAND_MountNandDisk(&MassNDisk) < 0) 
+			{
+				sysprintf("GNAND_MountNandDisk error for NAND0\n");
 				return 0;	
-		    	}
-		}			
+			}			
+			/* Get NAND disk information*/ 
+			u32TotalSize = (UINT32)((UINT64)MassNDisk.nZone* MassNDisk.nLBPerZone*MassNDisk.nPagePerBlock*MassNDisk.nPageSize/1024);
+			sysprintf("Total Disk Size %u KB\n", u32TotalSize);	
+
+			/* Format NAND if necessery */	
+			{
+				
+				ptPDiskPtr = pDiskList = fsGetFullDiskInfomation();
+				if (fsDiskFreeSpace('C', &block_size, &free_size, &disk_size) < 0){   
+					sysprintf("unknow disk type for NAND Disk 0, format device .....\n");	
+					fsFormatFlashMemoryCard(ptPDiskPtr);
+					
+				}		
+				fsReleaseDiskInformation(pDiskList);	
+			 	if(GNAND_InitNAND(&_nandDiskDriver2, &MassNDisk2, TRUE) < 0) {
+					sysprintf("GNAND_InitNAND error\n");
+					return 0;
+				}	
+				if(GNAND_MountNandDisk(&MassNDisk2) < 0) {
+					sysprintf("GNAND_MountNandDisk error\n");
+					return 0;		
+				}			
+				if (fsDiskFreeSpace('D', &block_size, &free_size, &disk_size) < 0){ 
+					fsSetReservedArea(0);	
+					ptPDiskPtr = pDiskList = fsGetFullDiskInfomation();
+					ptPDiskPtr = ptPDiskPtr->ptPDiskAllLink;
+					fsFormatFlashMemoryCard(ptPDiskPtr);
+					fsReleaseDiskInformation(pDiskList);	
+				}			
+				fsSetVolumeLabel('C', "NAND1-1\n", strlen("NAND1-1"));
+				fsSetVolumeLabel('D', "NAND1-2\n", strlen("NAND1-2"));		
+			}	
+				
+		#else
+
+			fsAssignDriveNumber('C', DISK_TYPE_SMART_MEDIA, 0, 1);     // NAND 0, 2 partitions
+			fsAssignDriveNumber('D', DISK_TYPE_SMART_MEDIA, 0, 2);     // NAND 0, 2 partitions
+
+			if(GNAND_InitNAND(&_nandDiskDriver0, &MassNDisk, TRUE) < 0) 
+			{
+				sysprintf("GNAND_InitNAND error\n");
+				return 0;		
+			}	
+			
+			if(GNAND_MountNandDisk(&MassNDisk) < 0) 
+			{
+				sysprintf("GNAND_MountNandDisk error\n");
+				return 0;	
+			}
+
+			fsSetVolumeLabel('C', "NAND1-1\n", strlen("NAND1-1"));
+			fsSetVolumeLabel('D', "NAND1-2\n", strlen("NAND1-2"));
+
+			u32TotalSize = MassNDisk.nZone* MassNDisk.nLBPerZone*MassNDisk.nPagePerBlock*MassNDisk.nPageSize;
+			
+			if(u32TotalSize > 32 * 0x100000)
+				u32NANDsize1 = 32 * 1024;
+			else
+				u32NANDsize1 = u32TotalSize / 1024 / 5;
+				
+			/* Format NAND if necessery */
+			if ((fsDiskFreeSpace('C', &block_size, &free_size, &disk_size) < 0) || 
+			    (fsDiskFreeSpace('D', &block_size, &free_size, &disk_size) < 0)) 			    
+			    	{   
+				    	if (fsTwoPartAndFormatAll((PDISK_T *)MassNDisk.pDisk, u32NANDsize1, (u32TotalSize - u32NANDsize1)) < 0) {
+						sysprintf("Format failed\n");	
+					fsSetVolumeLabel('C', "NAND1-1\n", strlen("NAND1-1"));
+					fsSetVolumeLabel('D', "NAND1-2\n", strlen("NAND1-2"));	
+					return 0;	
+			    	}
+			}			
+		#endif	//#ifndef __TWO_NAND__
 	#endif	//#ifdef __NAND__
 
 	#ifdef __SD__
@@ -245,31 +318,28 @@ INT main(void)
 	sysprintf("MSC Spi Disk Test\n");	
 #endif		
 #endif    //#ifndef __RAM_DISK_ONLY__	
-
-	mscdInit();	
 	
 	u32CdromSize = sizeof(CD_Tracks);
-		
+	
+	mscdInit();		
 	#ifdef __SPI_ONLY__	
 	{
 		UINT32 block_size, free_size, disk_size, reserved_size;
 		PDISK_T		*pDiskList;	
 		
-		
 		fsInitFileSystem();
 		fsAssignDriveNumber('C', DISK_TYPE_SD_MMC, 0, 1);
 		
-        reserved_size = 64*1024;			// SPI reserved size before FAT = 64KB
+        reserved_size = 64*1024;				// SPI reserved size before FAT = 64KB
         status0 = SpiFlashOpen(reserved_size);
-        
+
 		if (fsDiskFreeSpace('C', &block_size, &free_size, &disk_size) < 0)  
 		{
 			UINT32 u32BlockSize, u32FreeSize, u32DiskSize;
 			PDISK_T		*pDiskList;	
 			
 			//printf("Total SPI size = %d KB\n", u32TotalSectorSize/2);
-
-            fsSetReservedArea(reserved_size/512);
+			fsSetReservedArea(reserved_size/512);
 			pDiskList = fsGetFullDiskInfomation();
 			fsFormatFlashMemoryCard(pDiskList);
 			fsReleaseDiskInformation(pDiskList);
@@ -281,21 +351,22 @@ INT main(void)
 	}	
 			
 	mscdFlashInitExtendCDROM(NULL,NULL,NULL, 0,0,0,0,CDROM_Read,u32CdromSize);	
-#elif defined (__RAM_DISK_ONLY__)
-	mscdFlashInitExtendCDROM(NULL,NULL,NULL, 0,0,0,MSC_RAMDISK_8M,CDROM_Read,u32CdromSize);
+	#elif defined (__RAM_DISK_ONLY__)
+	
+	mscdFlashInitExtendCDROM(NULL,NULL,NULL, 0,0,0,MSC_RAMDISK_8M,CDROM_Read,u32CdromSize);	
 #else	
 	#ifdef __SD__
 		mscdSdEnable(u32SD_EXPORT);	
 	#endif
 	#ifdef __SD_ONLY__
-		mscdFlashInitExtendCDROM(NULL,NULL,NULL, status0,status1,status2,0,CDROM_Read,u32CdromSize);
+		mscdFlashInitExtendCDROM(NULL,NULL,NULL, status0,status1,status2,0,CDROM_Read,u32CdromSize);	
 	#else	
 		#ifdef __NAND__	
 			mscdNandEnable(u32NAND_EXPORT);			
 			#ifdef __TWO_NAND__	
-				mscdFlashInitExtendCDROM(&MassNDisk,NULL,&MassNDisk2,status0,status1,status2,0,CDROM_Read,u32CdromSize);
+				mscdFlashInitExtendCDROM(&MassNDisk,NULL,&MassNDisk2,status0,status1,status2,0,CDROM_Read,u32CdromSize);	
 			#else
-				mscdFlashInitExtendCDROM(&MassNDisk,NULL,NULL,status0,status1,status2,0,CDROM_Read,u32CdromSize);		
+				mscdFlashInitExtendCDROM(&MassNDisk,NULL,NULL,status0,status1,status2,0,CDROM_Read,u32CdromSize);			
 			#endif	
 		#endif		
 	#endif

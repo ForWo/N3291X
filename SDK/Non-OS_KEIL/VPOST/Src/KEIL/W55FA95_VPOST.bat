@@ -1,0 +1,1 @@
+move .\W55FA95_VPOST_Data\W55FA95_VPOST\W55FA95_VPOST.lib ..\..\Lib

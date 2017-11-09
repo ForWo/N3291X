@@ -1,0 +1,119 @@
+/****************************************************************************
+*                                                                           *
+* Copyright (c) 2009 Nuvoton Tech. Corp. All rights reserved.               *
+*                                                                           *
+*****************************************************************************/
+
+/****************************************************************************
+* FILENAME
+*   adc.c
+*
+* VERSION
+*   1.0
+*
+* DESCRIPTION
+*   Battery detection
+*
+* DATA STRUCTURES
+*   None
+*
+* FUNCTIONS
+*
+* HISTORY
+*
+* REMARK
+*   None
+****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "wblib.h"
+#include "nvtloader.h"
+#include "W55FA95_adc.h"
+#include "RTC.h"
+#include "w55fa95_gpio.h"
+
+extern VOID RTC_Check(VOID);
+
+void CorePowerLow(void)
+{
+#ifdef __KLE_DEMO__
+	gpio_setportval(GPIO_PORTE, 
+					(1<<0), 	//Mask
+					(0<<0));	//Low
+#endif					
+}
+void ForceShutdown(void)
+{
+	/* RTC Initialize */
+//#ifdef __ECO__	
+	sysprintf("Enter RTC\n");
+#ifdef __PICO_PROJECTOR__
+	gpio_configure(GPIO_PORTD, 		/* GPD1 */
+						1);
+	gpio_setportval(GPIO_PORTD, 		/* GPD1 to high */
+					(1<<1), 
+					(1<<1));								
+	gpio_setportdir(GPIO_PORTD, 
+					(1<<1), 		// Mask 
+					(1<<1));		// 1 output. 0 input.
+#endif
+	
+	outp32(TTR, 0);
+	RTC_Init();
+	outp32(REG_APBCLK, inp32(REG_APBCLK) | RTC_CKE);
+	RTC_Check();    
+///	outp32(TTR, 0);
+	outp32(PWRON, (inp32(PWRON) & ~0x01) | 2);		                        
+ 	RTC_Check();    
+	CorePowerLow();
+	sysprintf("RTC done\n");
+//#else	
+//	RTC_Init();	
+//	RTC_Ioctl(0, RTC_IOC_SET_POWER_OFF, 0, 0);
+//#endif 	
+	while(1);	/* Forever loop */
+}
+/*
+	There are 2 resistors form voltage divider in demo board. One is 100K Ohm, anothe is 200K Ohm
+	The ratio is 1/3. 	 
+	
+
+*/
+void BatteryDetection(BOOL bIsExtraPower)
+{
+	float voltage, step, tmp;
+	UINT16 u16Vol;
+	step = 3.3/1024.;  						/* Assume the reference votage is 3.3 V. 10bits ADC */
+		
+	if(adc_normalread(2, &u16Vol)==Successful)
+	{
+		UINT32 u32Dec, u32Fraction=3;
+		tmp = step*u16Vol*3;				/* Ratio is 1/3 */
+		voltage = tmp;
+		sysprintf("Battery value = %x\n", u16Vol);	
+		sysprintf("Battery Voltage = ");			
+		u32Dec = tmp;	
+		sysprintf("%d.",u32Dec); 	
+		tmp = tmp - u32Dec;
+		while((tmp!=0.) && (u32Fraction!=0))
+		{		
+			tmp = tmp*10.;	
+			u32Dec = tmp;	
+			sysprintf("%d",u32Dec); 	
+			tmp = tmp - u32Dec;
+			u32Fraction = u32Fraction-1;
+		}
+		sysprintf("\n"); 
+		if(bIsExtraPower==FALSE)
+		{//Withput extra power form USB or power cable
+			if(voltage<LOW_BATTERY_LEVEL)
+			{
+				sysprintf("Low Battery ...., please change the battery\n");
+				sysprintf("Forcce shutdown\n");
+				ForceShutdown();				
+			}
+		}
+	}	
+}

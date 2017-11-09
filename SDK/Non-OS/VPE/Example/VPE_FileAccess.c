@@ -4,7 +4,7 @@
 #include <string.h>
 #include "wblib.h"
 #include "nvtfat.h"
-#include "w55fa92_vpe.h"
+#include "w55fa95_vpe.h"
 #include "VPE_Emulation.h"
 
 #define DBG_PRINTF(...)

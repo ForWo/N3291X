@@ -6,9 +6,9 @@
 
 #include "jpegcodec.h"
 #include "nvtfat.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "jpegSample.h"
-#include "w55fa92_vpost.h"
+#include "w55fa95_vpost.h"
 
 /*-----------------------------------------------------------------------*/
 /*  JPEG Demo Code ReadMe                                                */
@@ -50,17 +50,15 @@ INT32 main()
 	BOOL bLoop = TRUE;
 	
 	/* CACHE_ON	*/
-	//sysInvalidCache();
-	//sysEnableCache(CACHE_WRITE_THROUGH);
-	//sysFlushCache(I_D_CACHE);
+	sysInvalidCache();
+	sysEnableCache(CACHE_WRITE_THROUGH);
+	sysFlushCache(I_D_CACHE);
 	
 	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */	
 	
 	uart.uiFreq = u32ExtFreq;
     uart.uiBaudrate = 115200;
     uart.uiDataBits = WB_DATA_BITS_8;
-    
-	uart.uart_no=WB_UART_1;
     uart.uiStopBits = WB_STOP_BITS_1;
     uart.uiParity = WB_PARITY_NONE;
     uart.uiRxTriggerLevel = LEVEL_1_BYTE;
@@ -81,9 +79,7 @@ INT32 main()
 	/*-----------------------------------------------------------------------*/
 	/*  Init SD card                                                         */
 	/*-----------------------------------------------------------------------*/
-
 	u32SicRef = sysGetHCLK1Clock();	
-		
 	sicIoctl(SIC_SET_CLOCK, u32SicRef / 1000, 0, 0);
 
 	sicOpen();	
@@ -100,7 +96,7 @@ INT32 main()
 	
 	/* start timer 1 */
 	sysSetTimerReferenceClock(TIMER0, u32ExtFreq);
-	sysStartTimer(TIMER0, 1000, PERIODIC_MODE);  	
+	sysStartTimer(TIMER0, 1000, PERIODIC_MODE); /* SW Modify sysStartTimer(TIMER0, 0, PERIODIC_MODE);*/   	
 	   	
 	/* JPEG Open */
 	jpegOpen ();
@@ -110,7 +106,7 @@ INT32 main()
 		sysprintf("\nPlease Select Test Item\n");
 		sysprintf("[*]Decode Test\n");
 		sysprintf(" 0 : Panel Test ");g_bDecPanelTest?sysprintf("Disable\n"):sysprintf("Enable\n");
-		sysprintf("     -> Decode Downscale to QQVGA\n");
+		sysprintf("     -> Decode Downscale to QVGA\n");
 		sysprintf("     -> Decode Stride is %d\n",PANEL_WIDTH);
 		sysprintf("     -> Output data size is %dx%d\n",PANEL_WIDTH,PANEL_HEIGHT);		
 		sysprintf(" 1 : Input Wait ");g_bDecIpwTest?sysprintf("Disable\n"):sysprintf("Enable\n");
@@ -129,18 +125,6 @@ INT32 main()
 			case JPEG_DEC_PRIMARY_PACKET_RGB565:
 				sysprintf("PACKET RGB565\n");
 				break;
-			case JPEG_DEC_PRIMARY_PACKET_RGB555R1:
-				sysprintf("PACKET RGB555R1\n");
-				break;
-			case JPEG_DEC_PRIMARY_PACKET_RGB565R1:
-				sysprintf("PACKET RGB565R1\n");
-				break;		
-			case JPEG_DEC_PRIMARY_PACKET_RGB555R2:
-				sysprintf("PACKET RGB555R2\n");
-				break;
-			case JPEG_DEC_PRIMARY_PACKET_RGB565R2:
-				sysprintf("PACKET RGB565R2\n");
-				break;						
 			case JPEG_DEC_PRIMARY_PACKET_RGB888:
 				sysprintf("PACKET RGB888\n");
 				break;
@@ -178,11 +162,7 @@ INT32 main()
 					sysprintf(" 1: PACKET RGB555\n");
 					sysprintf(" 2: PACKET RGB565\n");
 					sysprintf(" 3: PACKET RGB888\n");
-					sysprintf(" 4: PACKET RGB555R1\n");
-					sysprintf(" 5: PACKET RGB565R1\n");
-					sysprintf(" 6: PACKET RGB555R2\n");
-					sysprintf(" 7: PACKET RGB565R2\n");										
-					sysprintf(" 8: PLANAR format\n");
+					sysprintf(" 4: PLANAR format\n");
 					sysprintf(">");
 					u8Item = sysGetChar();
 					
@@ -201,18 +181,6 @@ INT32 main()
 							g_u32DecFormat = JPEG_DEC_PRIMARY_PACKET_RGB888;
 							break;
 						case '4':
-							g_u32DecFormat = JPEG_DEC_PRIMARY_PACKET_RGB555R1;
-							break;
-						case '5':
-							g_u32DecFormat = JPEG_DEC_PRIMARY_PACKET_RGB565R1;
-							break;
-						case '6':
-							g_u32DecFormat = JPEG_DEC_PRIMARY_PACKET_RGB555R2;
-							break;
-						case '7':
-							g_u32DecFormat = JPEG_DEC_PRIMARY_PACKET_RGB565R2;
-							break;														
-						case '8':
 							if(g_bDecPanelTest)
 								sysprintf("\n<Not support Planar format Panel Test>\n");
 							else

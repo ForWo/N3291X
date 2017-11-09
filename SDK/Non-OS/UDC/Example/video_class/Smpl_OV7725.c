@@ -1,10 +1,12 @@
 #include "wblib.h"
-#include "W55FA92_VideoIn.h"
-#include "W55FA92_GPIO.h"
+#include "W55FA95_VideoIn.h"
+#include "W55FA95_GPIO.h"
 #include "demo.h"
-#include "w55fa92_i2c.h"
+#include "w55fa95_i2c.h"
 
 #include "DrvI2C.h"
+
+
 
 typedef struct
 {
@@ -280,7 +282,7 @@ VOID OV7725_Init(UINT32 nIndex)
 	
 	if ( nIndex >= (sizeof(g_uOvDeviceID)/sizeof(UINT8)) )
 		return;
-	pVin->Open(48000, 24000);								/* For sensor clock output */	
+	videoIn_Open(48000, 24000);								/* For sensor clock output */	
 #if 0	//Sensor module default no power down and no reset. 
 	SnrPowerDown(FALSE);
 	SnrReset();		 
@@ -510,93 +512,132 @@ static VOID OV7725_Init(UINT32 nIndex)
 	DrvI2C_Close();	
 }
 #endif
-
-
-UINT32 Smpl_OV7725(void)
+/*===================================================================
+	LCD dimension = (OPT_LCD_WIDTH, OPT_LCD_HEIGHT)	
+	Packet dimension = (OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT)	
+	Stride should be LCM resolution  OPT_LCD_WIDTH.
+	Packet frame start address = VPOST frame start address + (OPT_LCD_WIDTH-OPT_PREVIEW_WIDTH)/2*2 	
+=====================================================================*/
+UINT32 Smpl_OV7725_VGA(UINT8* pu8FrameBuffer0, UINT8* pu8FrameBuffer1)
 {
 	PFN_VIDEOIN_CALLBACK pfnOldCallback;
 
-	INT32 i32ErrCode;
-			
-#ifdef __1ST_PORT__	
-	i32ErrCode = register_vin_device(1, &Vin);	
-	if(i32ErrCode<0){
-		sysprintf("Register vin 0 device fail\n");
-		return (UINT32)-1;
-	}
-	pVin = &Vin;
-	pVin->Init(TRUE, (E_VIDEOIN_SNR_SRC)eSYS_UPLL, 24000, eVIDEOIN_SNR_CCIR601);
-#endif 
-#ifdef __2ND_PORT__	
-	i32ErrCode = register_vin_device(2, &Vin);
-	if(i32ErrCode<0){
-		sysprintf("Register vin 1 device fail\n");
-		return (UINT32)-1;
-	}
-	pVin = &Vin;
-	pVin->Init(TRUE, (E_VIDEOIN_SNR_SRC)eSYS_UPLL, 24000, eVIDEOIN_2ND_SNR_CCIR601);
-#endif	
-	pVin->Open(48000, 24000);	
-	OV7725_Init(7);			
-	pVin->EnableInt(eVIDEOIN_VINT);
+	UINT32 u32PreW, u32PreH;
 	
-	pVin->InstallCallback(eVIDEOIN_VINT, 
+#ifdef __1ST_PORT__	
+	videoIn_Init(TRUE, 0, 24000, eVIDEOIN_SNR_CCIR601);	
+#endif
+#ifdef __2ND_PORT__
+	videoIn_Init(TRUE, 0, 24000, eVIDEOIN_2ND_SNR_CCIR601_2);	
+#endif	
+	OV7725_Init(7);			
+	videoIn_Open(24000, 12000);		
+	videoIn_EnableInt(eVIDEOIN_VINT);
+			
+	getFitPreviewDimension(OPT_LCM_WIDTH,
+						OPT_LCM_HEIGHT,
+						OPT_CROP_WIDTH,
+						OPT_CROP_HEIGHT,
+						&u32PreW,
+						&u32PreH);			
+						
+	sysprintf("Preview (Width , Height)=(%d, %d)\n", u32PreW, u32PreH);
+	videoIn_InstallCallback(eVIDEOIN_VINT, 
 						(PFN_VIDEOIN_CALLBACK)VideoIn_InterruptHandler,
 						&pfnOldCallback	);	//Frame End interrupt						
-	pVin->SetPacketFrameBufferControl(FALSE, FALSE);	
-	pVin->SetSensorPolarity(FALSE,
-						FALSE,				//Polarity.	
-						TRUE);		
-	pVin->SetDataFormatAndOrder(eVIDEOIN_IN_VYUY, 				//Input Order 
-							eVIDEOIN_IN_YUV422,			//Intput format
-							eVIDEOIN_OUT_YUV422);			//Output format for packet 																											
-	pVin->SetCropWinStartAddr(0,								//Vertical start position 	Y
-							0);										
-												
-#ifdef OV7725_CCIR656			
-	pVin->SetInputType(0,					//0: Both fields are disabled. 1: Field 1 enable. 2: Field 2 enable. 3: Both fields are enable
-				eVIDEOIN_TYPE_CCIR656,	//0: CCIR601.	1: CCIR656 	
-				0);						//swap?
-	pVin->SetStandardCCIR656(FALSE);					
-	pVin->SetSensorPolarity(FALSE,							// Inverse the SOF EOF
-						FALSE,							// Inverse the SOL EOL
-						TRUE);	
-			
- #else
- 	pVin->SetStandardCCIR656(TRUE);						//standard CCIR656 mode		
- 	pVin->SetSensorPolarity(TRUE,							
-						FALSE,						
-						TRUE);									
-#endif				
-	pVin->SetCropWinSize(OPT_CROP_HEIGHT,					//UINT16 u16Height, 
-						OPT_CROP_WIDTH);					//UINT16 u16Width;					
-	pVin->PreviewPipeSize(OPT_PREVIEW_HEIGHT, OPT_PREVIEW_WIDTH);						
-	pVin->EncodePipeSize(OPT_ENCODE_HEIGHT, OPT_ENCODE_WIDTH);
-#ifdef __TV__
-	pVin->SetStride(OPT_STRIDE, OPT_ENCODE_WIDTH);
-	pVin->SetBaseStartAddress(eVIDEOIN_PACKET, 0, (UINT32)((UINT32)u8PacketFrameBuffer0) );
-#else			
-	pVin->SetStride(OPT_STRIDE, OPT_ENCODE_WIDTH);
-	pVin->SetBaseStartAddress(eVIDEOIN_PACKET, (E_VIDEOIN_BUFFER)0, (UINT32)((UINT32)u8PacketFrameBuffer0 + (OPT_STRIDE-OPT_PREVIEW_WIDTH)/2*2) );					
-#endif			
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)0, 							//Planar buffer Y addrress
-							(UINT32)u8PlanarFrameBuffer0);
+	videoIn_SetPacketFrameBufferControl(FALSE, FALSE);	
 	
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)1, 							//Planar buffer U addrress
-							(UINT32)u8PlanarFrameBuffer0+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT);
+	videoinIoctl(VIDEOIN_IOCTL_SET_POLARITY,
+				TRUE,
+				FALSE,							//Polarity.	
+				TRUE);							
+												
+	videoinIoctl(VIDEOIN_IOCTL_ORDER_INFMT_OUTFMT,								
+				eVIDEOIN_IN_VYUY, 			//Input Order 
+				eVIDEOIN_IN_YUV422	,		//Intput format
+				eVIDEOIN_OUT_YUV422);		//Output format for packet 														
+		
+	videoinIoctl(VIDEOIN_IOCTL_SET_CROPPING_START_POSITION,				
+				0,							//Vertical start position 	Y
+				0,							//Horizontal start position	X
+				0);							//Useless
+	videoinIoctl(VIDEOIN_IOCTL_CROPPING_DIMENSION,				
+				OPT_CROP_HEIGHT,							//UINT16 u16Height, 
+				OPT_CROP_WIDTH,							//UINT16 u16Width;	
+				0);							//Useless
+					 							 
+	videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+				eVIDEOIN_PACKET,			//272/480
+				u32PreH/1,
+				OPT_CROP_HEIGHT);		
+																			
+	videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+				eVIDEOIN_PACKET,			//364/640
+				u32PreW,
+				OPT_CROP_WIDTH);		
+										 							 
+	videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+				eVIDEOIN_PLANAR,			//480/480
+				OPT_ENCODE_HEIGHT,
+				OPT_CROP_HEIGHT);	
+																					
+	videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+				eVIDEOIN_PLANAR,			//640/640
+				OPT_ENCODE_WIDTH,
+				OPT_CROP_WIDTH);
 				
-	pVin->SetPlanarFormat(eVIDEOIN_PLANAR_YUV422);				// Planar YUV422/420/macro 					
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)2, 							//Planar buffer V addrress
-							(UINT32)u8PlanarFrameBuffer0+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT/2);							
-	pVin->SetPipeEnable(TRUE, 									// Engine enable?
-						eVIDEOIN_BOTH_PIPE_ENABLE);		// which packet was enabled. 											
-										
-	pVin->SetShadowRegister();				
-	sysSetLocalInterrupt(ENABLE_IRQ);										
-	return Successful;				
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				OPT_STRIDE,				// Packet Stride
+				OPT_ENCODE_WIDTH,		// 
+				0);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PACKET,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)pu8FrameBuffer0 + (OPT_STRIDE-OPT_PREVIEW_WIDTH)/2*2) );					
+
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				640,				
+				640,
+				0);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PACKET,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)pu8FrameBuffer0) );					
+		
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				640,				
+				640,
+				0);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PACKET,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)pu8FrameBuffer0) );					
+		
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)u8PlanarFrameBuffer0) );
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				1, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)u8PlanarFrameBuffer0+640*480) );
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				2, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)u8PlanarFrameBuffer0+640*480+640*480/2) );	
+				
+	videoinIoctl(VIDEOIN_IOCTL_SET_PIPE_ENABLE,
+				TRUE, 						// Engine enable ?
+				eVIDEOIN_BOTH_PIPE_ENABLE,			// which packet was enable. 											
+				0 );		
+				
+	videoinIoctl(VIDEOIN_IOCTL_SET_SHADOW,
+				NULL,			//640/640
+				NULL,
+				NULL);				
+	sysSetLocalInterrupt(ENABLE_IRQ);						
+															
+	return Successful;			
 }	
 
 

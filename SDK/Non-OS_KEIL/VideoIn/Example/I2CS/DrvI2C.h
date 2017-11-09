@@ -13,7 +13,7 @@ extern "C"
 {
 #endif
 #ifndef _W55FA95_REG_H
-#include "W55FA92_reg.h"
+#include "W55FA95_reg.h"
 #endif
 
 

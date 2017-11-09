@@ -1,4 +1,4 @@
-#include "w55fa92_gnand.h"
+#include "w55fa95_gnand.h"
 
 typedef struct Disk_Par_Inf {
 	UINT32	partition_size,

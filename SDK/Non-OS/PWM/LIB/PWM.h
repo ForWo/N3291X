@@ -12,7 +12,7 @@
 /* Includes of system headers                                                                              */
 /*---------------------------------------------------------------------------------------------------------*/
 #include "wbio.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 
 
 #ifdef  __cplusplus
@@ -114,8 +114,8 @@ typedef struct
 /*---------------------------------------------------------------------------------------------------------*/
 /* Define PWM functions prototype                                                                          */
 /*---------------------------------------------------------------------------------------------------------*/
-VOID	PWM_Open(void);
-VOID	PWM_Close(void);
+VOID	PWM_Open(VOID);
+VOID	PWM_Close(VOID);
 UINT32	PWM_GetEngineClock(E_SYS_SRC_CLK* peSrcClk);
 BOOL 	PWM_SetClockSetting(E_SYS_SRC_CLK eSrcClk, UINT32 u32PllDiver, UINT32 u32EngineDiver);
 VOID	PWM_SetTimerCounter(UINT8 u8Timer, UINT16 u16Counter);

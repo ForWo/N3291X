@@ -16,8 +16,8 @@
 #include <string.h>
 #include "wblib.h"
 
-#include "w55fa92_reg.h"
-#include "w55fa92_spi.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_spi.h"
 #include "nvtfat.h"
 #include "SPIGlue.h"
 
@@ -85,7 +85,7 @@ static INT  SpiFlash_disk_read(PDISK_T *pDisk, UINT32 sector_no, INT number_of_s
 {
 	int status;	
 
-	status = spiFlashRead(sector_no*SECTOR_NUM+spi_FAT_offset, number_of_sector*SECTOR_NUM, buff);
+	status = spiFlashRead(sector_no*SECTOR_NUM+spi_FAT_offset, number_of_sector*SECTOR_NUM, (UINT32 *)buff);
 
 	if (status != Successful)
 		return status;
@@ -120,7 +120,7 @@ static INT  SpiFlash_disk_write(PDISK_T *pDisk, UINT32 sector_no, INT number_of_
 			SPI_writeSize = number_of_sector * SECTOR_NUM;
 			
 		// Read the original Sector content
-		status = spiFlashRead(SPI_AligneSectorAddr, SPI_SECTOR_ERASE_SIZE, (UINT8 *)((UINT32)SPI_BackupBuf|0x80000000));
+		status = spiFlashRead(SPI_AligneSectorAddr, SPI_SECTOR_ERASE_SIZE, (UINT32 *)((UINT32)SPI_BackupBuf|0x80000000));
 		if (status != Successful)
 			return status;
 
@@ -137,7 +137,7 @@ static INT  SpiFlash_disk_write(PDISK_T *pDisk, UINT32 sector_no, INT number_of_
 		if (SPI_addr != SPI_AligneSectorAddr)
 		{
 			SPI_tmpSize = SPI_addr - SPI_AligneSectorAddr;
-			status = spiFlashWrite(SPI_AligneSectorAddr, SPI_tmpSize, (UINT8 *)((UINT32)SPI_BackupBuf|0x80000000));
+			status = spiFlashWrite(SPI_AligneSectorAddr, SPI_tmpSize, (UINT32 *)((UINT32)SPI_BackupBuf|0x80000000));
 			
 			if (status != Successful)
 				return status;		
@@ -145,7 +145,7 @@ static INT  SpiFlash_disk_write(PDISK_T *pDisk, UINT32 sector_no, INT number_of_
 
 		// Write the target SPI data	
 		SPI_TargetSize = SPI_writeSize;
-		status = spiFlashWrite(SPI_addr, SPI_TargetSize, buff);
+		status = spiFlashWrite(SPI_addr, SPI_TargetSize, (UINT32 *)buff);
 		
 		if (status != Successful)
 			return status;
@@ -159,7 +159,7 @@ static INT  SpiFlash_disk_write(PDISK_T *pDisk, UINT32 sector_no, INT number_of_
 		if (SPI_tmpSize + SPI_TargetSize < SPI_SECTOR_ERASE_SIZE)
 		{
 			SPI_RemainingSize = SPI_SECTOR_ERASE_SIZE - SPI_writeSize - SPI_tmpSize;
-			status = spiFlashWrite(SPI_addr, SPI_RemainingSize, (UINT8 *)((UINT32)&SPI_BackupBuf[SPI_writeSize + SPI_tmpSize]|0x80000000));
+			status = spiFlashWrite(SPI_addr, SPI_RemainingSize, (UINT32 *)((UINT32)&SPI_BackupBuf[SPI_writeSize + SPI_tmpSize]|0x80000000));
 			
 			if (status != Successful)
 				return status;
@@ -273,9 +273,10 @@ INT MapFlashID(UINT32 spiID, DISK_DATA_T* pInfo)
 			return 0;
 			break;	
 	}
-
+	
 	pInfo->totalSectorN = pInfo->totalSectorN - spi_FAT_offset/512;	
 	sysprintf("Vendor = %s, Total sector = %d for Disk, Total size = %dK, FAT offset =%dK\n",pInfo->vendor, pInfo->totalSectorN, pInfo->diskSize,spi_FAT_offset/1024);
+	
 	
 	return 0;
 }

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "demo.h"
 #include "usbd.h"
 #include "videoclass.h"
@@ -12,7 +12,7 @@
 	#include "QQVGA.h"
 #endif
 #include "jpegcodec.h"
-#include "W55FA92_VideoIn.h"
+#include "W55FA95_VideoIn.h"
 
 /*********************************************************************************************************************/ 
 /* 1. The Sample code sends image to PC for preview & shapshot (toggle two fixed image patterns or data from VideoIN)*/
@@ -94,9 +94,8 @@ UINT32 u32VideoInIdx = 0;
 /* Skip Frame number */
 UINT32 u32SkipFrame = 0;
 
-
 /* UVC Main */
-VOID uvc_main(void)
+VOID uvc_main(VOID)
 {
 #ifdef __UVC_VIN__	
 	/* Skip frames */
@@ -119,7 +118,7 @@ VOID uvc_main(void)
 }
 
 /* UVC event */
-VOID uvcdEvent(void)
+VOID uvcdEvent(VOID)
 {
 	UINT8 result;
     UINT32 u32Addr,u32transferSize;   
@@ -221,7 +220,10 @@ void VideoIn_InterruptHandler(void)
 				}	
 				break; 	 
 	}
-
+	videoinIoctl(VIDEOIN_IOCTL_SET_SHADOW,
+				NULL,			//640/640
+				NULL,
+				NULL);	
 					
 	if(u32SkipFrame != 0)
 		u32SkipFrame--;
@@ -325,22 +327,50 @@ VOID ChangeFrame(BOOL bChangeSize, UINT32 u32Address, UINT16 u16Width,UINT16 u16
 		{
 			if(uvcStatus.snapshotFormatIndex == UVC_Format_YUY2)
 			{					 							 
-				pVin->PreviewPipeSize(u16Height, u16Width);
+				videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+							eVIDEOIN_PACKET,			
+							u16Height,
+							OPT_CROP_HEIGHT);																
+				videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+							eVIDEOIN_PACKET,			
+							u16Width,
+							OPT_CROP_WIDTH);	
 			}
 			else
 			{					 							 
-				pVin->EncodePipeSize(u16Height, u16Width);			
+				videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+							eVIDEOIN_PLANAR,
+							u16Height,
+							OPT_CROP_HEIGHT);																
+				videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+							eVIDEOIN_PLANAR,
+							u16Width,
+							OPT_CROP_WIDTH);			
 			}		
 		}
 		else		
 		{
 			if(uvcStatus.FormatIndex == UVC_Format_YUY2)
 			{					 							 
-				pVin->PreviewPipeSize(u16Height, u16Width);
+				videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+							eVIDEOIN_PACKET,			
+							u16Height,
+							OPT_CROP_HEIGHT);																	
+				videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+							eVIDEOIN_PACKET,			
+							u16Width,
+							OPT_CROP_WIDTH);	
 			}
 			else
 			{					 							 
-				pVin->EncodePipeSize(u16Height, u16Width);				
+				videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+							eVIDEOIN_PLANAR,
+							u16Height,
+							OPT_CROP_HEIGHT);																
+				videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+							eVIDEOIN_PLANAR,
+							u16Width,
+							OPT_CROP_WIDTH);			
 			}	
 		}		
 	}
@@ -349,27 +379,36 @@ VOID ChangeFrame(BOOL bChangeSize, UINT32 u32Address, UINT16 u16Width,UINT16 u16
 	{
 		if(uvcStatus.snapshotFormatIndex == UVC_Format_YUY2)
 		{
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PACKET,			
-						(E_VIDEOIN_BUFFER)0, 							//Packet buffer addrress
+						0, 							//Packet buffer addrress
 						(UINT32)u32Address);	
-						
-			
+			videoinIoctl(VIDEOIN_IOCTL_SET_PIPE_ENABLE,
+				TRUE, 						// Engine enable ?
+				eVIDEOIN_PACKET,		// which pipe was enable. 											
+				0 );							//Useless		
+							
+										
 		}
 		else
 		{
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PLANAR,			
-						(E_VIDEOIN_BUFFER)0, 							/* Planar buffer Y addrress */
+						0, 							/* Planar buffer Y addrress */
 						(UINT32)((UINT32)u32Address) );
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PLANAR,			
-						(E_VIDEOIN_BUFFER)1, 							/* Planar buffer U addrress */
+						1, 							/* Planar buffer U addrress */
 						(UINT32)((UINT32)u32Address+u16Width*u16Height) );
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PLANAR,			
-						(E_VIDEOIN_BUFFER)2, 							/* Planar buffer V addrress */
+						2, 							/* Planar buffer V addrress */
 						(UINT32)((UINT32)u32Address+u16Width*u16Height+u16Width*u16Height/2) );							
+			videoinIoctl(VIDEOIN_IOCTL_SET_PIPE_ENABLE,
+				TRUE, 						// Engine enable ?
+				eVIDEOIN_PLANAR,		// which pipe was enable. 											
+				0 );							//Useless		
+										
 		}
 	
 	}
@@ -377,30 +416,44 @@ VOID ChangeFrame(BOOL bChangeSize, UINT32 u32Address, UINT16 u16Width,UINT16 u16
 	{
 		if(uvcStatus.FormatIndex == UVC_Format_YUY2)
 		{
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PACKET,			
-						(E_VIDEOIN_BUFFER)0, 							//Packet buffer addrress
+						0, 							//Packet buffer addrress
 						(UINT32)u32Address);	
-						
+			videoinIoctl(VIDEOIN_IOCTL_SET_PIPE_ENABLE,
+				TRUE, 						// Engine enable ?
+				eVIDEOIN_PACKET,		// which pipe was enable. 											
+				0 );							//Useless		
+							
+										
 		}
 		else
 		{
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PLANAR,			
-						(E_VIDEOIN_BUFFER)0, 							/* Planar buffer Y addrress */
+						0, 							/* Planar buffer Y addrress */
 						(UINT32)((UINT32)u32Address) );
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PLANAR,			
-						(E_VIDEOIN_BUFFER)1, 							/* Planar buffer U addrress */
+						1, 							/* Planar buffer U addrress */
 						(UINT32)((UINT32)u32Address+u16Width*u16Height) );
-			pVin->SetBaseStartAddress(
+			videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
 						eVIDEOIN_PLANAR,			
-						(E_VIDEOIN_BUFFER)2, 							/* Planar buffer V addrress */
-						(UINT32)((UINT32)u32Address+u16Width*u16Height+u16Width*u16Height/2) );							
+						2, 							/* Planar buffer V addrress */
+						(UINT32)((UINT32)u32Address+u16Width*u16Height+u16Width*u16Height/2) );		
+			videoinIoctl(VIDEOIN_IOCTL_SET_PIPE_ENABLE,
+				TRUE, 						// Engine enable ?
+				eVIDEOIN_PLANAR,		// which pipe was enable. 											
+				0 );							//Useless		
+							
+										
+											
 		}			
-	}	
-	pVin->SetStride(u16Width, u16Width);	
-	pVin->SetShadowRegister();										
+	}			
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				u16Width,				
+				u16Width,
+				0);								
 }
 
 /* Get Image Size and Address (Image data control for Foramt and Frame) */
@@ -419,7 +472,6 @@ INT GetImage(PUINT32 pu32Addr, PUINT32 pu32transferSize)
 	if(!result)		/* If frame isn't updated */
 		return 0;	/* Skip the frame that had already been encoded */
 #endif 
-
 	
 	if(uvcStatus.StillImage)	/* Snapshot */
 	{     
@@ -454,7 +506,6 @@ INT GetImage(PUINT32 pu32Addr, PUINT32 pu32transferSize)
 				
 				/* Skip frames */
 				u32SkipFrame = UVC_SKIP_FRAME;					
-
 				while(u32SkipFrame)
 			   		GetImageBuffer();							
 			}
@@ -507,8 +558,7 @@ INT GetImage(PUINT32 pu32Addr, PUINT32 pu32transferSize)
 				u32CurFrameIndex = uvcStatus.snapshotFrameIndex;	
 				u32CurFormatIndex = uvcStatus.snapshotFormatIndex;				
 				/* Skip frames */
-				u32SkipFrame = UVC_SKIP_FRAME;	
-				
+				u32SkipFrame = UVC_SKIP_FRAME;					
 				while(u32SkipFrame)
 			   		GetImageBuffer();					
 			}	
@@ -585,7 +635,6 @@ INT GetImage(PUINT32 pu32Addr, PUINT32 pu32transferSize)
 					u32CurFormatIndex = uvcStatus.FormatIndex; 		
 					/* Skip frames */
 					u32SkipFrame = UVC_SKIP_FRAME;	
-					
 					while(u32SkipFrame)
 						GetImageBuffer();
 				}	

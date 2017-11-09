@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
@@ -13,7 +13,7 @@
 #define dbgprintf(...)
 #endif
 
-#define INI_BUF_SIZE    512
+#define	INI_BUF_SIZE 	512
 char iniBuf[INI_BUF_SIZE];
 int  buffer_current = 0, buffer_end = 0;    // position to buffer iniBuf
 
@@ -111,6 +111,9 @@ int ProcessINI(char *fileName)
     Ini_Writer.NAND1_1_FAT  = FAT_MODE_FILE;
     Ini_Writer.NAND1_2_FAT  = FAT_MODE_FILE;
     Ini_Writer.NANDCARD_FAT = FAT_MODE_SKIP;    // skip program NANDCARD
+#ifdef _KLE_MUL2_
+    Ini_Writer.NAND2_FAT    = FAT_MODE_SKIP;    // skip program NAND2 on CS0
+#endif
 
     //--- open INI file
     strcpy(szNvtFullName, fileName);
@@ -301,17 +304,42 @@ NextMark2:
                 }
             } while (1);
         }
+
+#ifdef _KLE_MUL2_
+        else if (strcmp(Cmd, "[NAND2 FAT FILE]") == 0)
+        {
+            do {
+                status = readLine(FileHandle, Cmd);
+                if (status < 0)
+                    break;          // use default value since error code from NVTFAT. Coulde be end of file.
+                else if (Cmd[0] == 0)
+                    continue;       // skip empty line
+                else if ((Cmd[0] == '/') && (Cmd[1] == '/'))
+                    continue;       // skip comment line
+                else if (Cmd[0] == '[')
+                    goto NextMark2; // use default value since no assign value before next keyword
+                else
+                {
+                    Ini_Writer.NAND2_FAT = atoi(Cmd);
+                    break;
+                }
+            } while (1);
+        }
+#endif
     } while (status >= 0);  // keep parsing INI file
 
     //--- show final configuration
     dbgprintf("Process %s file ...\n", fileName);
-    dbgprintf("  NnandLoader = %s\n", Ini_Writer.NandLoader);
-    dbgprintf("  Logo        = %s\n", Ini_Writer.Logo);
-    dbgprintf("  NvtLoader   = %s\n", Ini_Writer.NVTLoader);
-    dbgprintf("  SystemReservedMegaByte = %d\n", Ini_Writer.SystemReservedMegaByte);
-    dbgprintf("  NAND1_1_SIZE = %d\n", Ini_Writer.NAND1_1_SIZE);
-    dbgprintf("  NAND1_1_FAT  = %d\n", Ini_Writer.NAND1_1_FAT);
-    dbgprintf("  NAND1_2_FAT  = %d\n", Ini_Writer.NAND1_2_FAT);
-    dbgprintf("  NANDCARD_FAT = %d\n", Ini_Writer.NANDCARD_FAT);
+	dbgprintf(" NnandLoader = %s\n", Ini_Writer.NandLoader);
+	dbgprintf(" Logo        = %s\n", Ini_Writer.Logo);
+	dbgprintf(" NvtLoader   = %s\n", Ini_Writer.NVTLoader);
+	dbgprintf(" SystemReservedMegaByte = %d\n", Ini_Writer.SystemReservedMegaByte);
+	dbgprintf(" NAND1_1_SIZE = %d\n", Ini_Writer.NAND1_1_SIZE);
+	dbgprintf(" NAND1_1_FAT  = %d\n", Ini_Writer.NAND1_1_FAT);
+	dbgprintf(" NAND1_2_FAT  = %d\n", Ini_Writer.NAND1_2_FAT);
+	dbgprintf(" NANDCARD_FAT = %d\n", Ini_Writer.NANDCARD_FAT);
+#ifdef _KLE_MUL2_
+	dbgprintf(" NAND2_FAT    = %d\n", Ini_Writer.NAND2_FAT);
+#endif
     return Successful;
 }

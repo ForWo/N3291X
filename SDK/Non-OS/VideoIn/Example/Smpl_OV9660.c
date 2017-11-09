@@ -1,8 +1,10 @@
 #include "wblib.h"
-#include "W55FA92_VideoIn.h"
-#include "W55FA92_GPIO.h"
-#include "DrvI2C.h"
+#include "W55FA95_VideoIn.h"
+#include "W55FA95_GPIO.h"
 #include "demo.h"
+#include "w55fa95_i2c.h"
+
+#include "DrvI2C.h"	/* SW I2C */
 
 typedef struct
 {
@@ -37,7 +39,7 @@ struct OV_RegTable{
 static struct OV_RegValue g_sOV9660_VGA_RegValue[]=
 {//OV9660
 		{0x12, 0x80},
-	#if 0
+	#if 1
 		{0xd5, 0xff}, {0xd6, 0x3f}, {0x3d, 0x3c}, {0x11, 0x80},	{0x2a, 0x00}, {0x2b, 0x00},	//PCLK = SCLK
 	#else		
 		{0xd5, 0xff}, {0xd6, 0x3f}, {0x3d, 0x3c}, {0x11, 0x81},	{0x2a, 0x00}, {0x2b, 0x00},	//PCLK = SCLK/2
@@ -127,78 +129,244 @@ static UINT8 g_uOvDeviceID[]=
 	0x60,		// ov2640
 	0x60,		// 0v9660 VGA
 	0x60,		// 0v9660 SXGA
-	0x00		// not a device ID
+	0x00			// not a device ID
 };
 
 
-#ifdef __DEV__
+#if 0
 /*
-	Sensor power down and reset may default control on sensor daughter board and Reset by RC.	
+	Sensor power down and reset may default control on sensor daughter board.
+	Reset by RC.
 	Sensor alway power on (Keep low)
+
 */
 static void SnrReset(void)
-{/* GPB04 reset:	H->L->H 	*/				
-	//gpio_open(GPIO_PORTB);					//GPIOB4 as GPIO		
-	outp32(REG_GPBFUN0, inp32(REG_GPBFUN0) & (~ MF_GPB4));
-	
-	gpio_setportval(GPIO_PORTB, 1<<4, 1<<4);	//GPIOB 4 set high default
-	gpio_setportpull(GPIO_PORTB, 1<<4, 1<<4);	//GPIOB 4 pull-up 
-	gpio_setportdir(GPIO_PORTB, 1<<4, 1<<4);	//GPIOB 4 output mode 
-	sysDelay(3);			
-	gpio_setportval(GPIO_PORTB, 1<<4, 0<<4);	//GPIOB 4 set low
-	sysDelay(3);				
-	gpio_setportval(GPIO_PORTB, 1<<4, 1<<4);	//GPIOb 4 set high
+{/* GPA11 reset:	H->L->H 	*/			
+#ifdef __GPIO_PIN__
+	gpio_open(GPIO_PORTA, 11);					//GPIOA 10 as GPIO
+#else	
+	gpio_open(GPIO_PORTA);						//GPIOA 10 as GPIO
+#endif		
+	gpio_setportval(GPIO_PORTA, 1<<11, 1<<11);	//GPIOA 11 set high default
+	gpio_setportpull(GPIO_PORTA, 1<<11, 1<<11);	//GPIOA 11 pull-up 
+	gpio_setportdir(GPIO_PORTA, 1<<11, 1<<11);	//GPIOA 11 output mode 
+	Delay(1000);			
+	gpio_setportval(GPIO_PORTA, 1<<11, 1<<11);	//GPIOA 11 set low
+	Delay(1000);				
+	gpio_setportval(GPIO_PORTA, 1<<11, 0);		//GPIOA 11 set high
 }
 
 static void SnrPowerDown(BOOL bIsEnable)
-{/* GPE8 power down, HIGH for power down */
-	//gpio_open(GPIO_PORTB);						//GPIOB as GPIO
-	outp32(REG_GPEFUN1, inp32(REG_GPEFUN1) & (~ MF_GPE8));
-	
-	gpio_setportval(GPIO_PORTE, 1<<8, 1<<8);		//GPIOB 3 set high default
-	gpio_setportpull(GPIO_PORTE, 1<<8, 1<<8);		//GPIOB 3 pull-up 
-	gpio_setportdir(GPIO_PORTE, 1<<8, 1<<8);		//GPIOB 3 output mode 				
+{/* GPA10 power down, Low for power down */
+#ifdef __GPIO_PIN__
+	gpio_open(GPIO_PORTA, 10);					//GPIOA 10 as GPIO
+#else	
+	gpio_open(GPIO_PORTA);						//GPIOA 10 as GPIO
+#endif	
+	gpio_setportval(GPIO_PORTA, 1<<10, 1<<10);	//GPIOA 10 set high default
+	gpio_setportpull(GPIO_PORTA, 1<<10, 1<<10);	//GPIOA 10 pull-up 
+	gpio_setportdir(GPIO_PORTA, 1<<10, 1<<10);	//GPIOA 10 output mode 				
 	if(bIsEnable)
-		gpio_setportval(GPIO_PORTE, 1<<8, 1<<8);	//GPIOB 3 set high
-	else				
-		gpio_setportval(GPIO_PORTE, 1<<8, 0);		//GPIOB 3 set low		
+		gpio_setportval(GPIO_PORTA, 1<<10, 0);	//GPIOA 10 set high
+	else			
+		gpio_setportval(GPIO_PORTA, 1<<10, 1<<10);	//GPIOA 10 set low	
 }
-#endif
-#ifdef __DEMO__
-static void SnrReset(void)
-{/*  GPE8 reset  */				
-	//gpio_open(GPIO_PORTB);						//GPIOE as GPIO	
-	outp32(REG_GPEFUN1, inp32(REG_GPEFUN1) & (~ MF_GPE8));
-	
-	gpio_setportval(GPIO_PORTE, 1<<8, 1<<8);	//GPIOE 8 set high default
-	gpio_setportpull(GPIO_PORTE, 1<<8, 1<<8);	//GPIOE 8 pull-up 
-	gpio_setportdir(GPIO_PORTE, 1<<8, 1<<8);	//GPIOE 8 output mode 
-	sysDelay(3);			
-	gpio_setportval(GPIO_PORTE, 1<<8, 0<<8);	//GPIOE 8 set low
-	sysDelay(3);				
-	gpio_setportval(GPIO_PORTE, 1<<8, 1<<8);	//GPIOE 8 set high
-}
-#endif
-
+#endif 
+#if 1
+#define RETRY	1
 VOID OV9660_Init(UINT32 nIndex)
 {
 	UINT32 u32Idx;
 	UINT32 u32TableSize;
 	UINT8  u8DeviceID;
 	UINT8 u8ID;
+	INT32 rtval;
+	INT j;	
+	
 	struct OV_RegValue *psRegValue;
+	DBG_PRINTF("Sensor ID = %d\n", nIndex);
+	
+	if ( nIndex >= (sizeof(g_uOvDeviceID)/sizeof(UINT8)) )
+		return;
+	videoIn_Open(48000, 24000);								/* For sensor clock output */	
+#if 0	//Sensor module default no power down and no reset. 
+	SnrPowerDown(FALSE);
+	SnrReset();		 
+#endif 	 										
+		
+	u32TableSize = g_OV_InitTable[nIndex].u32TableSize;
+	psRegValue = g_OV_InitTable[nIndex].sRegTable;
+	u8DeviceID = g_uOvDeviceID[nIndex];
+	DBG_PRINTF("Device Slave Addr = 0x%x\n", u8DeviceID);
+	if ( psRegValue == 0 )
+		return;			
+	/* Software I2C use GPIOB 13,14 */	
+	i2cInit();	
+	/* Byte Write/Random Read */
+	rtval = i2cOpen();
+	if(rtval < 0)
+	{
+		DBG_PRINTF("Open I2C error!\n");
+		return;
+	}	
+	i2cIoctl(I2C_IOC_SET_DEV_ADDRESS, (u8DeviceID>>1), 0);  
+	i2cIoctl(I2C_IOC_SET_SPEED, 100, 0);	
+	i2cIoctl(I2C_IOC_SET_SINGLE_MASTER, 1, 0); 
+	for(u32Idx=0;u32Idx<u32TableSize; u32Idx++, psRegValue++)
+	{
+		j = RETRY;
+		i2cIoctl(I2C_IOC_SET_SUB_ADDRESS, (psRegValue->u8RegAddr), 1);
+		while(j-- > 0) 
+		{
+			if(i2cWrite(&(psRegValue->u8Value), 1) == 1)
+				break;
+		}						
+		if(j < 0)
+			sysprintf("WRITE ERROR [%d]!\n", u32Idx);
+		if ((psRegValue->u8RegAddr)==0x12 && (psRegValue->u8Value)==0x80)
+		{	
+			sysDelay(2);		
+			DBG_PRINTF("Delay A loop\n");
+		}					
+	}	
+	i2cIoctl(I2C_IOC_SET_SUB_ADDRESS, 0x0A, 1);	
+	j = RETRY;
+	while(j-- > 0) 
+	{
+		if(i2cRead_OV(&u8ID, 1) == 1)
+			break;
+	}
+	if(j <= 0)
+		DBG_PRINTF("Read ERROR [%x]!\n", 0x0A);
+	DBG_PRINTF("Sensor ID0 = 0x%x\n", u8ID);
 
+	i2cIoctl(I2C_IOC_SET_SUB_ADDRESS, 0x0B, 1);	
+	j = RETRY;
+	while(j-- > 0) 
+	{
+		if(i2cRead_OV(&u8ID, 1) == 1)
+			break;
+	}
+	if(j <= 0)
+		DBG_PRINTF("Read ERROR [%x]!\n", 0x0B);
+	DBG_PRINTF("Sensor ID0 = 0x%x\n", u8ID);
+
+	i2cIoctl(I2C_IOC_SET_SUB_ADDRESS, 0x1C, 1);	
+	j = RETRY;
+	while(j-- > 0) 
+	{
+		if(i2cRead_OV(&u8ID, 1) == 1)
+			break;
+	}
+	if(j < 0)
+		DBG_PRINTF("Read ERROR [%x]!\n", 0x1C);		
+	DBG_PRINTF("Sensor ID0 = 0x%x\n", u8ID);
+	
+	i2cIoctl(I2C_IOC_SET_SUB_ADDRESS, 0x1D, 1);	
+	j = RETRY;
+	while(j-- > 0) 
+	{
+		if(i2cRead_OV(&u8ID, 1) == 1)
+			break;
+	}
+	if(j < 0)
+		DBG_PRINTF("Read ERROR [%x]!\n", 0x1D);
+	DBG_PRINTF("Sensor ID0 = 0x%x\n", u8ID);
+
+	i2cIoctl(I2C_IOC_SET_SUB_ADDRESS, 0xD7, 1);	
+	j = RETRY;
+	while(j-- > 0) 
+	{
+		if(i2cRead_OV(&u8ID, 1) == 1)
+			break;
+	}
+	if(j < 0)
+		DBG_PRINTF("Read ERROR [%x]!\n", 0xD7);
+	DBG_PRINTF("Sensor ID0 = 0x%x\n", u8ID);
+
+	i2cIoctl(I2C_IOC_SET_SUB_ADDRESS, 0x6A, 1);	
+	j = RETRY;
+	while(j-- > 0) 
+	{
+		if(i2cRead_OV(&u8ID, 1) == 1)
+			break;
+	}
+	if(j < 0)
+		DBG_PRINTF("Read ERROR [%x]!\n", 0x6A);
+	DBG_PRINTF("Sensor ID0 = 0x%x\n", u8ID);
+}
+#else
+extern ERRCODE
+DrvI2C_Open(
+	UINT32 u32SCKPortIndex,
+	UINT32 u32SCKPinMask,
+	UINT32 u32SDAPortIndex,
+	UINT32 u32SDAPinMask,
+	PFN_DRVI2C_TIMEDELY pfnDrvI2C_Delay	
+);
+
+extern void Delay( 
+	UINT32 nCount 
+);
+
+BOOL 
+I2C_Write_8bitSlaveAddr_8bitReg_8bitData(UINT8 uAddr, UINT8 uRegAddr, UINT8 uData)
+{
+	// 3-Phase(ID address, regiseter address, data(8bits)) write transmission
+	volatile u32Delay = 0x100;
+	DrvI2C_SendStart();
+	while(u32Delay--);		
+	if ( (DrvI2C_WriteByte(uAddr,DrvI2C_Ack_Have,8)==FALSE) ||			// Write ID address to sensor
+		 (DrvI2C_WriteByte(uRegAddr,DrvI2C_Ack_Have,8)==FALSE) ||	// Write register address to sensor
+		 (DrvI2C_WriteByte(uData,DrvI2C_Ack_Have,8)==FALSE) )		// Write data to sensor
+	{
+		DrvI2C_SendStop();
+		return FALSE;
+	}
+	DrvI2C_SendStop();
+
+	if (uRegAddr==0x12 && (uData&0x80)!=0)
+	{
+		Delay(1000);			
+	}
+	return TRUE;
+}
+
+UINT8 I2C_Read_8bitSlaveAddr_8bitReg_8bitData(UINT8 uAddr, UINT8 uRegAddr)
+{
+	UINT8 u8Data;
+	
+	// 2-Phase(ID address, register address) write transmission
+	DrvI2C_SendStart();
+	DrvI2C_WriteByte(uAddr,DrvI2C_Ack_Have,8);		// Write ID address to sensor
+	DrvI2C_WriteByte(uRegAddr,DrvI2C_Ack_Have,8);	// Write register address to sensor
+	DrvI2C_SendStop();
+
+	// 2-Phase(ID-address, data(8bits)) read transmission
+	DrvI2C_SendStart();
+	DrvI2C_WriteByte(uAddr|0x01,DrvI2C_Ack_Have,8);		// Write ID address to sensor
+	u8Data = DrvI2C_ReadByte(DrvI2C_Ack_Have,8);		// Read data from sensor
+	DrvI2C_SendStop();
+	
+	return u8Data;
+}
+
+static VOID OV9660_Init(UINT32 nIndex)
+{
+	UINT32 u32Idx;
+	UINT32 u32TableSize;
+	UINT8  u8DeviceID;
+	UINT8 u8ID;
+	struct OV_RegValue *psRegValue;
 	DBG_PRINTF("Sensor ID = %d\n", nIndex);
 	if ( nIndex >= (sizeof(g_uOvDeviceID)/sizeof(UINT8)) )
 		return;
-	
-	//videoIn_Open(48000, 24000);								/* For sensor clock output */	
-	
+	videoIn_Open(48000, 24000);								/* For sensor clock output */	
 
-#ifdef __DEV__		
-	SnrPowerDown(FALSE); 	 	/* DEV use power down pin, demo board force it to low state for normal run */				
-#endif 
-	SnrReset();	 										
+#if 0	//Sensor module default no power down and no reset. 
+	SnrPowerDown(FALSE);
+	SnrReset();		 
+#endif 	 										
 		
 	u32TableSize = g_OV_InitTable[nIndex].u32TableSize;
 	psRegValue = g_OV_InitTable[nIndex].sRegTable;
@@ -206,38 +374,14 @@ VOID OV9660_Init(UINT32 nIndex)
 	DBG_PRINTF("Device Slave Addr = 0x%x\n", u8DeviceID);
 	if ( psRegValue == 0 )
 		return;	
-#ifdef __DEV__
-	#if defined(__1ST_PORT__) || defined(__2ND_PORT__)
-	outp32(REG_GPBFUN1, inp32(REG_GPBFUN1) & (~MF_GPB13));
-	outp32(REG_GPBFUN1, inp32(REG_GPBFUN1) & (~MF_GPB14));
+
+	gpio_open(GPIO_PORTB);				//GPIOB as GPIO
+
 	DrvI2C_Open(eDRVGPIO_GPIOB, 					
 				eDRVGPIO_PIN13, 
 				eDRVGPIO_GPIOB,
 				eDRVGPIO_PIN14, 
 				(PFN_DRVI2C_TIMEDELY)Delay);
-	#endif			
-#endif		
-#ifdef __DEMO__
-	#if defined(__1ST_PORT__) 
-	outp32(REG_GPBFUN1, inp32(REG_GPBFUN1) & (~MF_GPB13));
-	outp32(REG_GPBFUN1, inp32(REG_GPBFUN1) & (~MF_GPB14));
-	DrvI2C_Open(eDRVGPIO_GPIOB, 					
-				eDRVGPIO_PIN13, 
-				eDRVGPIO_GPIOB,
-				eDRVGPIO_PIN14, 
-				(PFN_DRVI2C_TIMEDELY)Delay);	
-	#endif
-	#if defined(__2ND_PORT__) 
-	outp32(REG_GPBFUN0, inp32(REG_GPBFUN0) & (~MF_GPB4));
-	outp32(REG_GPAFUN1, inp32(REG_GPAFUN1) & (~MF_GPA12) | (2<<16));
-	DrvI2C_Open(eDRVGPIO_GPIOB, 					
-				eDRVGPIO_PIN4, 
-				eDRVGPIO_GPIOA,
-				eDRVGPIO_PIN12, 
-				(PFN_DRVI2C_TIMEDELY)Delay);	
-	outp32(REG_GPAFUN1, inp32(REG_GPAFUN1) & (~MF_GPA12) | (2<<16));				
-	#endif			
-#endif	
 									
 	for(u32Idx=0;u32Idx<u32TableSize; u32Idx++, psRegValue++)
 	{
@@ -264,7 +408,7 @@ VOID OV9660_Init(UINT32 nIndex)
 	
 	DrvI2C_Close();	
 }
-
+#endif
 /*===================================================================
 	LCD dimension = (OPT_LCD_WIDTH, OPT_LCD_HEIGHT)	
 	Packet dimension = (OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT)	
@@ -275,88 +419,140 @@ UINT32 Smpl_OV9660_VGA(UINT8* pu8FrameBuffer0, UINT8* pu8FrameBuffer1, UINT8* pu
 {
 	PFN_VIDEOIN_CALLBACK pfnOldCallback;
 	PUINT8 pu8PacketBuf;
-	VINDEV_T Vin;
-	VINDEV_T* pVin;
-	INT32 i32ErrCode;
-	
+
+	UINT32 u32PreW, u32PreH;
 	pu8PacketBuf = (PUINT8)((UINT32)pu8FrameBuffer0 | 0x80000000);
-	memset(pu8PacketBuf, 0x0, OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT*2);
+	memset(pu8PacketBuf, 0x0, OPT_LCM_WIDTH*OPT_LCM_HEIGHT*2);
 	pu8PacketBuf = (PUINT8)((UINT32)pu8FrameBuffer1 | 0x80000000);
-	memset(pu8PacketBuf, 0x0, OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT*2);
+	memset(pu8PacketBuf, 0x0, OPT_LCM_WIDTH*OPT_LCM_HEIGHT*2);
 	pu8PacketBuf = (PUINT8)((UINT32)pu8FrameBuffer2 | 0x80000000);
-	memset(pu8PacketBuf, 0x0, OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT*2);
+	memset(pu8PacketBuf, 0x0, OPT_LCM_WIDTH*OPT_LCM_HEIGHT*2);
 	
 	InitVPOST(pu8FrameBuffer0);
-	
-	//videoIn_Init(TRUE, eSYS_UPLL, 24000, eVIDEOIN_SNR_CCIR601);		
 #ifdef __1ST_PORT__	
-	i32ErrCode = register_vin_device(1, &Vin);	
-	if(i32ErrCode<0){
-		sysprintf("Register vin 0 device fail\n");
-		return (UINT32)-1;
-	}
-	pVin = &Vin;
-	pVin->Init(TRUE, (E_VIDEOIN_SNR_SRC)eSYS_UPLL, 24000, eVIDEOIN_SNR_CCIR601);
-#endif 
-#ifdef __2ND_PORT__	
-	i32ErrCode = register_vin_device(2, &Vin);
-	if(i32ErrCode<0){
-		sysprintf("Register vin 1 device fail\n");
-		return (UINT32)-1;
-	}
-	pVin = &Vin;
-	pVin->Init(TRUE, (E_VIDEOIN_SNR_SRC)eSYS_UPLL, 24000, eVIDEOIN_2ND_SNR_CCIR601);
-#endif		
-	pVin->Open(48000, 24000);
+	videoIn_Init(TRUE, 0, 24000, eVIDEOIN_SNR_CCIR601);	
+#endif
+#ifdef __2ND_PORT__
+	//videoIn_Init(TRUE, 0, 24000, eVIDEOIN_2ND_SNR_CCIR601);	
+	videoIn_Init(TRUE, 0, 24000, eVIDEOIN_2ND_SNR_CCIR601_2);	
+#endif	
+	//SnrPowerDown(FALSE);
+	//SnrReset();	
 	OV9660_Init(5);			
-	pVin->EnableInt(eVIDEOIN_VINT);	
-	pVin->InstallCallback(eVIDEOIN_VINT, 
-						(PFN_VIDEOIN_CALLBACK)VideoIn_InterruptHandler,
-						&pfnOldCallback	);					//Frame End interrupt
+	videoIn_Open(48000, 24000);		
+	videoIn_EnableInt(eVIDEOIN_VINT);
+		
+	getFitPreviewDimension(OPT_LCM_WIDTH,
+						OPT_LCM_HEIGHT,
+						OPT_CROP_WIDTH,
+						OPT_CROP_HEIGHT,
+						&u32PreW,
+						&u32PreH);
 						
-	pVin->SetPacketFrameBufferControl(FALSE, FALSE);		
-	pVin->SetSensorPolarity(TRUE,
-						FALSE,							//Polarity.	
-						TRUE);																			
-	pVin->SetDataFormatAndOrder(eVIDEOIN_IN_UYVY, 				//Input Order 
-							eVIDEOIN_IN_YUV422,			//Intput format
-							eVIDEOIN_OUT_YUV422);			//Output format for packet 																
-	pVin->SetCropWinStartAddr(0,								//Vertical start position 	Y
-							0);							//Horizontal start position	X
-	pVin->SetCropWinSize(OPT_CROP_HEIGHT,					//UINT16 u16Height, 
-						OPT_CROP_WIDTH);					//UINT16 u16Width;	
-	pVin->PreviewPipeSize(OPT_PREVIEW_HEIGHT, OPT_PREVIEW_WIDTH);						
-	pVin->EncodePipeSize(OPT_ENCODE_HEIGHT, OPT_ENCODE_WIDTH);	
+	sysprintf("Preview (Width , Height)=(%d, %d)\n", u32PreW, u32PreH);
+	videoIn_InstallCallback(eVIDEOIN_VINT, 
+						(PFN_VIDEOIN_CALLBACK)VideoIn_InterruptHandler,
+						&pfnOldCallback	);	//Frame End interrupt						
+	videoIn_SetPacketFrameBufferControl(FALSE, FALSE);	
+	
+	videoinIoctl(VIDEOIN_IOCTL_SET_POLARITY,
+				TRUE,
+				FALSE,							//Polarity.	
+				TRUE);							
+												
+	videoinIoctl(VIDEOIN_IOCTL_ORDER_INFMT_OUTFMT,								
+				eVIDEOIN_IN_UYVY, 			//Input Order 
+				eVIDEOIN_IN_YUV422	,		//Intput format
+				eVIDEOIN_OUT_YUV422);		//Output format for packet 														
+		
+	videoinIoctl(VIDEOIN_IOCTL_SET_CROPPING_START_POSITION,				
+				0,							//Vertical start position 	Y
+				2,							//Horizontal start position	X
+				0);							//Useless
+	videoinIoctl(VIDEOIN_IOCTL_CROPPING_DIMENSION,				
+				OPT_CROP_HEIGHT,							//UINT16 u16Height, 
+				OPT_CROP_WIDTH,							//UINT16 u16Width;	
+				0);							//Useless
+//	u32GCD = GCD(OPT_PREVIEW_HEIGHT, OPT_CROP_HEIGHT);						 							 
+	videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+				eVIDEOIN_PACKET,			//272/480
+				u32PreH/1,
+				OPT_CROP_HEIGHT);		
+//	u32GCD = GCD(OPT_PREVIEW_WIDTH, OPT_CROP_WIDTH);																
+	videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+				eVIDEOIN_PACKET,			//364/640
+				u32PreW,
+				OPT_CROP_WIDTH);		
+				
+//	u32GCD = GCD(OPT_ENCODE_HEIGHT, OPT_CROP_HEIGHT);							 							 
+	videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+				eVIDEOIN_PLANAR,			//480/480
+				OPT_ENCODE_HEIGHT,
+				OPT_CROP_HEIGHT);	
+				
+//	u32GCD = GCD(OPT_ENCODE_WIDTH, OPT_CROP_WIDTH);																			
+	videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+				eVIDEOIN_PLANAR,			//640/640
+				OPT_ENCODE_WIDTH,
+				OPT_CROP_WIDTH);
 	
 #ifdef __TV__
-	pVin->SetStride(OPT_STRIDE, OPT_ENCODE_WIDTH);
-	pVin->SetBaseStartAddress(eVIDEOIN_PACKET, 0, (UINT32)((UINT32)pu8FrameBuffer0) );
-#else			
-	pVin->SetStride(OPT_STRIDE, OPT_ENCODE_WIDTH);
-	pVin->SetBaseStartAddress(eVIDEOIN_PACKET, (E_VIDEOIN_BUFFER)0, (UINT32)((UINT32)pu8FrameBuffer0 + (OPT_STRIDE-OPT_PREVIEW_WIDTH)/2*2)  );					
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				OPT_STRIDE,				
+				OPT_ENCODE_WIDTH,
+				0);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PACKET,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)pu8FrameBuffer0 ) );		
+				//(UINT32)((UINT32)pu8FrameBuffer + (OPT_STRIDE-OPT_PREVIEW_WIDTH)/2*2) );	
+				
+				
+								
+#else				
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				OPT_STRIDE,				
+				OPT_ENCODE_WIDTH,
+				0);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PACKET,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)pu8FrameBuffer0 + (OPT_STRIDE-OPT_PREVIEW_WIDTH)/2*2) );					
 #endif			
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)0, 							//Planar buffer Y addrress
-							(UINT32)u8PlanarFrameBuffer);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				0, 							//Planar buffer Y addrress
+				(UINT32)u8PlanarFrameBuffer);
 	
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)1, 							//Planar buffer U addrress
-							(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				1, 							//Planar buffer U addrress
+				(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT);
 				
-	pVin->SetPlanarFormat(eVIDEOIN_PLANAR_YUV422);				// Planar YUV422/420/macro 					
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)2, 							//Planar buffer V addrress
-							(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT/2);			
-							
-	pVin->SetPipeEnable(TRUE, 									// Engine enable?
-						eVIDEOIN_BOTH_PIPE_ENABLE);		// which packet was enabled. 											
-						
+	videoinIoctl(VIDEOIN_IOCTL_SET_PLANAR_FORMAT,
+				FALSE,		//FALSE = Planar YUV422. 
+				NULL,
+				NULL);			
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				2, 							//Planar buffer V addrress
+				(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT/2);			
 				
-	pVin->SetShadowRegister();				
+	videoinIoctl(VIDEOIN_IOCTL_SET_PIPE_ENABLE,
+				TRUE, 						// Engine enable?
+				eVIDEOIN_BOTH_PIPE_ENABLE,			// which packet was enable. 											
+				0 );							//Useless		
+				
+	videoinIoctl(VIDEOIN_IOCTL_SET_SHADOW,
+				NULL,			//640/640
+				NULL,
+				NULL);				
 	sysSetLocalInterrupt(ENABLE_IRQ);						
 															
 	return Successful;			
 }	
+
+
 
 
 /*===================================================================
@@ -369,86 +565,157 @@ UINT32 Smpl_OV9660_SXGA(UINT8* pu8FrameBuffer0, UINT8* pu8FrameBuffer1, UINT8* p
 {
 	PFN_VIDEOIN_CALLBACK pfnOldCallback;
 	PUINT8 pu8PacketBuf;
-	VINDEV_T Vin;
-	VINDEV_T* pVin;
-	INT32 i32ErrCode;
+
+	UINT32 u32PlanarFormat;
+	UINT32 u32PreW, u32PreH;
 	
+	sysprintf("Please choice planar format [0]=Planar YUV422.  [!0]=Planar YUV420\n");	
+	u32PlanarFormat = sysGetChar();
+	if(u32PlanarFormat==0)
+		u32PlanarFormat = 0;	//0 ==> planar YUV422
+	else
+		u32PlanarFormat = 1;	//!0 ==> planar YUV420
 	pu8PacketBuf = (PUINT8)((UINT32)pu8FrameBuffer0 | 0x80000000);
-	memset(pu8PacketBuf, 0x0, OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT*2);
+	memset(pu8PacketBuf, 0x0, OPT_LCM_WIDTH*OPT_LCM_HEIGHT*2);
 	pu8PacketBuf = (PUINT8)((UINT32)pu8FrameBuffer1 | 0x80000000);
-	memset(pu8PacketBuf, 0x0, OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT*2);
+	memset(pu8PacketBuf, 0x0, OPT_LCM_WIDTH*OPT_LCM_HEIGHT*2);
 	pu8PacketBuf = (PUINT8)((UINT32)pu8FrameBuffer2 | 0x80000000);
-	memset(pu8PacketBuf, 0x0, OPT_PREVIEW_WIDTH*OPT_PREVIEW_HEIGHT*2);
+	memset(pu8PacketBuf, 0x0, OPT_LCM_WIDTH*OPT_LCM_HEIGHT*2);
 	
 	InitVPOST(pu8FrameBuffer0);
-	
-	//videoIn_Init(TRUE, eSYS_UPLL, 24000, eVIDEOIN_SNR_CCIR601);		
 #ifdef __1ST_PORT__	
-	i32ErrCode = register_vin_device(1, &Vin);	
-	if(i32ErrCode<0){
-		sysprintf("Register vin 0 device fail\n");
-		return (UINT32)-1;
-	}
-	pVin = &Vin;
-	pVin->Init(TRUE, (E_VIDEOIN_SNR_SRC)eSYS_UPLL, 24000, eVIDEOIN_SNR_CCIR601);
-#endif 
-#ifdef __2ND_PORT__	
-	i32ErrCode = register_vin_device(2, &Vin);
-	if(i32ErrCode<0){
-		sysprintf("Register vin 1 device fail\n");
-		return (UINT32)-1;
-	}
-	pVin = &Vin;
-	pVin->Init(TRUE, (E_VIDEOIN_SNR_SRC)eSYS_UPLL, 24000, eVIDEOIN_2ND_SNR_CCIR601);
+	videoIn_Init(TRUE, 0, 24000, eVIDEOIN_SNR_CCIR601);	
+#endif
+#ifdef __2ND_PORT__
+	videoIn_Init(TRUE, 0, 24000, eVIDEOIN_2ND_SNR_CCIR601);	
 #endif	
-	pVin->Open(48000, 24000);
-	OV9660_Init(6);			
-	pVin->EnableInt(eVIDEOIN_VINT);	
-	pVin->InstallCallback(eVIDEOIN_VINT, 
+	//SnrPowerDown(FALSE);
+	//SnrReset();	
+	OV9660_Init(6);			//SXGA
+	videoIn_Open(48000, 24000);		
+	videoIn_EnableInt(eVIDEOIN_VINT);
+		
+	getFitPreviewDimension(OPT_LCM_WIDTH,
+						OPT_LCM_HEIGHT,
+						OPT_CROP_WIDTH,
+						OPT_CROP_HEIGHT,
+						&u32PreW,
+						&u32PreH);
+						
+	videoIn_InstallCallback(eVIDEOIN_VINT, 
 						(PFN_VIDEOIN_CALLBACK)VideoIn_InterruptHandler,
-						&pfnOldCallback	);					//Frame End interrupt
+						&pfnOldCallback	);	//Frame End interrupt
 						
-	pVin->SetPacketFrameBufferControl(FALSE, FALSE);		
-	pVin->SetSensorPolarity(TRUE,
-						FALSE,							//Polarity.	
-						TRUE);																			
-	pVin->SetDataFormatAndOrder(eVIDEOIN_IN_UYVY, 				//Input Order 
-							eVIDEOIN_IN_YUV422,			//Intput format
-							eVIDEOIN_OUT_YUV422);			//Output format for packet 																
-	pVin->SetCropWinStartAddr(0,								//Vertical start position 	Y
-							0);							//Horizontal start position	X
-	pVin->SetCropWinSize(OPT_CROP_HEIGHT,					//UINT16 u16Height, 
-						OPT_CROP_WIDTH);					//UINT16 u16Width;	
-	pVin->PreviewPipeSize(OPT_PREVIEW_HEIGHT, OPT_PREVIEW_WIDTH);						
-	pVin->EncodePipeSize(OPT_ENCODE_HEIGHT, OPT_ENCODE_WIDTH);	
+	videoIn_SetPacketFrameBufferControl(FALSE, FALSE);	
 	
-#ifdef __TV__
-	pVin->SetStride(OPT_STRIDE, OPT_ENCODE_WIDTH);
-	pVin->SetBaseStartAddress(eVIDEOIN_PACKET, 0, (UINT32)((UINT32)pu8FrameBuffer0) );
-#else			
-	pVin->SetStride(OPT_STRIDE, OPT_ENCODE_WIDTH);
-	pVin->SetBaseStartAddress(eVIDEOIN_PACKET, (E_VIDEOIN_BUFFER)0, (UINT32)((UINT32)pu8FrameBuffer0 + (OPT_STRIDE-OPT_PREVIEW_WIDTH)/2*2)  );					
+	videoinIoctl(VIDEOIN_IOCTL_SET_POLARITY,
+				TRUE,
+				FALSE,							//Polarity.	
+				TRUE);							
+												
+	videoinIoctl(VIDEOIN_IOCTL_ORDER_INFMT_OUTFMT,								
+				eVIDEOIN_IN_UYVY, 			//Input Order 
+				eVIDEOIN_IN_YUV422	,		//Intput format
+				eVIDEOIN_OUT_YUV422);		//Output format for packet 														
+		
+	videoinIoctl(VIDEOIN_IOCTL_SET_CROPPING_START_POSITION,				
+				0,							//Vertical start position
+				4,							//Horizontal start position	
+				0);							//Useless
+	videoinIoctl(VIDEOIN_IOCTL_CROPPING_DIMENSION,				
+				OPT_CROP_HEIGHT,							//UINT16 u16Height, 
+				OPT_CROP_WIDTH,							//UINT16 u16Width;	
+				0);							//Useless
+//	u32GCD = GCD(OPT_PREVIEW_HEIGHT, OPT_CROP_HEIGHT);						 							 
+	videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+				eVIDEOIN_PACKET,			//272/480
+				OPT_PREVIEW_HEIGHT,
+				OPT_CROP_HEIGHT);		
+//	u32GCD = GCD(OPT_PREVIEW_WIDTH, OPT_CROP_WIDTH);																
+	videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+				eVIDEOIN_PACKET,			//364/640
+				OPT_PREVIEW_WIDTH,
+				OPT_CROP_WIDTH);		
+				
+//	u32GCD = GCD(OPT_ENCODE_HEIGHT, OPT_CROP_HEIGHT);							 							 
+	videoinIoctl(VIDEOIN_IOCTL_VSCALE_FACTOR,
+				eVIDEOIN_PLANAR,			//480/480
+				OPT_ENCODE_HEIGHT,
+				OPT_CROP_HEIGHT);	
+				
+//	u32GCD = GCD(OPT_ENCODE_WIDTH, OPT_CROP_WIDTH);																			
+	videoinIoctl(VIDEOIN_IOCTL_HSCALE_FACTOR,
+				eVIDEOIN_PLANAR,			//640/640
+				OPT_ENCODE_WIDTH,
+				OPT_CROP_WIDTH);
+	
+#if  0
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				OPT_STRIDE,				
+				OPT_ENCODE_WIDTH,
+				0);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PACKET,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)pu8FrameBuffer0 ) );		
+				//(UINT32)((UINT32)pu8FrameBuffer + (OPT_STRIDE-OPT_PREVIEW_WIDTH)/2*2) );	
+				
+				
+								
+#else				
+	videoinIoctl(VIDEOIN_IOCTL_SET_STRIDE,										
+				OPT_STRIDE,				
+				OPT_ENCODE_WIDTH,
+				0);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PACKET,			
+				0, 							//Packet buffer addrress 0	
+				(UINT32)((UINT32)pu8FrameBuffer0 + (OPT_STRIDE-u32PreW)/2*2) );					
 #endif			
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)0, 							//Planar buffer Y addrress
-							(UINT32)u8PlanarFrameBuffer);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				0, 							//Planar buffer Y addrress
+				(UINT32)u8PlanarFrameBuffer);
 	
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)1, 							//Planar buffer U addrress
-							(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT);
+	videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				1, 							//Planar buffer U addrress
+				(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT);
+	if(u32PlanarFormat==0)
+	{	
+		videoinIoctl(VIDEOIN_IOCTL_SET_PLANAR_FORMAT,
+				FALSE,		//FALSE = Planar YUV422. 
+				NULL,
+				NULL);			
+		videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				2, 							//Planar buffer V addrress
+				(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT/2);			
+	}
+	else
+	{
+		videoinIoctl(VIDEOIN_IOCTL_SET_PLANAR_FORMAT,
+				TRUE,		//TRUE = Planar YUV420. 
+				NULL,
+				NULL);			
+		videoinIoctl(VIDEOIN_IOCTL_SET_BUF_ADDR,
+				eVIDEOIN_PLANAR,			
+				2, 							//Planar buffer V addrress
+				(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT/4);	
+	}
 				
-	pVin->SetPlanarFormat(eVIDEOIN_PLANAR_YUV422);				// Planar YUV422/420/macro 					
-	pVin->SetBaseStartAddress(eVIDEOIN_PLANAR,			
-							(E_VIDEOIN_BUFFER)2, 							//Planar buffer V addrress
-							(UINT32)u8PlanarFrameBuffer+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT+OPT_ENCODE_WIDTH*OPT_ENCODE_HEIGHT/2);			
-							
-	pVin->SetPipeEnable(TRUE, 									// Engine enable?
-						eVIDEOIN_BOTH_PIPE_ENABLE);		// which packet was enabled. 											
-						
+	videoinIoctl(VIDEOIN_IOCTL_SET_PIPE_ENABLE,
+				TRUE, 						// Engine enable?
+				eVIDEOIN_BOTH_PIPE_ENABLE,			// which packet was enable. 											
+				0 );							//Useless		
 				
-	pVin->SetShadowRegister();				
+	videoinIoctl(VIDEOIN_IOCTL_SET_SHADOW,
+				NULL,			//640/640
+				NULL,
+				NULL);				
 	sysSetLocalInterrupt(ENABLE_IRQ);						
 															
 	return Successful;			
 }	
+
 

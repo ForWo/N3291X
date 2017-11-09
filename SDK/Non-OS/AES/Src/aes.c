@@ -12,7 +12,7 @@
 #include <string.h>
 #include "wbio.h"
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "aes.h"
 
 /*-----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ BOOL volatile _aes_bIsAESOK=FALSE, _aes_bIsBusError=FALSE;      // for interrupt
  *      _aes_bIsAESOK:    TRUE indicate AESOK interrupt happen.
  *      _aes_bIsBusError: TRUE indicate BERR  interrupt happen.
  *---------------------------------------------------------------------------*/
-void AES_Int_Handler()
+VOID AES_Int_Handler()
 {
     UINT32 volatile isr;
     UINT32 volatile ier;
@@ -96,7 +96,7 @@ void AES_Int_Handler()
 /*-----------------------------------------------------------------------------
  * Clear interrupt flag in AES register.
  *---------------------------------------------------------------------------*/
-void AES_Clear_Interrupt_Flag()
+VOID AES_Clear_Interrupt_Flag()
 {
     _aes_bIsAESOK = FALSE;
     outpw(REG_AESISR, AESOK);   // clear interrupt flag
@@ -114,17 +114,15 @@ void AES_Clear_Interrupt_Flag()
  *---------------------------------------------------------------------------*/
 int AES_Check_Bus_Error()
 {
-    int result = 0;
-
     //--- check Bus Error status
     if (inpw(REG_AESIER) & ENBERR)
     {
         // interrupt enable, check bus error by _aes_bIsBusError that update by interrupt handler
         if (_aes_bIsBusError)
         {
-            sysprintf("ERROR in AES_Check_Bus_Error(): Interrupt Handler inform that Bus Error !!\n");
+            sysprintf("ERROR in AES_Check_Bus_Error(): Interrupt Handler inform that Bus Eerror !!\n");
             _aes_bIsBusError = FALSE;
-            result = AES_ERR_BUS_ERROR;
+            return AES_ERR_BUS_ERROR;
         }
     }
     else
@@ -134,21 +132,10 @@ int AES_Check_Bus_Error()
         {
             sysprintf("ERROR in AES_Check_Bus_Error(): Polling REG_AESISR and found Bus Error !!\n");
             outpw(REG_AESISR, BERR);    // clear interrupt flag
-            result = AES_ERR_BUS_ERROR;
+            return AES_ERR_BUS_ERROR;
         }
     }
-
-    if (result == AES_ERR_BUS_ERROR)
-    {
-        sysprintf("    AESCR = 0x%08x\n", inpw(REG_AESCR));
-        sysprintf("    AESSAR = 0x%08x\n", inpw(REG_AESSAR));
-        sysprintf("    AESDAR = 0x%08x\n", inpw(REG_AESDAR));
-        sysprintf("    AESBCR = 0x%08x\n", inpw(REG_AESBCR));
-        sysprintf("    ACSAR = 0x%08x\n", inpw(REG_ACSAR));
-        sysprintf("    ACDAR = 0x%08x\n", inpw(REG_ACDAR));
-        sysprintf("    ACBCR = 0x%08x\n", inpw(REG_ACBCR));
-    }
-    return result;
+    return 0;
 }
 
 
@@ -168,7 +155,7 @@ int AES_Check_Bus_Error()
  *      0:  OK
  *      error code: FAIL
  *---------------------------------------------------------------------------*/
-int Do_AES_Async(UINT8* input_buf, UINT8* output_buf, UINT32 input_len, UINT8* iv,
+int Do_AES(UINT8* input_buf, UINT8* output_buf, UINT32 input_len, UINT8* iv,
            UINT8* key, KEYSIZE key_size, INT isDecrypt)
 {
     //--- check input_len
@@ -271,20 +258,33 @@ int Do_AES_Async(UINT8* input_buf, UINT8* output_buf, UINT32 input_len, UINT8* i
     AES_Clear_Interrupt_Flag();
     outpw(REG_AESCR, inpw(REG_AESCR) | AESON);
 
-    // AES is running now, call flush to wait for its finish.
-    return AES_ERR_RUNNING;
+    //--- wait AES done
+    if (inpw(REG_AESIER) & ENAESOK)
+    {
+        // interrupt enable, wait AES done by _aes_bIsAESOK that update by interrupt handler
+        while (!_aes_bIsAESOK)
+        {
+            if (AES_Check_Bus_Error() == AES_ERR_BUS_ERROR)    // bus error happen
+                return AES_ERR_BUS_ERROR;
+        }
+        DBG_PRINTF("Interrupt Handler inform that AES finish.\n");
+        _aes_bIsAESOK = FALSE;
+    }
+    else
+    {
+        // interrupt disable, wait AES done by polling REG_AESISR
+        while (! (inpw(REG_AESISR) & AESOK))
+        {
+            if (AES_Check_Bus_Error() == AES_ERR_BUS_ERROR)    // bus error happen
+                return AES_ERR_BUS_ERROR;
+        }
+        DBG_PRINTF("Polling REG_AESISR and found AES finish.\n");
+        outpw(REG_AESISR, AESOK);   // clear interrupt flag
+    }
+    return 0;
 }
-int Do_AES(UINT8* input_buf, UINT8* output_buf, UINT32 input_len, UINT8* iv,
-           UINT8* key, KEYSIZE key_size, INT isDecrypt)
-{
-	int errcode = Do_AES_Async (input_buf, output_buf, input_len, iv, key, key_size, isDecrypt);
-	if (errcode == AES_ERR_RUNNING) {
-		errcode = AES_Flush ();
-	}
-	
-	return errcode;
-}
-	
+
+
 /*-----------------------------------------------------------------------------
  * Encrypt plain text by AES algorithm that support by FA95 with any length.
  * INPUT:
@@ -299,7 +299,7 @@ int Do_AES(UINT8* input_buf, UINT8* output_buf, UINT32 input_len, UINT8* iv,
  * RETURN:
  *      same to Do_AES()
  *---------------------------------------------------------------------------*/
-int AES_Encrypt_Async(UINT8* plain_buf, UINT8* cipher_buf, UINT32 data_len, UINT8* iv,
+int AES_Encrypt(UINT8* plain_buf, UINT8* cipher_buf, UINT32 data_len, UINT8* iv,
                 UINT8* key, KEYSIZE key_size)
 {
     int result;
@@ -322,7 +322,6 @@ int AES_Encrypt_Async(UINT8* plain_buf, UINT8* cipher_buf, UINT32 data_len, UINT
     memcpy(next_iv, iv, 16);
     while (1)
     {
-		// Due to division into several sub-text, just the last sub-text can go async mode.
         if (data_len > AES_MAX_BCNT)
         {
             result = Do_AES(plain_buf, cipher_buf, AES_MAX_BCNT, next_iv, key, key_size, AES_ENCRYPT);
@@ -336,21 +335,12 @@ int AES_Encrypt_Async(UINT8* plain_buf, UINT8* cipher_buf, UINT32 data_len, UINT
         }
         else    // final round
         {
-            result = Do_AES_Async(plain_buf, cipher_buf, data_len, next_iv, key, key_size, AES_ENCRYPT);
+            result = Do_AES(plain_buf, cipher_buf, data_len, next_iv, key, key_size, AES_ENCRYPT);
             return result;
         }
     }
 }
-int AES_Encrypt(UINT8* plain_buf, UINT8* cipher_buf, UINT32 data_len, UINT8* iv,
-                UINT8* key, KEYSIZE key_size)
-{
-	int errcode = AES_Encrypt_Async (plain_buf, cipher_buf, data_len, iv, key, key_size);
-	if (errcode == AES_ERR_RUNNING) {
-		errcode = AES_Flush ();
-	}
-	
-	return errcode;
-}
+
 
 /*-----------------------------------------------------------------------------
  * Decrypt cipher text by AES algorithm that support by FA95 with any length.
@@ -366,7 +356,7 @@ int AES_Encrypt(UINT8* plain_buf, UINT8* cipher_buf, UINT32 data_len, UINT8* iv,
  * RETURN:
  *      same to Do_AES()
  *---------------------------------------------------------------------------*/
-int AES_Decrypt_Async(UINT8* cipher_buf, UINT8* plain_buf, UINT32 data_len, UINT8* iv,
+int AES_Decrypt(UINT8* cipher_buf, UINT8* plain_buf, UINT32 data_len, UINT8* iv,
                 UINT8* key, KEYSIZE key_size)
 {
     int result;
@@ -389,7 +379,6 @@ int AES_Decrypt_Async(UINT8* cipher_buf, UINT8* plain_buf, UINT32 data_len, UINT
     memcpy(next_iv, iv, 16);
     while (1)
     {
-		// Due to division into several sub-text, just the last sub-text can go async mode.
         if (data_len > AES_MAX_BCNT)
         {
             result = Do_AES(cipher_buf, plain_buf, AES_MAX_BCNT, next_iv, key, key_size, AES_DECRYPT);
@@ -403,94 +392,19 @@ int AES_Decrypt_Async(UINT8* cipher_buf, UINT8* plain_buf, UINT32 data_len, UINT
         }
         else    // final round
         {
-            result = Do_AES_Async(cipher_buf, plain_buf, data_len, next_iv, key, key_size, AES_DECRYPT);
+            result = Do_AES(cipher_buf, plain_buf, data_len, next_iv, key, key_size, AES_DECRYPT);
             return result;
         }
     }
 
 //    return Do_AES(cipher_buf, plain_buf, data_len, iv, key, key_size, AES_DECRYPT);
 }
-int AES_Decrypt(UINT8* cipher_buf, UINT8* plain_buf, UINT32 data_len, UINT8* iv,
-                UINT8* key, KEYSIZE key_size)
-{
-	int errcode = AES_Decrypt_Async (cipher_buf, plain_buf, data_len, iv, key, key_size);
-	if (errcode == AES_ERR_RUNNING) {
-		errcode = AES_Flush ();
-	}
-	
-	return errcode;
-}
-				
-int AES_Flush(void)
-{
-	int result;
-	
-	while ((result = AES_Check_Status ()) == AES_ERR_BUSY);
-	
-	return result;
-}
 
-/*-----------------------------------------------------------------------------
- * Check task status
- * RETURN:
- * 	0:					task done
- *	AES_ERR_BUSY:		task on-going
- * 	AES_ERR_BUS_ERROR:	bus error
- *---------------------------------------------------------------------------*/
-int AES_Check_Status()
-{
-    //--- check Bus Error status
-    if (inpw(REG_AESIER) & ENBERR)
-    {
-        // interrupt enable, check bus error by _aes_bIsBusError that update by interrupt handler
-        if (_aes_bIsBusError)
-        {
-            sysprintf("ERROR in AES_Check_Bus_Error(): Interrupt Handler inform that Bus Error !!\n");
-            _aes_bIsBusError = FALSE;
-			return AES_ERR_BUS_ERROR;
-        }
-    }
-    else
-    {
-        // interrupt disable, check bus error by polling REG_AESISR
-        if (inpw(REG_AESISR) & BERR)
-        {
-            sysprintf("ERROR in AES_Check_Bus_Error(): Polling REG_AESISR and found Bus Error !!\n");
-            outpw(REG_AESISR, BERR);    // clear interrupt flag
-            return AES_ERR_BUS_ERROR;
-        }
-    }
-
-   
-   //--- check AES done
-    if (inpw(REG_AESIER) & ENAESOK)
-    {
-        // interrupt enable, wait AES done by _aes_bIsAESOK that update by interrupt handler
-        if (_aes_bIsAESOK)
-        {
-			DBG_PRINTF("Interrupt Handler inform that AES finish.\n");
-			_aes_bIsAESOK = FALSE;
-			return 0;
-		}
-    }
-    else
-    {
-        // interrupt disable, wait AES done by polling REG_AESISR
-        if (inpw(REG_AESISR) & AESOK)
-        {
-			DBG_PRINTF("Polling REG_AESISR and found AES finish.\n");
-			outpw(REG_AESISR, AESOK);   // clear interrupt flag
-			return 0;
-		}
-    }
-	
-    return AES_ERR_BUSY;
-}
 
 /*-----------------------------------------------------------------------------
  * Enable AES interrupt feature in AES.
  *---------------------------------------------------------------------------*/
-void AES_Enable_Interrupt(void)
+VOID AES_Enable_Interrupt(VOID)
 {
     AES_Clear_Interrupt_Flag();             // clear all AES interrupt flags
     outpw(REG_AESIER, ENAESOK | ENBERR);    // enable all AES interrupts
@@ -500,7 +414,7 @@ void AES_Enable_Interrupt(void)
 /*-----------------------------------------------------------------------------
  * Disable AES interrupt feature in AES.
  *---------------------------------------------------------------------------*/
-void AES_Disable_Interrupt(void)
+VOID AES_Disable_Interrupt(VOID)
 {
     AES_Clear_Interrupt_Flag();             // clear all AES interrupt flags
     outpw(REG_AESIER, 0x00);                // disable all AES interrupts
@@ -510,28 +424,14 @@ void AES_Disable_Interrupt(void)
 /*-----------------------------------------------------------------------------
  * Initial AES.
  *---------------------------------------------------------------------------*/
-void AES_Initial(void)
+VOID AES_Initial(VOID)
 {
-	// 1.Check I/O pins. If I/O pins are used by other IPs, return error code.
-	// 2.Enable IP¡¦s clock
+	//--- Enable AES clock. HCLK3_CKE is the clock source of AES clock.
 	outpw(REG_AHBCLK, inpw(REG_AHBCLK) | IPSEC_CKE | HCLK3_CKE);
-	// 3.Reset IP
-	outp32 (REG_AHBIPRST, inp32 (REG_AHBIPRST) | IPSEC_RST);
-	outp32 (REG_AHBIPRST, inp32 (REG_AHBIPRST) & ~IPSEC_RST);
-	// 4.Configure IP according to inputted arguments.
-	// 5.Enable IP I/O pins
-	// 6.Register ISR.
-    //--- initial AES interrupt: hook up ISR to IRQ5 for AES and enable it.
-	sysInstallISR(IRQ_LEVEL_1, IRQ_IPSEC, (void *)AES_Int_Handler);    // hook up ISR
-	sysEnableInterrupt(IRQ_IPSEC);        // enable AES interrupt in AIC
-}
 
-/*-----------------------------------------------------------------------------
- * Final AES.
- *---------------------------------------------------------------------------*/
-void AES_Final(void)
-{
-	// 1.Disable IP I/O pins
-	// 2.Disable IP¡¦s clock
-	outp32 (REG_AHBCLK, inp32 (REG_AHBCLK) & ~IPSEC_CKE);
+    //--- initial AES interrupt: hook up ISR to IRQ5 for AES and enable it.
+	sysInstallISR(IRQ_LEVEL_1, IRQ_AES, (PVOID)AES_Int_Handler);    // hook up ISR
+	sysSetLocalInterrupt(ENABLE_IRQ);   // enable interrupt feature for system
+	sysEnableInterrupt(IRQ_AES);        // enable AES interrupt in AIC
+    AES_Enable_Interrupt();             // enable all AES interrupts in AES
 }

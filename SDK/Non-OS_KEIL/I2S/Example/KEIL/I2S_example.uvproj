@@ -151,7 +151,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -349,7 +349,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\Lib;..\..\..\SYSLIB\Lib;..\..\..\NVTFAT\lib;..\..\..\SIC\Lib</IncludePath>
+              <IncludePath>..\..\Lib;..\..\..\I2C\lib;..\..\..\SYSLIB\Lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -377,7 +377,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc>--entry 0</Misc>
@@ -401,29 +401,29 @@
               <FilePath>..\Src\standalone.c</FilePath>
             </File>
             <File>
+              <FileName>w55fa95_nau8822.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\w55fa95_nau8822.c</FilePath>
+            </File>
+            <File>
               <FileName>wb_init.s</FileName>
               <FileType>2</FileType>
               <FilePath>..\Src\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_i2s.lib</FileName>
+              <FileName>w55fa95_i2s.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\Lib\w55fa92_i2s.lib</FilePath>
+              <FilePath>..\..\Lib\w55fa95_i2s.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>w55fa95_i2c.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\I2C\lib\w55fa95_i2c.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_nvtfat.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\NVTFAT\lib\W55FA92_nvtfat.lib</FilePath>
-            </File>
-            <File>
-              <FileName>W55FA92_SIC.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\..\SIC\Lib\W55FA92_SIC.lib</FilePath>
+              <FilePath>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
           </Files>
         </Group>

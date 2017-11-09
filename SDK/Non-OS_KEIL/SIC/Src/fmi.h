@@ -14,18 +14,8 @@
 #include <stdio.h>
 #include "wbio.h"
 
-/*-----------------------------------------------------------------------------
- * To define some flag for emulation or FPGA
- *---------------------------------------------------------------------------*/
-// Define OPT_FPGA_DEBUG to run special code only for FPGA board
-//#define OPT_FPGA_DEBUG
-
 // define DATE FMI_DATE_CODE and show it when running to make maintaining easy.
-#ifdef OPT_FPGA_DEBUG
-    #define FMI_DATE_CODE   "20170920 for FPGA"
-#else
     #define FMI_DATE_CODE   "20170920"
-#endif
 
 // Define _SIC_USE_INT_ to run code that use interrupt function
 //#define _SIC_USE_INT_
@@ -38,13 +28,13 @@
 //#define _USE_DAT3_DETECT_
 
 //-- function return value
-#define    Successful  0
-#define    Fail        1
+#define	   Successful  0
+#define	   Fail        1
 
 //--- define type of SD card or MMC
-#define FMI_TYPE_UNKNOWN                0
-#define FMI_TYPE_SD_HIGH                1
-#define FMI_TYPE_SD_LOW                 2
+#define FMI_TYPE_UNKNOWN	            0
+#define FMI_TYPE_SD_HIGH	            1
+#define FMI_TYPE_SD_LOW		            2
 #define FMI_TYPE_MMC                    3   // MMC access mode: Byte mode for capacity <= 2GB
 #define FMI_TYPE_MMC_SECTOR_MODE        4   // MMC access mode: Sector mode for capacity > 2GB
 
@@ -57,17 +47,17 @@ extern UINT32 _fmi_uFMIReferenceClock;
 extern BOOL volatile _fmi_bIsSDDataReady;
 extern BOOL volatile _fmi_bIsSMPRegionDetect;
 
-#define STOR_STRING_LEN 32
+#define STOR_STRING_LEN	32
 
 /* we allocate one of these for every device that we remember */
 typedef struct disk_data_t
 {
-    struct disk_data_t  *next;      /* next device */
+    struct disk_data_t  *next;           /* next device */
 
     /* information about the device -- always good */
-    unsigned int  totalSectorN;
-    unsigned int  diskSize;         /* disk size in Kbytes */
-    int           sectorSize;
+	unsigned int  totalSectorN;
+	unsigned int  diskSize;			/* disk size in Kbytes */
+	int           sectorSize;
     char          vendor[STOR_STRING_LEN];
     char          product[STOR_STRING_LEN];
     char          serial[STOR_STRING_LEN];
@@ -89,7 +79,7 @@ INT  fmiSD_Write_in(FMI_SD_INFO_T *pSD, UINT32 uSector, UINT32 uBufcnt, UINT32 u
 VOID fmiCheckRB(void);
 
 /*-----------------------------------------------------------------------------
- * 2011/6/29, declaration more functions
+ * 2011/6/29 by CJChen1@nuvoton.com, declaration more functions
  *---------------------------------------------------------------------------*/
 VOID fmiSD_Set_clock(UINT32 sd_clock_khz);
 VOID fmiSD_Show_info(int sdport);

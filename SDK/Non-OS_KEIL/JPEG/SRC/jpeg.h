@@ -143,8 +143,8 @@
 INT jpegSetEncodeMode(UINT8 u8SourceFormat,	UINT16 u16JpegFormat);
 INT jpegSetDecodeMode(UINT32 u8OutputFormat);
 BOOL jpegPollInt(UINT32 u32Intflag);	
-VOID jpegEncodeTrigger(void);
-VOID jpegDecodeTrigger(void);
+VOID jpegEncodeTrigger(VOID);
+VOID jpegDecodeTrigger(VOID);
 VOID jpegGetDecodedDimension(
 	PUINT16 pu16Height,			//Decode/Encode Height
 	PUINT16	pu16Width			//Decode/Encode Width

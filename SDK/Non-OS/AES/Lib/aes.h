@@ -23,9 +23,6 @@
 #define AES_ERR_IV          (AES_ERR_ID|0x05)
 #define AES_ERR_MODE        (AES_ERR_ID|0x06)
 #define AES_ERR_BUS_ERROR   (AES_ERR_ID|0x07)
-#define AES_ERR_RUNNING		(AES_ERR_ID|0x08)
-#define AES_ERR_BUSY		(AES_ERR_ID|0x09)
-#define AES_ERR_CMPDAT		(AES_ERR_ID|0x0A)
 
 
 //--- Define valid macro for AES cipher key length
@@ -39,9 +36,7 @@ typedef enum
 
 //--- Declare the API prototype for AES driver
 // Initial AES
-void AES_Initial(void);
-// Final AES
-void AES_Final(void);
+VOID AES_Initial(VOID);
 
 // Encrypt input_buf by AES CBC mode.
 int AES_Encrypt(
@@ -53,16 +48,6 @@ int AES_Encrypt(
     KEYSIZE key_size        // length of cipher key
     );
 
-// Encrypt input_buf by AES CBC mode without waiting flush.
-int AES_Encrypt_Async(
-    UINT8*  input_buf,      // pointer to plain text buffer
-    UINT8*  output_buf,     // pointer to cipher text buffer
-    UINT32  input_len,      // length of plain text
-    UINT8*  iv,             // pointer to initial vector
-    UINT8*  key,            // pointer to cipher key
-    KEYSIZE key_size        // length of cipher key
-    );
-	
 // Decrypt input_buf by AES CBC mode.
 int AES_Decrypt(
     UINT8*  input_buf,      // pointer to cipher text buffer
@@ -73,26 +58,10 @@ int AES_Decrypt(
     KEYSIZE key_size        // length of cipher key
     );
 
-// Decrypt input_buf by AES CBC mode without flush.
-int AES_Decrypt_Async(
-    UINT8*  input_buf,      // pointer to cipher text buffer
-    UINT8*  output_buf,     // pointer to plain text buffer
-    UINT32  input_len,      // length of cipher text
-    UINT8*  iv,             // pointer to initial vector
-    UINT8*  key,            // pointer to cipher key
-    KEYSIZE key_size        // length of cipher key
-    );
-
-// Wait for finish of pending job.
-int AES_Flush(void);
-
-// Check task status
-int AES_Check_Status (void);
-
 // Enable AES interrupt feature
-void AES_Enable_Interrupt(void);
+VOID AES_Enable_Interrupt(VOID);
 
 // Disable AES interrupt feature
-void AES_Disable_Interrupt(void);
+VOID AES_Disable_Interrupt(VOID);
 
 #endif  // end of _AES_H

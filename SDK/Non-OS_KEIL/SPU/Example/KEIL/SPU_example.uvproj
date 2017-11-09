@@ -151,7 +151,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -377,10 +377,10 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc>--entry Reset_Go</Misc>
+            <Misc>--entry 0</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -406,14 +406,14 @@
               <FilePath>..\Src\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_spu.lib</FileName>
+              <FileName>w55fa95_spu.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\Lib\w55fa92_spu.lib</FilePath>
+              <FilePath>..\..\Lib\w55fa95_spu.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
           </Files>
         </Group>

@@ -20,12 +20,12 @@
 /*-----------------------------------------------------------------------------------*/
 
 #include "wblib.h"
-#include "w55fa92_spi.h"
+#include "w55fa95_spi.h"
 
 #include <stdio.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_spi.h"
+#include "w55fa95_spi.h"
 #include "Gneiss.h"
 
 #define DBG_PRINTF	sysprintf
@@ -49,7 +49,6 @@ int main()
 	unsigned int RPMC_counter;
   
 	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */	
-	uart.uart_no = WB_UART_1;
 	uart.uiFreq = u32ExtFreq;
 	uart.uiBaudrate = 115200;
 	uart.uiDataBits = WB_DATA_BITS_8;

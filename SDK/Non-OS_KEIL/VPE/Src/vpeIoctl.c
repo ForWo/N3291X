@@ -27,21 +27,21 @@
  **************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_vpe.h"	//Export
+#include <string.h>
+#include "w55fa95_vpe.h"	//Export
 
 UINT32 u32VpeYBufAddr, u32VpeUBufAddr, u32VpeVBufAddr, u32VpeDstBufAddr; 
 
-UINT16 g_u16SrcWidth, g_u16SrcHeight; //Src or Dst dimension. 
+UINT16 g_u16SrcWidth, g_u16SrcHeight; 		//Src or Dst dimension. 
 UINT16 g_u16DstWidth, g_u16DstHeight; 	
-UINT32 g_u16SrcLOffset, g_u16SrcROffset; //Src or Dst offset
+UINT32 g_u16SrcLOffset, g_u16SrcROffset; 	//Src or Dst offset
 UINT32 g_u16DstLOffset, g_u16DstROffset; 	
 UINT32 u32SrcSize, u32DstSize;
 UINT32 u32RotDir;
 UINT32 u32SrcComPixelWidth, u32DstComPixelWidth;
-
+PUINT32 pu32TLBEntry;
 #define MAX_COUNT				(16)		//Assume max is 16MB
 #define MAX_COMPONENT_ENTRY	(2)		//Each component has 2 entry
 
@@ -160,7 +160,7 @@ BOOL bIsSrcEntry1;
 BOOL bIsSrcEntry2;
 BOOL bIsDstEntry0;
 #endif
-UINT32 InitLRUTable(void)
+void InitLRUTable(void)
 {	
 	UINT32 u32Idx;
 #if 1
@@ -171,9 +171,7 @@ UINT32 InitLRUTable(void)
 	LRUEntry[1] =  1;	//Next will update 5 U
 	LRUEntry[2] =  1;	//Next will update 6 V
 	LRUEntry[3] =  0;	//Next will update 3 PAC	
-#endif					
-					
-	return Successful;
+#endif										
 }
 /*
 	According to virtual address of page fault. 
@@ -188,10 +186,10 @@ UINT32 Search(UINT32 u32PageFaultVirAddr)
 }
 UINT32 vpeFindMatchAddr(
 	UINT32 u32PageFaultVirAddr,
-	PUINT32 pu32ComIdx
+	PUINT32 pu32ComIdx			/* Indicate which component(ebtry) page fault. To update the new entry according to page fault address */
 	)
 {
-//	UINT32 u32YBufAddr, u32UBufAddr,  u32VBufAddr, u32DstBufAddr;
+	//UINT32 u32YBufAddr, u32UBufAddr,  u32VBufAddr, u32DstBufAddr;
 	UINT32 u32BufAddr[4];
 	UINT32 u32Offset[4];
 	UINT32 u32Tmp[4];
@@ -201,14 +199,14 @@ UINT32 vpeFindMatchAddr(
 	vpeGetReferenceVirtualAddress(&(u32BufAddr[0]), &(u32BufAddr[1]), &(u32BufAddr[2]), &(u32BufAddr[3]));
 	do
 	{
-		if(u32BufAddr[u32Idx]<=u32PageFaultVirAddr)		/* Report page fault address must > pattern start address */				
+		if(u32BufAddr[u32Idx]<=u32PageFaultVirAddr)		/* Report page fault address must be >= pattern start address */				
 			u32Offset[u32Idx] = u32PageFaultVirAddr - u32BufAddr[u32Idx];				
 		else
 			u32Offset[u32Idx]  = 0x7FFFFFFF;
 		u32Idx = u32Idx+1;
 	}while(u32Idx<4);
 	memcpy(u32Tmp, u32Offset, 16);				/* 4 component with word length */
-	bublesort(u32Offset, 4);						/* Sorting, the min vale will be index-0 */ 
+	bublesort(u32Offset, 4);						/* Sorting, the min value will be index-0 */ 
 	u32Idx=0;
 	while(u32Offset[0]!=u32Tmp[u32Idx])			/* Compare */
 		u32Idx=u32Idx+1;						/* u32Idx will be the component index. 0==> Y, 1==>U. 2==>V, 3==>Dst */
@@ -223,10 +221,10 @@ UINT32 vpeFindMatchAddr(
 		u32Idx = u32Idx+4;
 	}
 	*pu32ComIdx = u32Idx;			
-	
+	sysprintf("Component Index = %d\n", u32Idx);	
 	u32MMUIdx = Search(u32PageFaultVirAddr);
-	//sysprintf("MMU Table Inx = %d\n", u32MMUIdx);	
-	return u32MMUIdx;
+	sysprintf("MMU Table Inx = %d\n", u32MMUIdx);	
+	return u32MMUIdx;							/* Report level 1 entry index */
 }
 
 
@@ -272,7 +270,7 @@ ERRCODE vpeSetFmtOperation(
 			return ERR_VPE_DST_FMT; 
 	if(eSrcFmt>VPE_SRC_PACKET_RGB888)
 			return ERR_VPE_SRC_FMT;	
-	if(eOper>VPE_OP_FLOP)
+	if(eOper>VPE_DDA_SCALE)
 			return ERR_VPE_OP;	
 			
 	switch(eSrcFmt)		
@@ -373,23 +371,23 @@ void vpeSetScaleFilter(
 {
 #if 0
 	outp32(REG_VPE_CMD, (inp32(REG_VPE_CMD) & ~(TAP|BYPASS|BILINEAR)) |
-					 	(((bIsSoftwareMode<<8) &TAP) | ((bIsBypass3x3Filter<<9) &BYPASS) |
+					 	(((bIsSoftwareMode<<10) &TAP) | ((bIsBypass3x3Filter<<9) &BYPASS) |
 					 	 ((BisBilinearFilter<<7)&BILINEAR))
 						);							
 #else
 	outp32(REG_VPE_CMD, (inp32(REG_VPE_CMD) & ~(TAP|BYPASS|BILINEAR)) |
-					 	(((bIsSoftwareMode<<8) &TAP) | ((bIsBypass3x3Filter<<9) &BYPASS) |			//Block base 3x3 filter is need enable if 2 step step 3x3 filter  
+					 	(((bIsSoftwareMode<<10) &TAP) | ((bIsBypass3x3Filter<<9) &BYPASS) |			//Block base 3x3 filter is need enable if 2 step step 3x3 filter  
 					 	 ((bisBilinearFilter<<7)&BILINEAR))
 						);
 						
-//	if(bIsBypass3x3Filter==FALSE)
-//	{//Line base 3x3 enable 
-//		outp32(REG_VPE_CMD, (inp32(REG_VPE_CMD) | BIT19));	//frame base 3X3 filter enable
-//	}
-//	else
-//	{//Line base 3x3 disable 
-//		outp32(REG_VPE_CMD, (inp32(REG_VPE_CMD) & ~BIT19));	//frame base 3X3 filter disable		
-//	}	
+	if(bIsBypass3x3Filter==FALSE)
+	{//Line base 3x3 enable 
+		outp32(REG_VPE_CMD, (inp32(REG_VPE_CMD) | BIT19));	//frame base 3X3 filter enable
+	}
+	else
+	{//Line base 3x3 disable 
+		outp32(REG_VPE_CMD, (inp32(REG_VPE_CMD) & ~BIT19));	//frame base 3X3 filter disable		
+	}	
 #endif	
 }
 
@@ -407,10 +405,10 @@ void vpeSetScale3x3Coe(
 	else
 	{
 		outp32(REG_VPE_CMD, (inp32(REG_VPE_CMD) & ~TAP)); //Software mode
-//		outp32(REG_VPE_FCOEF0, u32Coe1to4);
-//		outp32(REG_VPE_FCOEF1, u32Coe5to8);
-//		outp32(REG_VPE_TG, ((inp32(REG_VPE_TG)& ~(TAPC_JUMP|TAPC_CEN)) |
-//								(u16CoePreCur<<16)&(TAPC_JUMP|TAPC_CEN)) );
+		outp32(REG_VPE_FCOEF0, u32Coe1to4);
+		outp32(REG_VPE_FCOEF1, u32Coe5to8);
+		outp32(REG_VPE_TG, ((inp32(REG_VPE_TG)& ~(TAPC_JUMP|TAPC_CEN)) |
+								(u16CoePreCur<<16)&(TAPC_JUMP|TAPC_CEN)) );
 	}							
 }
 void vpeSetMatchMacroBlock(
@@ -419,31 +417,19 @@ void vpeSetMatchMacroBlock(
 {	
 	UINT32 u32YMcu;
 	u32YMcu = u16YMcu;
-//	outp32(REG_VPE_MCU, ((u32YMcu << 16) | u16XMcu));
+	outp32(REG_VPE_MCU, ((u32YMcu << 16) | u16XMcu));
 }
 static UINT32 u32VpeTrigger =0;
 void vpeTrigger(void)
 {
-	UINT32 i,j;
+	//UINT32 i,j;
 	while( (inp32(REG_VPE_TG)&VPE_GO==VPE_GO) );	
-	outp32(REG_VPE_RESET, 0x3);
-	outp32(REG_VPE_RESET, 0x0);
-	/*if((inp32(REG_VMMU_CR)&MMU_EN)==MMU_EN)
+	outp32(REG_VPE_RESET,  0x03);
+	outp32(REG_VPE_RESET,  0x00);
+	if((inp32(REG_VMMU_CR)&MMU_EN)==MMU_EN)
 	{
 		InitLRUTable();				
-	}*/
-	i = (inp32(REG_VPE_CMD)&HOST_SEL)>>4; 
-	j =  (inp32(REG_VPE_CMD)&OPCMD)>>16; 
-	if( (i==VPE_HOST_VDEC_LINE) &&  
-		((j >=VPE_OP_RIGHT) || (j <=VPE_OP_LEFT)) )
-	{//if Host Select  = VPE_HOST_LINE_BASE and Rotation L and R
-		outp32(REG_VPE_CMD, inp32(REG_VPE_CMD) | BIT11);	//Signal buffer. 
-	}
-	else
-	{
-		outp32(REG_VPE_CMD, inp32(REG_VPE_CMD) & ~BIT11);	//Dual buffer. 
-	}
-		
+	}		
 	outp32(REG_VPE_TG, inp32(REG_VPE_TG)|VPE_GO);
 	u32VpeTrigger = u32VpeTrigger+1;
 }
@@ -459,9 +445,9 @@ void vpeEnableVmmu(BOOL bIsEnable)
 {
 	//outp32(REG_VMMU_CR, bIsEnable&0x03);
 	if(bIsEnable==TRUE)
-		//outp32(REG_VMMU_CR, 0x03);
-		//outp32(REG_VMMU_CR, 0x13);	//SC test mode main TLB enable
-		outp32(REG_VMMU_CR, 0x1);		//main TLB disable
+		//outp32(REG_VMMU_CR, 0x03);		//mmu enable, micro tlb enable
+		//outp32(REG_VMMU_CR, 0x13);		//SC test mode and mmu enable, micro tlb enable
+		outp32(REG_VMMU_CR, 0x1);			//mmu enable
 	else
 		outp32(REG_VMMU_CR, 0x00);	
 }
@@ -469,6 +455,7 @@ void vpeEnableVmmu(BOOL bIsEnable)
 void vpeSetTtbAddress(UINT32 u32PhysicalTtbAddr)
 {
 	outp32(REG_VMMU_TTB, u32PhysicalTtbAddr);
+	pu32TLBEntry = (PUINT32)u32PhysicalTtbAddr;
 }
 UINT32 vpeGetTtbAddress(void)
 {
@@ -489,6 +476,8 @@ UINT32 vpeGetTtbEntry(UINT32 u32Entry)
 		return 0;
 	return (inp32(REG_VMMU_L1PT0+4*u32Entry));
 }
+PUINT32 pu32TTB;
+
 ERRCODE vpeIoctl(UINT32 u32Cmd, UINT32 u32Arg0, UINT32 u32Arg1, UINT32 u32Arg2) 
 {
 	ERRCODE ErrCode=Successful; 
@@ -497,9 +486,19 @@ ERRCODE vpeIoctl(UINT32 u32Cmd, UINT32 u32Arg0, UINT32 u32Arg1, UINT32 u32Arg2)
 	{
 		case VPE_IOCTL_SET_SRCBUF_ADDR:		
 				vpeSetSrcBufAddr(u32Arg0, u32Arg1, u32Arg2);
+				
+				vpeSetTtbEntry(0, pu32TTB[u32Arg0/0x100000]);	
+				vpeSetTtbEntry(4,  pu32TTB[u32Arg0/0x100000+1]);	
+				vpeSetTtbEntry(1,  pu32TTB[u32Arg1/0x100000]);	
+				vpeSetTtbEntry(5,  pu32TTB[u32Arg1/0x100000+1]);	
+				vpeSetTtbEntry(2,  pu32TTB[u32Arg2/0x100000]);	
+				vpeSetTtbEntry(6,  pu32TTB[u32Arg2/0x100000+1]);
 			break;	
 		case VPE_IOCTL_SET_DSTBUF_ADDR:
 				vpeSetDstBufAddr(u32Arg0);
+				
+				vpeSetTtbEntry(3,  pu32TTB[u32Arg0/0x100000]);	
+				vpeSetTtbEntry(7,  pu32TTB[u32Arg0/0x100000+1]);	
 			break;	
 		case VPE_IOCTL_SET_SRC_OFFSET:
 				vpeSetSrcOffset(u32Arg0, u32Arg1);
@@ -538,211 +537,45 @@ ERRCODE vpeIoctl(UINT32 u32Cmd, UINT32 u32Arg0, UINT32 u32Arg1, UINT32 u32Arg2)
 				vpeSetScale3x3Coe(u32Arg0, u32Arg1, u32Arg2);			
 			break;
 		case VPE_IOCTL_SET_FMT:
-				vpeSetFmtOperation((E_VPE_SRC_FMT)u32Arg0, (E_VPE_DST_FMT)u32Arg1, (E_VPE_CMD_OP)u32Arg2);	
+				vpeSetFmtOperation(u32Arg0, u32Arg1, u32Arg2);	
 			break;
 		case VPE_IOCTL_SET_MACRO_BLOCK:
 				vpeSetMatchMacroBlock(u32Arg0, u32Arg1);	
 			break;
 		case VPE_IOCTL_HOST_OP:		
-				vpeHostOperation((E_VPE_HOST)u32Arg0, (E_VPE_CMD_OP)u32Arg1);				
+				vpeHostOperation(u32Arg0, u32Arg1);				
 			break;	
 		case VPE_IOCTL_TRIGGER:	
 				vpeTrigger();		
 			break;	
 		case VPE_IOCTL_CHECK_TRIGGER:				
 				ErrCode = vpeCheckTrigger();	//0= Complete, 1=Not Complete, <0 ==> IOCTL Error
-			break;						
+			break;	
+		case VPE_IOCTL_SET_MMU_ENTRY:
+				{
+					pu32TTB = (PUINT32)u32Arg1;
+					
+					vpeEnableVmmu(u32Arg0);	
+					vpeSetTtbAddress(u32Arg1);	
+				/*												
+					vpeSetTtbEntry(0, pu32TTB[u32VpeYBufAddr/0x100000]);	
+					vpeSetTtbEntry(4,  pu32TTB[u32VpeYBufAddr/0x100000+1]);	
+					vpeSetTtbEntry(1,  pu32TTB[u32VpeUBufAddr/0x100000]);	
+					vpeSetTtbEntry(5,  pu32TTB[u32VpeUBufAddr/0x100000+1]);	
+					vpeSetTtbEntry(2,  pu32TTB[u32VpeVBufAddr/0x100000]);	
+					vpeSetTtbEntry(6,  pu32TTB[u32VpeVBufAddr/0x100000+1]);	
+					vpeSetTtbEntry(3,  pu32TTB[u32VpeDstBufAddr/0x100000]);	
+					vpeSetTtbEntry(7,  pu32TTB[u32VpeDstBufAddr/0x100000+1]);	
+				*/	
+				}
+			break;							
+		case VPE_IOCTL_SET_TLB_ENTRY:
+				vpeSetTtbEntry(u32Arg0, u32Arg1);	
+			break;											
 		default:
 			return ERR_VPE_IOCTL;
 	}
 	
 	
 	return ErrCode;
-}
-
-static int _next_ttb_idx_src;	// next TTB index dedicated for source to replace
-static int _next_ttb_idx_dst;	// next TTB index dedicated for destination to replace
-
-void vpemmuSetTTBEntry (int idx, UINT32 entryValue)
-{
-	if (idx >= 0 && idx < 8) {
-		outp32 ((UINT32) REG_VMMU_L1PT0 + idx * sizeof (UINT32), entryValue);
-	}
-}
-
-void vpemmuSetTTB (UINT32 ttb)
-{
-	outp32 (REG_VMMU_TTB, ttb);
-}
-
-void vpemmuEnableMainTLB (BOOL enabled)
-{
-	if (enabled) {
-		outp32 (REG_VMMU_CR, inp32 (REG_VMMU_CR) | MAIN_EN);
-	}
-	else {
-		outp32 (REG_VMMU_CR, inp32 (REG_VMMU_CR) & ~MAIN_EN);
-	}
-}
-
-void vpemmuEnableMainTLBSrcCh (BOOL enabled)
-{
-	if (enabled) {
-		outp32 (REG_VMMU_CR, inp32 (REG_VMMU_CR) | MAIN_TLB);
-	}
-	else {
-		outp32 (REG_VMMU_CR, inp32 (REG_VMMU_CR) & ~MAIN_TLB);
-	}
-}
-
-UINT32 vpemmuGetPageFaultVA ()
-{
-	return inp32 (REG_VMMU_PFTVA);
-}
-
-static int _find_next_ttb_idx_src (void)
-{
-	// 0, 1, 2, 4, 5, 6 dedicated for source
-	_next_ttb_idx_src ++;
-	if (_next_ttb_idx_src < 0) {
-		_next_ttb_idx_src = 0;
-	}
-	else if (_next_ttb_idx_src == 3) {
-		_next_ttb_idx_src = 4;
-	}
-	else if (_next_ttb_idx_src >= 7) {
-		_next_ttb_idx_src = 0;
-	}
-	
-	return _next_ttb_idx_src;
-}
-
-static int _find_next_ttb_idx_dst (void)
-{
-	// 3, 7 dedicated for destination
-	_next_ttb_idx_dst += 4;
-	
-	if (_next_ttb_idx_dst < 3) {
-		_next_ttb_idx_dst = 3;
-	}
-	else if (_next_ttb_idx_dst > 3 && _next_ttb_idx_dst < 7) {
-		_next_ttb_idx_dst = 7;
-	}
-	else if (_next_ttb_idx_dst > 7) {
-		_next_ttb_idx_dst = 3;
-	}
-	
-	return _next_ttb_idx_dst;
-}
-
-UINT32 vpemmuGetTTB ()
-{
-	return inp32 (REG_VMMU_TTB);
-}
-
-void vpemmuResumeMMU (void)
-{
-	outp32 (REG_VMMU_CMD, inp32 (REG_VMMU_CMD) | RESUME);
-}
-
-// handler for page fault interrupt
-static void _pgflt_hdlr (void)
-{
-	UINT32 srcVA = inp32 (REG_VPE_PLYA_PK);	// va of source base
-///	UINT32 srcVAU= inp32 (REG_VPE_PLUA);
-///	UINT32 srcVAV= inp32 (REG_VPE_PLVA);
-	UINT32 dstVA = inp32 (REG_VPE_DEST_PK);	// va of destination base
-	UINT32 pgfltVA = vpemmuGetPageFaultVA ();	// page fault va
-	
-	// Check page fault va is located in source or in destination.
-	// If nothing gets wrong, page fault va will locate in the area difference from base of which to page fault va is smaller.
-	UINT32 srcDisp = (pgfltVA >= srcVA) ? (pgfltVA - srcVA) : 0xFFFFFFFF;
-	UINT32 dstDisp = (pgfltVA >= dstVA) ? (pgfltVA - dstVA) : 0xFFFFFFFF;
-	UINT32 ttbIdx = (srcDisp <= dstDisp) ?
-		_find_next_ttb_idx_src () :
-		_find_next_ttb_idx_dst ();
-	
-	{	// Fill in the selected TTB entry.
-		UINT32 lv1PgTblIdx = pgfltVA / 0x100000;
-		UINT32 ttb = vpemmuGetTTB ();	// pa of TTB
-		
-		vpemmuSetTTBEntry (ttbIdx, ((UINT32 *) ttb)[lv1PgTblIdx]);
-	}
-		
-	vpemmuResumeMMU ();	// resume MMU
-}
-
-// handler for page miss interrupt
-static void _pgms_hdlr (void)
-{
-	_pgflt_hdlr ();
-}
-
-static PFN_VPE_CALLBACK _old_pgflt_hdlr = NULL;
-static PFN_VPE_CALLBACK _old_pgms_hdlr = NULL;
-
-void vpemmuEnableMMU (BOOL enabled)
-{
-	if (enabled) {
-		outp32 (REG_VMMU_CR, inp32 (REG_VMMU_CR) | MMU_EN);
-	}
-	else {
-		outp32 (REG_VMMU_CR, inp32 (REG_VMMU_CR) & ~MMU_EN);
-	}
-}
-
-void vpemmuFlushMainTLB (void)
-{
-	outp32 (REG_VMMU_CMD, inp32 (REG_VMMU_CMD) | VPE_FLUSH);	// Start flush main TLB.
-	while (! (inp32 (REG_VMMU_CMD) & MTLB_FINISH));	// Wait for flush main TLB completed.
-	outp32 (REG_VMMU_CMD, inp32 (REG_VMMU_CMD) & ~VPE_FLUSH);	// End of flush main TLB.
-}
-
-void vpemmuInvalidateMicroTLB (void)
-{
-	outp32 (REG_VMMU_CMD, inp32 (REG_VMMU_CMD) | INVALID);
-	outp32 (REG_VMMU_CMD, inp32 (REG_VMMU_CMD) & ~INVALID);
-}
-
-void vpemmuTeardown (void)
-{
-	vpemmuEnableMMU (FALSE);
-	
-	vpeDisableInt (VPE_INT_PAGE_FAULT);	
-	vpeDisableInt (VPE_INT_PAGE_MISS);
-	
-	vpeInstallCallback (VPE_INT_PAGE_FAULT, _old_pgflt_hdlr, &_old_pgflt_hdlr);						
-	vpeInstallCallback (VPE_INT_PAGE_MISS, _old_pgms_hdlr, &_old_pgms_hdlr);
-}
-
-void vpemmuSetup (UINT32 ttb, BOOL mainTLB, BOOL mainTLBSrcCh)
-{
-	_next_ttb_idx_src = -1;
-	_next_ttb_idx_dst = -1;
-
-	vpemmuSetTTBEntry (0, 0x00000000);
-	vpemmuSetTTBEntry (1, 0x00000000);
-	vpemmuSetTTBEntry (2, 0x00000000);
-	vpemmuSetTTBEntry (3, 0x00000000);
-	vpemmuSetTTBEntry (4, 0x00000000);
-	vpemmuSetTTBEntry (5, 0x00000000);
-	vpemmuSetTTBEntry (6, 0x00000000);
-	vpemmuSetTTBEntry (7, 0x00000000);
-	
-	vpemmuSetTTB (ttb);
-	
-	vpemmuEnableMainTLB (mainTLB);
-	vpemmuEnableMainTLBSrcCh (mainTLBSrcCh);
-	
-	vpeInstallCallback (VPE_INT_PAGE_FAULT, _pgflt_hdlr, &_old_pgflt_hdlr);						
-	vpeInstallCallback (VPE_INT_PAGE_MISS, _pgms_hdlr, &_old_pgms_hdlr);
-		
-	vpeEnableInt (VPE_INT_PAGE_FAULT);	
-	vpeEnableInt (VPE_INT_PAGE_MISS);
-	
-	vpemmuEnableMMU (TRUE);
-	
-	// TLB depends on MMU enabled. Enable MMU first before flush main TLB/invalidate micro TLB.
-	vpemmuFlushMainTLB ();
-	vpemmuInvalidateMicroTLB ();
 }

@@ -1,5 +1,5 @@
 #include <string.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
 
 //#define __DEBUG__
@@ -37,8 +37,8 @@ typedef struct
 
 int wbSpiWrite(UINT32 addr, UINT32 len, UINT8 *buf);
 int sstSpiWrite(UINT32 addr, UINT32 len, UINT8 *buf);
-
 int gSpiReadCMD = 0x03;
+
 spiflash_t spiflash[]={
 	{0xEF, wbSpiWrite},
 	{0xBF, sstSpiWrite},
@@ -75,13 +75,31 @@ int spiTxLen(int port, int count, int bitLen)
 		reg = reg & 0xffffff07;
 	else
 		reg = (reg & 0xffffff07) | (bitLen << 3);
-	reg = (reg & 0xff1fffff) | (count << 21);
+	reg = (reg & 0xfffffcff) | (count << 8);
 
 	outpw(REG_SPI0_CNTRL, reg);
 
 	return Successful;
 }
 
+VOID Reset(VOID)
+{
+	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) | 0x01);	// CS0
+
+	outpw(REG_SPI0_TX0, 0x66);
+	spiTxLen(0, 0, 8);
+	spiActive(0);
+
+	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) & 0xfe);	// CS0
+
+	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) | 0x01);	// CS0
+
+	outpw(REG_SPI0_TX0, 0x99);
+	spiTxLen(0, 0, 8);
+	spiActive(0);
+
+	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) & 0xfe);	// CS0
+}
 int usiCheckBusy()
 {
 	// check status
@@ -126,7 +144,7 @@ void Enter4ByteMode(void)
 
 void Exit4ByteMode(void)
 {
-//	int volatile i = 0;
+
 	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) | 0x01);	// CS0
 
 	// erase command
@@ -138,8 +156,7 @@ void Exit4ByteMode(void)
 
 	// check status
 	usiCheckBusy();
-	
-	
+
 }
 
 
@@ -258,7 +275,6 @@ int usiEraseSector(UINT32 addr, UINT32 secCount)
 {
 	int volatile i;
 
-	usiCheckBusy();
 	if ((addr % (64*1024)) != 0)
 		return -1;
 	if(!g_4byte_adderss)
@@ -276,7 +292,21 @@ int usiEraseSector(UINT32 addr, UINT32 secCount)
 			PRINTF("SPI 4 Byte Address Mode Enable (E1)\n");	
 		}
 	}
-	usiCheckBusy();	
+	else
+	{
+		if(!(addr & 0xFF000000) && !( (addr+secCount*64*1024 - 1) & 0xFF000000))
+		{
+			if(g_4byte_adderss)
+			{
+				Exit4ByteMode();
+				g_4byte_adderss = FALSE;
+				PRINTF("SPI 4 Byte Address Mode Disable (E)\n");	
+			}
+		}	
+
+
+	}
+
 	for (i=0; i<secCount; i++)
 	{
 		usiWriteEnable();
@@ -318,30 +348,6 @@ int usiWaitEraseReady(void)
 		return 0xFF;	// busy
 }
 
-VOID Reset(void)
-{
-	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) | 0x01);	// CS0
-
-	outpw(REG_SPI0_TX0, 0x66);
-	spiTxLen(0, 0, 8);
-	spiActive(0);
-
-	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) & 0xfe);	// CS0
- 	
- 	sysDelay(10);
-		
-	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) | 0x01);	// CS0
-
-	outpw(REG_SPI0_TX0, 0x99);
-	spiTxLen(0, 0, 8);
-	spiActive(0);
-
-	outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) & 0xfe);	// CS0
-	
-	sysDelay(10);
-	
-	usiCheckBusy();
-}
 int usiEraseAll(void)
 {
 	usiWriteEnable();
@@ -442,13 +448,14 @@ INT16 usiReadID()
 				break;
 			default:
 				return 0x0;
-//				break;
+				break;
 		}
 		if(g_SPI_SIZE != 0)
 		{
 			g_SPI_SIZE = g_SPI_SIZE * 256;	
 			
 			Exit4ByteMode();
+			
 		}		
 		if(u8MemType == 0x40 && u8Capaticy == 0x19)
 		{			
@@ -497,13 +504,13 @@ INT16 usiReadID()
 			
 			Exit4ByteMode();
 		}
-	}	
+	}
 	if(g_SPI_SIZE > 0x1000000)
 	{
 		sysprintf("Spiflash is larger than 16MB --> Enter 4 Byte address mode\n");
 		g_4byte_adderss = TRUE;
 		Enter4ByteMode();
-	}
+	}	
 
 	return id;
 }
@@ -548,7 +555,7 @@ int usiInit(void)
 		outpw(REG_APBIPRST, 0);
 
 		//Startup SPI0 multi-function features, chip select using SS0
-		outp32(REG_GPDFUN1, (inp32(REG_GPDFUN1) & ~(MF_GPD15|MF_GPD14|MF_GPD13|MF_GPD12)) | 0x22220000);		
+		outp32(REG_GPDFUN, (inp32(REG_GPDFUN) & ~(MF_GPD15|MF_GPD14|MF_GPD13|MF_GPD12)) | 0xAA000000);			
 
 		//configure SPI divider, the sclk = 60 / 8 = 7.5Mhz
 		outpw(REG_SPI0_DIVIDER, 0x0003) ;       // (3+1)*2=8, N=3
@@ -569,7 +576,7 @@ int usiInit(void)
 		// delay for time
 		// Delay
 	    for (loop=0; loop<0x20000; loop++);  
-		usiCheckBusy();
+
 		_usbd_bIsSPIInit = TRUE;
 	}	
 	return 0;
@@ -810,7 +817,8 @@ int wbSpiWrite(UINT32 addr, UINT32 len, UINT8 *buf)
 		outpw(REG_SPI0_SSR, inpw(REG_SPI0_SSR) & 0xfe);	// CS0
 
 		// check status
-		usiCheckBusy();
+		usiCheckBusy();	
+		
 	}
 
 	return Successful;

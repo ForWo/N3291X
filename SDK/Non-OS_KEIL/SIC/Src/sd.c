@@ -6,16 +6,16 @@
 /*                                                                                   */
 /*-----------------------------------------------------------------------------------*/
 #ifdef ECOS
-    #include "drv_api.h"
-    #include "diag.h"
-    #include "wbtypes.h"
-    #include "wbio.h"
+#include "drv_api.h"
+#include "diag.h"
+#include "wbtypes.h"
+#include "wbio.h"
 #else
-    #include "wblib.h"
+#include "wblib.h"
 #endif
 
-#include "w55fa92_reg.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_sic.h"
 
 #include "fmi.h"
 #include "nvtfat.h"
@@ -39,8 +39,8 @@
 
 #define SD_BLOCK_SIZE   512
 
-#define FMI_SD_INITCOUNT    2000
-#define FMI_TICKCOUNT       1000
+#define FMI_SD_INITCOUNT 2000
+#define FMI_TICKCOUNT   1000
 
 // global variables
 // For response R3 (such as ACMD41, CRC-7 is invalid; but SD controller will still
@@ -83,18 +83,13 @@ INT fmiSDCommand(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg)
     outpw(REG_SDARG, uArg);
     outpw(REG_SDCR, (inpw(REG_SDCR)&(~SDCR_CMD_CODE))|(ucCmd << 8)|(SDCR_CO_EN));
 
-    DBG_PRINTF("--> Send CMD%d (Arg=0x%x) ... ", ucCmd, uArg);
     while(inpw(REG_SDCR) & SDCR_CO_EN)
     {
         if (pSD == pSD0)
             fmiSD_CardStatus();
         if (pSD->bIsCardInsert == FALSE)
-        {
-            DBG_PRINTF("NO SD CARD !\n");
             return FMI_NO_SD_CARD;
-        }
     }
-    DBG_PRINTF("done !!\n");
     return Successful;
 }
 
@@ -104,23 +99,18 @@ INT fmiSDCmdAndRsp(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg, INT ntickCount)
     outpw(REG_SDARG, uArg);
     outpw(REG_SDCR, (inpw(REG_SDCR)&(~SDCR_CMD_CODE))|(ucCmd << 8)|(SDCR_CO_EN | SDCR_RI_EN));
 
-    DBG_PRINTF("--> Send CMD%d (Arg=0x%x) ... ", ucCmd, uArg);
     if (ntickCount > 0)
     {
         while(inpw(REG_SDCR) & SDCR_RI_EN)
         {
             if(ntickCount-- == 0) {
                 outpw(REG_SDCR, inpw(REG_SDCR)|SDCR_SWRST); // reset SD engine
-                DBG_PRINTF("timeout !\n");
                 return FMI_SD_INIT_TIMEOUT;
             }
             if (pSD == pSD0)
                 fmiSD_CardStatus();
             if (pSD->bIsCardInsert == FALSE)
-            {
-                DBG_PRINTF("NO SD CARD !\n");
                 return FMI_NO_SD_CARD;
-            }
         }
     }
     else
@@ -130,10 +120,7 @@ INT fmiSDCmdAndRsp(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg, INT ntickCount)
             if (pSD == pSD0)
                 fmiSD_CardStatus();
             if (pSD->bIsCardInsert == FALSE)
-            {
-                DBG_PRINTF("NO SD CARD !\n");
                 return FMI_NO_SD_CARD;
-            }
         }
     }
 
@@ -142,7 +129,6 @@ INT fmiSDCmdAndRsp(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg, INT ntickCount)
         if (((inpw(REG_SDRSP1) & 0xff) != 0x55) && ((inpw(REG_SDRSP0) & 0xf) != 0x01))
         {
             _fmi_uR7_CMD = 0;
-            DBG_PRINTF("CMD8/R7 ERROR ! RESP0=0x%08X, RESP1=0x%08X\n", inpw(REG_SDRSP0), inpw(REG_SDRSP1));
             return FMI_SD_CMD8_ERROR;
         }
     }
@@ -150,14 +136,10 @@ INT fmiSDCmdAndRsp(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg, INT ntickCount)
     if (!_fmi_uR3_CMD)
     {
         if (inpw(REG_SDISR) & SDISR_CRC_7)      // check CRC7
-        {
-            DBG_PRINTF("done !! RESP0=0x%08X, RESP1=0x%08X\n", inpw(REG_SDRSP0), inpw(REG_SDRSP1));
             return Successful;
-        }
         else
         {
             sysprintf("response error [%d]!\n", ucCmd);
-            DBG_PRINTF("CRC7 ERROR !\n");
             return FMI_SD_CRC7_ERROR;
         }
     }
@@ -165,10 +147,8 @@ INT fmiSDCmdAndRsp(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg, INT ntickCount)
     {
         _fmi_uR3_CMD = 0;
         outpw(REG_SDISR, SDISR_CRC_IF);
-        DBG_PRINTF("done !! RESP0=0x%08X, RESP1=0x%08X\n", inpw(REG_SDRSP0), inpw(REG_SDRSP1));
         return Successful;
     }
-    DBG_PRINTF("done !!\n");
 }
 
 
@@ -181,16 +161,12 @@ INT fmiSDCmdAndRsp2(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg, UINT *puR2ptr)
     outpw(REG_SDARG, uArg);
     outpw(REG_SDCR, (inpw(REG_SDCR)&(~SDCR_CMD_CODE))|(ucCmd << 8)|(SDCR_CO_EN | SDCR_R2_EN));
 
-    DBG_PRINTF("--> Send CMD%d (Arg=0x%x) ... ", ucCmd, uArg);
     while(inpw(REG_SDCR) & SDCR_R2_EN)
     {
         if (pSD == pSD0)
             fmiSD_CardStatus();
         if (pSD->bIsCardInsert == FALSE)
-        {
-            DBG_PRINTF("NO SD CARD !\n");
             return FMI_NO_SD_CARD;
-        }
     }
 
     if (inpw(REG_SDISR) & SDISR_CRC_7)
@@ -200,14 +176,10 @@ INT fmiSDCmdAndRsp2(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg, UINT *puR2ptr)
 
         for (i=0; i<4; i++)
             *puR2ptr++ = ((tmpBuf[i] & 0x00ffffff)<<8) | ((tmpBuf[i+1] & 0xff000000)>>24);
-        DBG_PRINTF("done !!\n");
         return Successful;
     }
     else
-    {
-        DBG_PRINTF("CRC7 ERROR !\n");
         return FMI_SD_CRC7_ERROR;
-    }
 }
 
 
@@ -216,16 +188,12 @@ INT fmiSDCmdAndRspDataIn(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg)
     outpw(REG_SDARG, uArg);
     outpw(REG_SDCR, (inpw(REG_SDCR)&(~SDCR_CMD_CODE))|(ucCmd << 8)|(SDCR_CO_EN | SDCR_RI_EN | SDCR_DI_EN));
 
-    DBG_PRINTF("--> Send CMD%d (Arg=0x%x) ... ", ucCmd, uArg);
     while (inpw(REG_SDCR) & SDCR_RI_EN)
     {
         if (pSD == pSD0)
             fmiSD_CardStatus();
         if (pSD->bIsCardInsert == FALSE)
-        {
-            DBG_PRINTF("NO SD CARD !\n");
             return FMI_NO_SD_CARD;
-        }
     }
 
     while (inpw(REG_SDCR) & SDCR_DI_EN)
@@ -233,10 +201,7 @@ INT fmiSDCmdAndRspDataIn(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg)
         if (pSD == pSD0)
             fmiSD_CardStatus();
         if (pSD->bIsCardInsert == FALSE)
-        {
-            DBG_PRINTF("NO SD CARD !\n");
             return FMI_NO_SD_CARD;
-        }
     }
 
     if (!(inpw(REG_SDISR) & SDISR_CRC_7))       // check CRC7
@@ -250,7 +215,6 @@ INT fmiSDCmdAndRspDataIn(FMI_SD_INFO_T *pSD, UINT8 ucCmd, UINT32 uArg)
         sysprintf("fmiSDCmdAndRspDataIn: read data CRC16 error!\n");
         return FMI_SD_CRC16_ERROR;
     }
-    DBG_PRINTF("done !! Data In done !!\n");
     return Successful;
 }
 
@@ -347,13 +311,9 @@ VOID fmiSD_Set_clock(UINT32 sd_clock_khz)
         current_sd_clock_khz = sd_clock_khz;
 
     //--- choose a suitable value for first divider CLKDIV2[SD_N0]
-#ifdef  OPT_FPGA_DEBUG
-    // div0 always is 1 for FPGA board since FPGA board don't support CLKDIV2[SD_N0]
-    div0 = 1;
-#else
-    // 2014/12/29, the frequency after first divider MUST <= 177MHz because of FA92 hardware limitation.
-    sd_clk_div0_min = _fmi_uFMIReferenceClock / 177000;
-    if (_fmi_uFMIReferenceClock % 177000 != 0)
+    // 2014/12/29, the frequency after first divider MUST <= 223MHz because of FA95 hardware limitation.
+    sd_clk_div0_min = _fmi_uFMIReferenceClock / 223000;
+    if (_fmi_uFMIReferenceClock % 223000 != 0)
         sd_clk_div0_min++;
     if (sd_clk_div0_min > SD_CLK_DIV0_MAX)
         sd_clk_div0_min = SD_CLK_DIV0_MAX;
@@ -374,7 +334,6 @@ VOID fmiSD_Set_clock(UINT32 sd_clock_khz)
         if (div0 < sd_clk_div0_min)
             div0 = sd_clk_div0_min;
     }
-#endif
 
     //--- calculate the second divider CLKDIV2[SD_N1]
     div1 = rate / div0;
@@ -479,24 +438,17 @@ INT fmiSD_Init(FMI_SD_INFO_T *pSD)
                 }
                 // MMC card is ready. Check the access mode of MMC card.
                 if (resp & 0x00400000)
-                {
                     pSD->uCardType = FMI_TYPE_MMC_SECTOR_MODE;
-                    DBG_PRINTF("--> MMC card report Ready and Sector Mode (>2GB) !\n");
-                }
                 else
-                {
                     pSD->uCardType = FMI_TYPE_MMC;
-                    DBG_PRINTF("--> MMC card report Ready and Byte Mode (<=2GB) !\n");
-                }
             }
             else
             {
                 pSD->uCardType = FMI_TYPE_UNKNOWN;
-                sysprintf("ERROR: Unknown card type !!\n");
                 return FMI_ERR_DEVICE;
             }
         }
-        else if (i == Successful)    // SD Memory
+        else if (i == Successful)   // SD Memory
         {
             _fmi_uR3_CMD = 1;
             fmiSDCmdAndRsp(pSD, 41, 0x00ff8000, u32CmdTimeOut); // 3.0v-3.4v
@@ -566,7 +518,7 @@ INT fmiSwitchToHighSpeed(FMI_SD_INFO_T *pSD)
 {
     int volatile status=0;
     UINT16 current_comsumption, busy_status0, busy_status1;
-    //UINT16 fun1_info, switch_status;
+    // UINT16 fun1_info, switch_status;
 
     outpw(REG_DMACSAR, (UINT32)_fmi_pSDHCBuffer);   // set DMA transfer starting address
     outpw(REG_SDBLEN, 63);  // 512 bit
@@ -578,8 +530,8 @@ INT fmiSwitchToHighSpeed(FMI_SD_INFO_T *pSD)
     if (!current_comsumption)
         return Fail;
 
-    //fun1_info =  _fmi_pSDHCBuffer[12]<<8 | _fmi_pSDHCBuffer[13];
-    //switch_status =  _fmi_pSDHCBuffer[16] & 0xf;
+    // fun1_info =  _fmi_pSDHCBuffer[12]<<8 | _fmi_pSDHCBuffer[13];
+    // switch_status =  _fmi_pSDHCBuffer[16] & 0xf;
     busy_status0 = _fmi_pSDHCBuffer[28]<<8 | _fmi_pSDHCBuffer[29];
 
     if (!busy_status0)  // function ready
@@ -1093,8 +1045,6 @@ VOID fmiGet_SD_info(FMI_SD_INFO_T *pSD, DISK_DATA_T *_info)
 
             _info->totalSectorN = (*(UINT32 *)(_fmi_pSDHCBuffer+212));
             _info->diskSize = _info->totalSectorN / 2;
-            DBG_PRINTF("--> EXT_CSD v1.%d revision 1.%d, Card size = (SEC_COUNT*512) = (%d*512)\n",
-                _fmi_ucSDHCBuffer[194], _fmi_ucSDHCBuffer[192], *(UINT32 *)(_fmi_pSDHCBuffer+212));
         }
         else
         {
@@ -1106,7 +1056,6 @@ VOID fmiGet_SD_info(FMI_SD_INFO_T *pSD, DISK_DATA_T *_info)
 
             _info->diskSize = size / 1024;
             _info->totalSectorN = size / 512;
-            DBG_PRINTF("--> CSD v1.%d, Card size = (%d+1)*2^(%d+2)*2^%d\n", (Buffer[0] & 0xc0000000)>>30, C_Size, MULT, R_LEN);
         }
     }
     else
@@ -1120,7 +1069,6 @@ VOID fmiGet_SD_info(FMI_SD_INFO_T *pSD, DISK_DATA_T *_info)
 
             _info->diskSize = size;
             _info->totalSectorN = size << 1;
-            DBG_PRINTF("--> CSD v2.0, Card size = (C_SIZE+1)*512KB = (%d+1)*512KB\n", C_Size);
         }
         else
         {
@@ -1132,7 +1080,6 @@ VOID fmiGet_SD_info(FMI_SD_INFO_T *pSD, DISK_DATA_T *_info)
 
             _info->diskSize = size / 1024;
             _info->totalSectorN = size / 512;
-            DBG_PRINTF("--> CSD v1.%d, Card size = (%d+1)*2^(%d+2)*2^%d\n", (Buffer[0] & 0xc0000000)>>30, C_Size, MULT, R_LEN);
         }
     }
     _info->sectorSize = 512;
@@ -1143,10 +1090,10 @@ VOID fmiGet_SD_info(FMI_SD_INFO_T *pSD, DISK_DATA_T *_info)
 
     _info->vendor[0] = (Buffer[0] & 0xff000000) >> 24;
     ptr = (unsigned char *)Buffer;
-	ptr = (unsigned char *)Buffer + 3;
+    ptr = (unsigned char *)Buffer + 3;
     for (i=0; i<5; i++)
         _info->product[i] = *ptr++;
-	ptr = (unsigned char *)Buffer + 9;
+    ptr = (unsigned char *)Buffer + 9;
     for (i=0; i<4; i++)
         _info->serial[i] = *ptr++;
 

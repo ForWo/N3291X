@@ -11,14 +11,20 @@
 #include "wbio.h"
 #include "wblib.h"
 
-#include "w55fa92_reg.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_sic.h"
 #include "fmi.h"
-#include "w55fa92_gnand.h"
+#include "w55fa95_gnand.h"
 
 //--- Should define these compile flags from ADS target.
 // __OPT_SW_WP_GPA0             : use GPA0 as software Write Protect pin for CS0; 1 is normal; 0 is protected
 // __OPT_NAND_CARD_DETECT_GPD14 : use GPD14 as NAND card detect pin for CS1; 1 is removed; 0 is inserted
+// __OPT_NAND2_CARD             : support 2 NAND flash chips work on CS0 interface at the same time and one external NAND card.
+//      Use GPH5 to select which one will used on CS0.
+//      Software chip id 0 = CS0, GPH5=1 for first NAND flash (default)
+//                       1 = CS1 for NAND card
+//                       2 = CS0, GPH5=0 for second NAND flash
+// __OPT_NCWriter : to support Nand Card Writer board that CS0 is Nand Cartridge.
 
 // define DATE CODE and show it when running to make maintaining easy.
 #define NAND_DATE_CODE  FMI_DATE_CODE
@@ -48,12 +54,12 @@
 #define BCH_PADDING_LEN_512     32
 #define BCH_PADDING_LEN_1024    64
 // define the BCH parity code lenght for 512 bytes data pattern
-#define BCH_PARITY_LEN_T4       8
-#define BCH_PARITY_LEN_T8       15
-#define BCH_PARITY_LEN_T12      23
-#define BCH_PARITY_LEN_T15      29
+#define BCH_PARITY_LEN_T4  8
+#define BCH_PARITY_LEN_T8  15
+#define BCH_PARITY_LEN_T12 23
+#define BCH_PARITY_LEN_T15 29
 // define the BCH parity code lenght for 1024 bytes data pattern
-#define BCH_PARITY_LEN_T24      45
+#define BCH_PARITY_LEN_T24 45
 
 
 #if defined (OPT_SW_WP) || defined (__OPT_SW_WP_GPA0)
@@ -65,6 +71,10 @@ extern BOOL volatile _fmi_bIsSMDataReady;
 INT fmiSMCheckBootHeader(INT chipSel, FMI_SM_INFO_T *pSM);
 static int _nand_init0 = 0, _nand_init1 = 0;
 
+#ifdef __OPT_NAND2_CARD
+    static int _nand_init2 = 0;
+#endif
+
 __align(4096) UCHAR _fmi_ucSMBuffer[8192];
 UINT8 *_fmi_pSMBuffer;
 
@@ -73,40 +83,16 @@ UINT8 *_fmi_pSMBuffer;
 // return 1 for Ready
 INT fmiSMCheckRB(FMI_SM_INFO_T *pSM)
 {
-#if 0   // no timer in it
-    UINT32 ii;
-    for (ii=0; ii<100; ii++);
-
-    while(1)
-    {
-        if(pSM == pSM0)
-        {
-            if (inpw(REG_SMISR) & SMISR_RB0_IF)
-            {
-                while(! (inpw(REG_SMISR) & SMISR_RB0) );
-                outpw(REG_SMISR, SMISR_RB0_IF);
-                return 1;
-            }
-        }
-        else
-        {
-            if (inpw(REG_SMISR) & SMISR_RB1_IF)
-            {
-                while(! (inpw(REG_SMISR) & SMISR_RB1) );
-                outpw(REG_SMISR, SMISR_RB1_IF);
-                return 1;
-            }
-        }
-    }
-    return 0;
-
-#else
     unsigned int volatile tick;
     tick = sysGetTicks(TIMER0);
 
     while(1)
     {
+#ifdef __OPT_NAND2_CARD
+        if ((pSM == pSM0) || (pSM == pSM2))
+#else
         if(pSM == pSM0)
+#endif
         {
             if (inpw(REG_SMISR) & SMISR_RB0_IF)
             {
@@ -125,14 +111,32 @@ INT fmiSMCheckRB(FMI_SM_INFO_T *pSM)
             }
 #ifdef __OPT_NAND_CARD_DETECT_GPD14
             if (nand_is_card_inserted() != 0)   // nand card removed
-                return GNERR_NAND_NOT_FOUND;
+                return (INT)GNERR_NAND_NOT_FOUND;
 #endif
         }
+
+#ifdef __OPT_NCWriter
+  #ifdef __OPT_NAND_CARD_DETECT_GPD14
+        // NandCardWriter board v0.3 support GPD14 as NAND card insert/remove detection.
+        if (nand_is_card_inserted() != 0)   // nand card removed
+        {
+            ERR_PRINTF("NAND ERROR: fmiSMCheckRB() NAND seems don't exist !!\n");
+            return (INT)GNERR_NAND_NOT_FOUND;
+        }
+  #endif
+
+        // NandCardWriter board v0.2 has no any GPIO pin for NAND card insert/remove detection.
+        // So, we treat R/B timeout as NAND card removed. It is not normal usage but seems work.
+        if ((sysGetTicks(TIMER0) - tick) > 2)   // set R/B timeout to 2 ticks = 20ms. It should enough for all NAND command.
+        {
+            ERR_PRINTF("NAND ERROR: fmiSMCheckRB() NAND seems don't exist !!\n");
+            return (INT)GNERR_NAND_NOT_FOUND;
+        }
+#else
         if ((sysGetTicks(TIMER0) - tick) > 1000)
-            break;
-    }
-    return 0;   // timeout error
+            return 0;   // timeout error
 #endif
+    }   // end of while(1)
 }
 
 
@@ -167,7 +171,11 @@ INT fmiSM_Reset(FMI_SM_INFO_T *pSM)
     UINT32 volatile i;
     int result;
 
+#ifdef __OPT_NAND2_CARD
+    if ((pSM == pSM0) || (pSM == pSM2))
+#else
     if(pSM == pSM0)
+#endif
         outpw(REG_SMISR, SMISR_RB0_IF);
     else
         outpw(REG_SMISR, SMISR_RB1_IF);
@@ -213,14 +221,18 @@ VOID fmiSM_Initial(FMI_SM_INFO_T *pSM)
         outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_ECC_CHK);  // disable ECC check
 
 #ifdef _SIC_USE_INT_
+#ifdef __OPT_NAND2_CARD
+    if ((_nand_init0 == 0) && (_nand_init1 == 0) && (_nand_init2 == 0))
+#else
     if ((_nand_init0 == 0) && (_nand_init1 == 0))
+#endif
         outpw(REG_SMIER, SMIER_DMA_IE);
 #endif  //_SIC_USE_INT_
 
     //--- Set register to disable Mask ECC feature
     outpw(REG_SMREAREA_CTL, inpw(REG_SMREAREA_CTL) & ~SMRE_MECC);
 
-    //--- Set registers that depend on page size. According to FA92 sepc, the correct order is
+    //--- Set registers that depend on page size. According to FA95 sepc, the correct order is
     //--- 1. SMCR_BCH_TSEL  : to support T24, MUST set SMCR_BCH_TSEL before SMCR_PSIZE.
     //--- 2. SMCR_PSIZE     : set SMCR_PSIZE will auto change SMRE_REA128_EXT to default value.
     //--- 3. SMRE_REA128_EXT: to use non-default value, MUST set SMRE_REA128_EXT after SMCR_PSIZE.
@@ -994,7 +1006,11 @@ INT fmiSM_ReadID(FMI_SM_INFO_T *pSM, NDISK_T *NDISK_info)
  *---------------------------------------------------------------------------*/
 VOID fmiSMClearRBflag(FMI_SM_INFO_T *pSM)
 {
+#ifdef __OPT_NAND2_CARD
+    if ((pSM == pSM0) || (pSM == pSM2))
+#else
     if (pSM == pSM0)
+#endif
     {
         while(!(inpw(REG_SMISR) & SMISR_RB0));
         outpw(REG_SMISR, SMISR_RB0_IF);
@@ -1830,11 +1846,6 @@ INT fmiCheckInvalidBlock(FMI_SM_INFO_T *pSM, UINT32 BlockNo)
     if (BlockNo == 0)
         return 0;
 
-//    if (pSM->bIsMLCNand == TRUE)
-//        sector = (BlockNo+1) * pSM->uPagePerBlock - 1;
-//    else
-//        sector = BlockNo * pSM->uPagePerBlock;
-
     //--- check first page ...
     sector = BlockNo * pSM->uPagePerBlock;  // first page
     if (pSM->nPageSize == NAND_PAGE_512B)
@@ -1937,22 +1948,35 @@ static void sicSMselect(INT chipSel)
 {
     if (chipSel == 0)
     {
-        outpw(REG_GPDFUN0, (inpw(REG_GPDFUN0) & (~0xF0F00000)) | 0x20200000);   // enable NRE/RB0 pins
-        outpw(REG_GPDFUN1, (inpw(REG_GPDFUN1) & (~0x0000000F)) | 0x00000002);   // enable NWR pins
-        outpw(REG_GPEFUN1, (inpw(REG_GPEFUN1) & (~0x000FFF0F)) | 0x00022202);   // enable CS0/ALE/CLE/ND3 pins
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN) | 0x0003CC00);       // enable NAND NWR/NRD/RB0 pins
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN) | 0x00F30000);       // enable NAND ALE/CLE/CS0 pins
         outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_CS0);
         outpw(REG_SMCSR, inpw(REG_SMCSR) |  SMCR_CS1);
+#ifdef __OPT_NAND2_CARD
+        // use CS0, set GPIO H5 to high
+        outpw(REG_GPIOH_DOUT, inpw(REG_GPIOH_DOUT) | 0x0020);   // output 1 to GPH5 to use first NAND flash
+#endif
     }
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+    {
+        // use CS0, set GPIO H5 to low
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN) | 0x0003CC00);       // enable NAND NWR/NRD/RB0 pins
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN) | 0x00F30000);       // enable NAND ALE/CLE/CS0 pins
+        outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_CS0);
+        outpw(REG_SMCSR, inpw(REG_SMCSR) |  SMCR_CS1);
+        outpw(REG_GPIOH_DOUT, inpw(REG_GPIOH_DOUT) & ~0x0020);  // output 0 to GPH5 to use second NAND flash
+    }
+#endif
     else if (chipSel == 1)
     {
-        outpw(REG_GPDFUN0, (inpw(REG_GPDFUN0) & (~0xFF000000)) | 0x22000000);   // enable NRE/RB1 pins
-        outpw(REG_GPDFUN1, (inpw(REG_GPDFUN1) & (~0x0000000F)) | 0x00000002);   // enable NWR pins
-        outpw(REG_GPEFUN1, (inpw(REG_GPEFUN1) & (~0x000FFFF0)) | 0x00022220);   // enable CS1/ALE/CLE/ND3 pins
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN) | 0x0003F000);       // enable NAND NWR/NRD/RB1 pins
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN) | 0x00FC0000);       // enable NAND ALE/CLE/CS1 pins
         outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_CS1);
         outpw(REG_SMCSR, inpw(REG_SMCSR) |  SMCR_CS0);
     }
 
-    //--- 2014/2/26, Reset NAND controller and DMAC to keep clean status for next access.
+    //--- 2014/2/26, Reset SD controller and DMAC to keep clean status for next access.
     // Reset DMAC engine and interrupt satus
     outpw(REG_DMACCSR, inpw(REG_DMACCSR) | DMAC_SWRST | DMAC_EN);
     while(inpw(REG_DMACCSR) & DMAC_SWRST);
@@ -2178,6 +2202,10 @@ static INT fmiNormalCheckBlock(FMI_SM_INFO_T *pSM, UINT32 BlockNo)
 /* function pointer */
 FMI_SM_INFO_T *pSM0=0, *pSM1=0;
 
+#ifdef __OPT_NAND2_CARD
+    FMI_SM_INFO_T *pSM2=0;  // for second NAND flash on CS0
+#endif
+
 static INT sicSMInit(INT chipSel, NDISK_T *NDISK_info)
 {
     int status=0, count;
@@ -2189,9 +2217,15 @@ static INT sicSMInit(INT chipSel, NDISK_T *NDISK_info)
     outpw(REG_DMACCSR, inpw(REG_DMACCSR) & ~DMAC_SWRST);
     outpw(REG_FMICR, FMI_SM_EN);
 
+#ifdef __OPT_NAND2_CARD
+    if ((_nand_init0 == 0) && (_nand_init1 == 0) && (_nand_init2 == 0))
+#else
     if ((_nand_init0 == 0) && (_nand_init1 == 0))
+#endif
     {
         // enable SM
+//      outpw(REG_SMTCR, 0x20304);
+//      outpw(REG_SMTCR, 0x10205);
         outpw(REG_SMTCR, 0x20305);
         outpw(REG_SMCSR, (inpw(REG_SMCSR) & ~SMCR_PSIZE) | PSIZE_512);
         outpw(REG_SMCSR, inpw(REG_SMCSR) |  SMCR_ECC_3B_PROTECT);
@@ -2206,9 +2240,18 @@ static INT sicSMInit(INT chipSel, NDISK_T *NDISK_info)
         DBG_PRINTF("Parity written to SM registers and NAND !!\n");
 #endif  // _NAND_PAR_ALC_
 
+#ifdef __OPT_NAND2_CARD
+        // initial GPIO H5 to output HIGH to use first NAND flash on CS0 by default.
+        outpw(REG_SHRPIN_R_FB, inpw(REG_SHRPIN_R_FB) & ~R_FB_AEN);  // set GPH5 to digital mode
+        outpw(REG_GPHFUN, inpw(REG_GPHFUN) & ~MF_GPH5);         // set GPH5 as GPIO pin
+        outpw(REG_GPIOH_DOUT, inpw(REG_GPIOH_DOUT) | 0x0020);   // output 1 to GPH5; initial to use first NAND flash
+        outpw(REG_GPIOH_PUEN, inpw(REG_GPIOH_PUEN) | 0x0020);   // set GPH5 internal resistor to pull up
+        outpw(REG_GPIOH_OMD, inpw(REG_GPIOH_OMD) | 0x0020);     // set GPH5 to OUTPUT mode
+#endif
+
 #ifdef __OPT_NAND_CARD_DETECT_GPD14
         // initial GPIO D14 to input mode for NAND card detect.
-        outpw(REG_GPDFUN1, inpw(REG_GPDFUN1) & ~MF_GPD14);      // set GPD14 as GPIO pin
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN) & ~MF_GPD14);        // set GPD14 as GPIO pin
         outpw(REG_GPIOD_PUEN, inpw(REG_GPIOD_PUEN) & ~BIT14);   // disable GPD14 internal pull up resistor
         outpw(REG_GPIOD_OMD, inpw(REG_GPIOD_OMD) & ~BIT14);     // set GPD14 to INPUT mode
 #endif
@@ -2226,6 +2269,10 @@ static INT sicSMInit(INT chipSel, NDISK_T *NDISK_info)
             return FMI_NO_MEMORY;
         memset((char *)pSM0, 0, sizeof(FMI_SM_INFO_T));
 
+#ifdef __OPT_NAND2_CARD
+        outpw(REG_GPIOH_DOUT, inpw(REG_GPIOH_DOUT) | 0x0020);   // output 1 to GPH5 to use first NAND flash
+#endif
+
         if ((status = fmiSM_ReadID(pSM0, NDISK_info)) < 0)
         {
             if (pSM0 != NULL)
@@ -2238,13 +2285,13 @@ static INT sicSMInit(INT chipSel, NDISK_T *NDISK_info)
         fmiSM_Initial(pSM0);
 
 #ifdef OPT_SW_WP
-        outpw(REG_GPAFUN0, inpw(REG_GPAFUN0) & ~MF_GPA7);       // port A7 low (WP)
+        outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA7);         // port A7 low (WP)
         outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0080);  // port A7 low (WP)
         outpw(REG_GPIOA_OMD, inpw(REG_GPIOA_OMD) | 0x0080);     // port A7 output
 #endif
 
 #ifdef __OPT_SW_WP_GPA0
-        outpw(REG_GPAFUN0, inpw(REG_GPAFUN0) & ~MF_GPA0);       // set GPA0 as GPIO pin
+        outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA0);         // set GPA0 as GPIO pin
         outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0001);  // output 0 to GPA0; initial to Write Protected mode
         outpw(REG_GPIOA_OMD, inpw(REG_GPIOA_OMD) | 0x0001);     // set GPA0 to OUTPUT mode
 #endif
@@ -2298,7 +2345,7 @@ static INT sicSMInit(INT chipSel, NDISK_T *NDISK_info)
         }
         fmiSM_Initial(pSM1);
 #ifdef OPT_SW_WP
-        outpw(REG_GPAFUN0, inpw(REG_GPAFUN0) & ~MF_GPA7);       // port A7 low (WP)
+        outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA7);         // port A7 low (WP)
         outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0080);  // port A7 low (WP)
         outpw(REG_GPIOA_OMD, inpw(REG_GPIOA_OMD) | 0x0080);     // port A7 output
 #endif
@@ -2331,6 +2378,70 @@ static INT sicSMInit(INT chipSel, NDISK_T *NDISK_info)
 
         _nand_init1 = 1;
     }
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+    {
+        if (_nand_init2)
+            return 0;
+
+        pSM2 = malloc(sizeof(FMI_SM_INFO_T));
+        if (pSM2 == NULL)
+            return FMI_NO_MEMORY;
+        memset((char *)pSM2, 0, sizeof(FMI_SM_INFO_T));
+
+        outpw(REG_GPIOH_DOUT, inpw(REG_GPIOH_DOUT) & ~0x0020);  // output 0 to GPH5 to use second NAND flash
+        if ((status = fmiSM_ReadID(pSM2, NDISK_info)) < 0)
+        {
+            if (pSM2 != NULL)
+            {
+                free(pSM2);
+                pSM2 = 0;
+            }
+            return status;
+        }
+        fmiSM_Initial(pSM2);
+
+#ifdef OPT_SW_WP
+        outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA7);         // port A7 low (WP)
+        outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0080);  // port A7 low (WP)
+        outpw(REG_GPIOA_OMD, inpw(REG_GPIOA_OMD) | 0x0080);     // port A7 output
+#endif
+
+#ifdef __OPT_SW_WP_GPA0
+        outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA0);         // set GPA0 as GPIO pin
+        outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0001);  // output 0 to GPA0; initial to Write Protected mode
+        outpw(REG_GPIOA_OMD, inpw(REG_GPIOA_OMD) | 0x0001);     // set GPA0 to OUTPUT mode
+#endif
+
+        // check NAND boot header
+        fmiSMCheckBootHeader(chipSel, pSM2);
+        while(1)
+        {
+            status = fmiNormalCheckBlock(pSM2, pSM2->uLibStartBlock);
+            if (status == GNERR_NAND_NOT_FOUND)
+                return status;
+            if (!status)
+                break;
+            else
+            {
+                DBG_PRINTF("invalid start block %d\n", pSM2->uLibStartBlock);
+                pSM2->uLibStartBlock++;
+                if (pSM2->uLibStartBlock > pSM2->uBlockPerFlash)
+                {
+                    ERR_PRINTF("ERROR: has no valid blocks to use. Initial CS2 NAND fail !\n");
+                    return FMI_SM_INIT_ERROR;
+                }
+            }
+        }
+        if (pSM2->bIsCheckECC)
+            if (pSM2->uLibStartBlock == 0)
+                pSM2->uLibStartBlock++;
+        NDISK_info->nStartBlock = pSM2->uLibStartBlock;     /* available start block */
+        pSM2->uBlockPerFlash -= pSM2->uLibStartBlock;
+
+        _nand_init2 = 1;
+    }
+#endif  // __OPT_NAND2_CARD
     else
         return FMI_SM_INIT_ERROR;
 
@@ -2467,6 +2578,10 @@ INT sicSMpread(INT chipSel, INT PBA, INT page, UINT8 *buff)
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -2529,6 +2644,10 @@ INT sicSMpwrite(INT chipSel, INT PBA, INT page, UINT8 *buff)
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -2574,12 +2693,15 @@ static INT sicSM_is_page_dirty(INT chipSel, INT PBA, INT page)
     int result;
     FMI_SM_INFO_T *pSM;
     int pageNo;
-    UINT8 data0;
-    //UINT8 data1;
+    UINT8 data0, data1;
 
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -2600,7 +2722,8 @@ static INT sicSM_is_page_dirty(INT chipSel, INT PBA, INT page)
         return result;
 
     data0 = inpw(REG_SMDATA);   // read 3rd bytes of redundancy area
-    //data1 = inpw(REG_SMDATA);   // read 4th bytes of redundancy area
+    data1 = inpw(REG_SMDATA);   // read 4th bytes of redundancy area
+    data1 = data1;              // to avoid compile warning message
 
     if (pSM->nPageSize == NAND_PAGE_512B)
         fmiSM_Reset(pSM);
@@ -2625,6 +2748,10 @@ static INT sicSM_is_valid_block(INT chipSel, INT PBA)
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -2777,7 +2904,7 @@ INT sicSMMarkBadBlock(FMI_SM_INFO_T *pSM, UINT32 BlockNo)
 
     /* page 0 */
     sector = BlockNo * pSM->uPagePerBlock;
-    column = pSM->nPageSize;
+    column = pSM->nPageSize;    // set address to begin of spare area
 
     // send command
     outpw(REG_SMCMD, 0x80);     // serial data input command
@@ -2812,7 +2939,7 @@ INT sicSMMarkBadBlock(FMI_SM_INFO_T *pSM, UINT32 BlockNo)
     sector++;
     // send command
     outpw(REG_SMCMD, 0x80);     // serial data input command
-    outpw(REG_SMADDR, column);                  // CA0 - CA7
+    outpw(REG_SMADDR, column);  // CA0 - CA7
     outpw(REG_SMADDR, (column >> 8) & 0x3f);    // CA8 - CA12
     outpw(REG_SMADDR, sector & 0xff);           // PA0 - PA7
     if (!pSM->bIsMulticycle)
@@ -2852,6 +2979,10 @@ INT sicSMblock_erase(INT chipSel, INT PBA)
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -2864,7 +2995,7 @@ INT sicSMblock_erase(INT chipSel, INT PBA)
     result = fmiCheckInvalidBlock(pSM, PBA);
     if (result == GNERR_NAND_NOT_FOUND)
         return result;
-    if (result != 1)  // valid block
+    if (result != 1)    // valid block
     {
         page_no = PBA * pSM->uPagePerBlock;     // get page address
 
@@ -2934,6 +3065,10 @@ INT sicSMblock_erase_test(INT chipSel, INT PBA)
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -2986,6 +3121,10 @@ static INT sicSMchip_erase(INT chipSel)
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -3119,6 +3258,120 @@ INT nand_ioctl(INT param1, INT param2, INT param3, INT param4)
 }
 
 
+#ifdef __OPT_NAND2_CARD
+/*-----------------------------------------------------------------------------
+ * Define driver API for second NAND flash on CS0.
+ *---------------------------------------------------------------------------*/
+INT nandInit2(NDISK_T *NDISK_info)
+{
+    return (sicSMInit(2, NDISK_info));
+}
+
+
+INT nandpread2(INT PBA, INT page, UINT8 *buff)
+{
+    return (sicSMpread(2, PBA, page, buff));
+}
+
+
+INT nandpwrite2(INT PBA, INT page, UINT8 *buff)
+{
+#ifdef OPT_SW_WP
+    int status;
+    UINT32 ii;
+
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0080);   // port A7 high (WP)
+    for (ii=0; ii<SW_WP_DELAY_LOOP; ii++);
+    status = sicSMpwrite(2, PBA, page, buff);
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~ 0x0080); // port A7 low (WP)
+    return status;
+
+#elif defined __OPT_SW_WP_GPA0
+    int status;
+    UINT32 ii;
+
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0001);   // output 1 to GPA0 to non-PROTECTED mode
+    for (ii=0; ii<SW_WP_DELAY_LOOP; ii++);
+    status = sicSMpwrite(2, PBA, page, buff);
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0001);  // output 0 to GPA0 to PROTECTED mode
+    return status;
+
+#else
+    return (sicSMpwrite(2, PBA, page, buff));
+#endif
+}
+
+
+INT nand_is_page_dirty2(INT PBA, INT page)
+{
+    return (sicSM_is_page_dirty(2, PBA, page));
+}
+
+
+INT nand_is_valid_block2(INT PBA)
+{
+    return (sicSM_is_valid_block(2, PBA));
+}
+
+
+INT nand_block_erase2(INT PBA)
+{
+#ifdef OPT_SW_WP
+    int status;
+    UINT32 ii;
+
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0080);   // port A7 high (WP)
+    for (ii=0; ii<SW_WP_DELAY_LOOP; ii++);
+    status = sicSMblock_erase(2, PBA);
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~ 0x0080); // port A7 low (WP)
+    return status;
+
+#elif defined __OPT_SW_WP_GPA0
+    int status;
+    UINT32 ii;
+
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0001);   // output 1 to GPA0 to non-PROTECTED mode
+    for (ii=0; ii<SW_WP_DELAY_LOOP; ii++);
+    status = sicSMblock_erase(2, PBA);
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0001);  // output 0 to GPA0 to PROTECTED mode
+    return status;
+
+#else
+    return (sicSMblock_erase(2, PBA));
+#endif
+}
+
+
+INT nand_chip_erase2(VOID)
+{
+#ifdef OPT_SW_WP
+    int status;
+    UINT32 ii;
+
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0080);   // port A7 high (WP)
+    for (ii=0; ii<SW_WP_DELAY_LOOP; ii++);
+    status = sicSMchip_erase(2);
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~ 0x0080);     // port A7 low (WP)
+    return status;
+
+#elif defined __OPT_SW_WP_GPA0
+    int status;
+    UINT32 ii;
+
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) | 0x0001);   // output 1 to GPA0 to non-PROTECTED mode
+    for (ii=0; ii<SW_WP_DELAY_LOOP; ii++);
+    status = sicSMchip_erase(2);
+    outpw(REG_GPIOA_DOUT, inpw(REG_GPIOA_DOUT) & ~0x0001);  // output 0 to GPA0 to PROTECTED mode
+    return status;
+
+#else
+    return (sicSMchip_erase(2));
+#endif
+}
+
+#endif  // __OPT_NAND2_CARD
+
+
 /*-----------------------------------------------------------------------------
  * Found the IBR read area size that IBR will read by different BCH rule.
  *      The IBR read area not always 4 blocks any more if we use a NAND flash that IBR don't support it.
@@ -3133,12 +3386,31 @@ INT nand_ioctl(INT param1, INT param2, INT param3, INT param4)
 UINT32 fmiSM_GetIBRAreaSize(FMI_SM_INFO_T *pSM)
 {
     UINT32 uIBRAreaSize = 0;
+
+#ifdef __OPT_NCWriter   // for NandCardWriter case
+    //--- NandCardWriter write Nand Card through CS0. So, it doesn't take care about power on setting.
+    if (pSM->bIsMLCNand)
+    {
+        // MLC NAND could ask more BCH correct bits, so all blocks don't use IBR BCH rule.
+        uIBRAreaSize = 0;
+    }
+    else
+    {
+        // Since SLC NAND need less BCH correct bits and for backward compatible (NAND card in FA93 project),
+        // so keep first 4 blocks to use IBR BCH rule.
+        uIBRAreaSize = 4;
+    }
+
+#else   // for normal case
     UINT32 u8PowerOn;
     UINT32 u_PagePerBlock = 64;
     UINT32 u_PageSize;
 
     if (pSM == pSM0)    // for CS0 that should be on board bootable Nand
     {
+#ifdef __OPT_NAND2_CARD
+        outpw(REG_GPIOH_DOUT, inpw(REG_GPIOH_DOUT) | 0x0020);   // output 1 to GPH5 to use first NAND flash
+#endif
         u8PowerOn = (inpw(REG_CHIPCFG) & 0x0780 /*(NPAGE|NADDR|NTYPE)*/) >> 7;
         if((u8PowerOn & 0x6) != 0x6)    /* With Power-On-Setting for NAND */
         {
@@ -3178,6 +3450,7 @@ UINT32 fmiSM_GetIBRAreaSize(FMI_SM_INFO_T *pSM)
             uIBRAreaSize = 4;
         }
     }
+#endif
 
     INF_PRINTF("uIBRAreaSize = %d blocks\n", uIBRAreaSize);
     return uIBRAreaSize;
@@ -3301,6 +3574,17 @@ VOID fmiSMClose(INT chipSel)
             pSM0 = 0;
         }
     }
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+    {
+        _nand_init2 = 0;
+        if (pSM2 != 0)
+        {
+            free(pSM2);
+            pSM2 = 0;
+        }
+    }
+#endif
     else
     {
         _nand_init1 = 0;
@@ -3311,14 +3595,17 @@ VOID fmiSMClose(INT chipSel)
         }
     }
 
+#ifdef __OPT_NAND2_CARD
+    if ((_nand_init0 == 0) && (_nand_init1 == 0) && (_nand_init2 == 0))
+#else
     if ((_nand_init0 == 0) && (_nand_init1 == 0))
+#endif
     {
         outpw(REG_SMCSR, inpw(REG_SMCSR)|0x06000000);       // disable both CS-0 and CS-1
         outpw(REG_SMISR, 0xfff);                            // clear all SM interrupt flag
         outpw(REG_FMICR, 0x00);                             // disable both SD and SM engine
-        outpw(REG_GPDFUN0, inpw(REG_GPDFUN0) & (~0xFFF00000));   // disable NRE/RB0/RB1 pins
-        outpw(REG_GPDFUN1, inpw(REG_GPDFUN1) & (~0x0000000F));   // disable NWR pins
-        outpw(REG_GPEFUN1, inpw(REG_GPEFUN1) & (~0x000FFFFF));   // disable CS0/ALE/CLE/ND3/CS1 pins
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN) & ~0x0003FC00);  // disable NAND NWR/NRD/RB0/RB1 pins
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN) & ~0x00FF0000);  // disable NAND ALE/CLE/CS0/CS1 pins
     }
 }
 
@@ -3416,6 +3703,10 @@ INT sicSMRegionProtect(INT chipSel, INT PBA, INT page)
     sicSMselect(chipSel);
     if (chipSel == 0)
         pSM = pSM0;
+#ifdef __OPT_NAND2_CARD
+    else if (chipSel == 2)
+        pSM = pSM2;
+#endif
     else
         pSM = pSM1;
 
@@ -3448,6 +3739,13 @@ INT nandRegionProtect1(INT PBA, INT page)
 {
     return (sicSMRegionProtect(1, PBA, page));
 }
+
+#ifdef __OPT_NAND2_CARD
+INT nandRegionProtect2(INT PBA, INT page)
+{
+    return (sicSMRegionProtect(2, PBA, page));
+}
+#endif
 
 
 /*-----------------------------------------------------------------------------

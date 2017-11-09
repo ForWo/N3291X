@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include "DrvI2C.h"
-#include "W55FA92_reg.h"
+#include "W55FA95_reg.h"
 #include "wblib.h"
 
 

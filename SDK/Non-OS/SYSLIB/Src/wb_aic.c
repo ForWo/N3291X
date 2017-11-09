@@ -25,17 +25,15 @@
 #include <stdio.h>
 #include "wblib.h"
 #define WB_MIN_INT_SOURCE  1
-//#define WB_MAX_INT_SOURCE  31
-#define WB_MAX_INT_SOURCE  47
-//#define WB_NUM_OF_AICREG   32
-#define WB_NUM_OF_AICREG   48
+#define WB_MAX_INT_SOURCE  31
+#define WB_NUM_OF_AICREG   32
 
 /* Global variables */
 BOOL volatile _sys_bIsAICInitial = FALSE;
 BOOL volatile _sys_bIsHWMode = TRUE;
 
 /* declaration the function prototype */
-extern VOID WB_Interrupt_Shell(void);
+extern VOID WB_Interrupt_Shell(VOID);
 
 /* SCR and SVR register access function */
 #define AIC_REG_OFFSET    						0x4
@@ -75,23 +73,7 @@ sys_pvFunPtr sysIrqHandlerTable[] = { 0,                /* 0 */
                                   WB_Interrupt_Shell,	/* 28 */
                                   WB_Interrupt_Shell,	/* 29 */
                                   WB_Interrupt_Shell,	/* 30 */
-                                  WB_Interrupt_Shell,	/* 31 */
-                                  WB_Interrupt_Shell,	/* 32 */
-                                  WB_Interrupt_Shell,	/* 33 */
-                                  WB_Interrupt_Shell,	/* 34 */
-                                  WB_Interrupt_Shell,	/* 35 */
-                                  WB_Interrupt_Shell,	/* 36 */
-                                  WB_Interrupt_Shell,	/* 37 */  
-                                  WB_Interrupt_Shell,	/* 38 */
-                                  WB_Interrupt_Shell,	/* 39 */
-                                  WB_Interrupt_Shell,	/* 40 */
-                                  WB_Interrupt_Shell,	/* 41 */
-                                  WB_Interrupt_Shell,	/* 42 */
-                                  WB_Interrupt_Shell,	/* 43 */
-                                  WB_Interrupt_Shell,	/* 44 */
-                                  WB_Interrupt_Shell,	/* 45 */
-                                  WB_Interrupt_Shell,	/* 46 */
-                                  WB_Interrupt_Shell	/* 47 */
+                                  WB_Interrupt_Shell	/* 31 */
                                 };
 
 sys_pvFunPtr sysFiqHandlerTable[] = { 0,
@@ -125,36 +107,10 @@ sys_pvFunPtr sysFiqHandlerTable[] = { 0,
                                   WB_Interrupt_Shell,	/* 28 */
                                   WB_Interrupt_Shell,	/* 29 */
                                   WB_Interrupt_Shell,	/* 30 */
-                                  WB_Interrupt_Shell,	/* 31 */
-                                  WB_Interrupt_Shell,	/* 32 */
-                                  WB_Interrupt_Shell,	/* 33 */
-                                  WB_Interrupt_Shell,	/* 34 */
-                                  WB_Interrupt_Shell,	/* 35 */
-                                  WB_Interrupt_Shell,	/* 36 */
-                                  WB_Interrupt_Shell,	/* 37 */  
-                                  WB_Interrupt_Shell,	/* 38 */
-                                  WB_Interrupt_Shell,	/* 39 */
-                                  WB_Interrupt_Shell,	/* 40 */
-                                  WB_Interrupt_Shell,	/* 41 */
-                                  WB_Interrupt_Shell,	/* 42 */
-                                  WB_Interrupt_Shell,	/* 43 */
-                                  WB_Interrupt_Shell,	/* 44 */
-                                  WB_Interrupt_Shell,	/* 45 */
-                                  WB_Interrupt_Shell,	/* 46 */
-                                  WB_Interrupt_Shell	/* 47 */
+                                  WB_Interrupt_Shell	/* 31 */
                                 };
 
 /* Interrupt Handler */
-#ifdef __FreeRTOS__
-VOID sysIrqHandler(UINT32 _mIPER, UINT32 _mISNR)
-{
-	_mIPER = _mIPER >> 2;
-	if (_mISNR != 0)
-		if (_mIPER == _mISNR)
-			(*sysIrqHandlerTable[_mIPER])();
-	outpw(REG_AIC_EOSCR, 1);
-}
-#else
 __irq VOID sysIrqHandler()
 {
 	if (_sys_bIsHWMode)
@@ -175,18 +131,11 @@ __irq VOID sysIrqHandler()
 		UINT32 volatile _mISR, i;
 
 		_mISR = inpw(REG_AIC_ISR);
-		for (i=1; i<32; i++)
+		for (i=1; i<WB_NUM_OF_AICREG; i++)
 			if (_mISR & (1 << i))
 				(*sysIrqHandlerTable[i])();
-				
-		_mISR = inpw(REG_AIC_ISRH);				
-		for (i=32; i<WB_NUM_OF_AICREG; i++)
-			if (_mISR & (1 << (i-32)))
-				(*sysIrqHandlerTable[i])();				
-		
 	}
 }
-#endif
 
 __irq VOID sysFiqHandler()
 {
@@ -208,14 +157,9 @@ __irq VOID sysFiqHandler()
 		UINT32 volatile _mISR, i;
 
 		_mISR = inpw(REG_AIC_ISR);
-		for (i=1; i<32; i++)
+		for (i=1; i<WB_NUM_OF_AICREG; i++)
 			if (_mISR & (1 << i))
 				(*sysFiqHandlerTable[i])();
-				
-		_mISR = inpw(REG_AIC_ISRH);				
-		for (i=32; i<WB_NUM_OF_AICREG; i++)
-			if (_mISR & (1 << (i-32)))
-				(*sysFiqHandlerTable[i])();					
 	}
 }
 
@@ -231,13 +175,11 @@ VOID sysInitializeAIC()
 	*((unsigned volatile *)0x18) = 0xe59ff018;
 	*((unsigned volatile *)0x1C) = 0xe59ff018;   
 
-#ifndef __FreeRTOS__
 	_mOldIrqVect = *(PVOID volatile *)0x38;
-	*(PVOID volatile *)0x38 = (PVOID)sysIrqHandler;
-#endif
+	*(PVOID volatile *)0x38 = (PVOID volatile)sysIrqHandler;
 
 	_mOldFiqVect = *(PVOID volatile *)0x3C;
-	*(PVOID volatile *)0x3C = (PVOID)sysFiqHandler;
+	*(PVOID volatile *)0x3C = (PVOID volatile)sysFiqHandler;
 
 	if (sysGetCacheState() == TRUE)
 		sysFlushCache(I_CACHE);
@@ -248,11 +190,9 @@ VOID sysInitializeAIC()
 ERRCODE sysDisableInterrupt(INT_SOURCE_E eIntNo)
 {
 	if ((eIntNo > WB_MAX_INT_SOURCE) || (eIntNo < WB_MIN_INT_SOURCE))
-	  	return (ERRCODE)WB_PM_INVALID_IRQ_NUM;
-	if (eIntNo > 31)
-		outpw(REG_AIC_MDCRH, (1 << (eIntNo-32)));
-	else
-		outpw(REG_AIC_MDCR, (1 << eIntNo));
+	  	return WB_PM_INVALID_IRQ_NUM;
+
+	outpw(REG_AIC_MDCR, (1 << eIntNo));
 	return Successful;
 }
 
@@ -267,15 +207,27 @@ INT32 sysDisableGroupInterrupt(INT_SOURCE_GROUP_E eIntNo)
 ERRCODE sysEnableInterrupt(INT_SOURCE_E eIntNo)
 {
 	if ((eIntNo > WB_MAX_INT_SOURCE) || (eIntNo < WB_MIN_INT_SOURCE))
-	  	return (ERRCODE)WB_PM_INVALID_IRQ_NUM;
+	  	return WB_PM_INVALID_IRQ_NUM;
 
-	if (eIntNo > 31)
-		outpw(REG_AIC_MECRH, (1 << (eIntNo-32)));	
-	else
-		outpw(REG_AIC_MECR, (1 << eIntNo));
+	outpw(REG_AIC_MECR, (1 << eIntNo));
 	return Successful;
 }
 
+#if 0
+INT32 sysEnableGroupInterrupt(INT_SOURCE_GROUP_E eIntNo)
+{
+	outpw(REG_AIC_GEN, inpw(REG_AIC_GEN) | eIntNo);
+	return Successful;
+}
+
+UINT32 sysGetGroupInterruptStatus()
+{
+	UINT32 status;
+
+	status = inpw(REG_AIC_GASR);
+	return status;
+}
+#endif
 
 PVOID sysInstallExceptionHandler(INT32 nExceptType, PVOID pvNewHandler)
 {
@@ -374,12 +326,10 @@ ERRCODE sysSetGlobalInterrupt(INT32 nIntState)
 	{
 		case ENABLE_ALL_INTERRUPTS:
 		   	outpw(REG_AIC_MECR, 0xFFFFFFFF);
-		   	outpw(REG_AIC_MECRH, 0xFFFF);
 		break;
 
 		case DISABLE_ALL_INTERRUPTS:
 		   	outpw(REG_AIC_MDCR, 0xFFFFFFFF);
-		   	outpw(REG_AIC_MDCRH, 0xFFFF);	
 		break;
 
 		default:
@@ -393,7 +343,7 @@ ERRCODE sysSetInterruptPriorityLevel(INT_SOURCE_E eIntNo, UINT32 uIntLevel)
 	UINT32 _mRegValue;
 
 	if ((eIntNo > WB_MAX_INT_SOURCE) || (eIntNo < WB_MIN_INT_SOURCE))
-	  	return (ERRCODE)WB_PM_INVALID_IRQ_NUM;
+	  	return WB_PM_INVALID_IRQ_NUM;
 	
 	_mRegValue = AICRegRead(REG_AIC_SCR1, (eIntNo/4));
 	_mRegValue = _mRegValue & ( 0xFFFFFFF8<<((eIntNo%4)*8) | ( (1<<((eIntNo%4)*8))-1 ) );
@@ -417,7 +367,7 @@ ERRCODE sysSetInterruptType(INT_SOURCE_E eIntNo, UINT32 uIntSourceType)
 	UINT32 _mRegValue;
 
 	if ((eIntNo > WB_MAX_INT_SOURCE) || (eIntNo < WB_MIN_INT_SOURCE))
-	  	return (ERRCODE)WB_PM_INVALID_IRQ_NUM;
+	  	return WB_PM_INVALID_IRQ_NUM;
 
 	_mRegValue = AICRegRead(REG_AIC_SCR1, (eIntNo/4));
 	_mRegValue = _mRegValue & ( 0xFFFFFF3F<<((eIntNo & 0x3)*8) | ( (1<<((eIntNo%4)*8))-1 ) );
@@ -468,14 +418,11 @@ ERRCODE sysSetAIC2SWMode()
 }
 
 //OK
-UINT32	sysGetInterruptEnableStatus(void)
+UINT32	sysGetInterruptEnableStatus(VOID)
 {
     	return (inpw(REG_AIC_IMR));
 }
-UINT32	sysGetInterruptHighEnableStatus(void)
-{
-    	return (inpw(REG_AIC_IMRH));
-}
+
 //OK
 BOOL sysGetIBitState()
 {

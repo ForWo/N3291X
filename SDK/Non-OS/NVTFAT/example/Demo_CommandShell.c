@@ -36,7 +36,6 @@
 #include "wblib.h"
 #endif
 
-#include "w55fa92_sdio.h"
 #include "nvtfat.h"
 
 #define SYSTEM_CLOCK     	27000000
@@ -54,17 +53,16 @@
 #include "usb.h"
 #endif
 #ifdef ENABLE_GNAND
-#include "W55FA92_gnand.h"
-#include "W55FA92_SIC.h"
+//#include "NUC930_gnand.h"
+//#include "NUC930_sic.h"
+#include "W55FA95_gnand.h"
+#include "W55FA95_SIC.h"
 #endif
 #if defined(ENABLE_SD_ONE_PART)||defined(ENABLE_SD_TWO_PART)||defined(ENABLE_SD_FOUR_PART)
-#include "W55FA92_SIC.h"
+#include "W55FA95_SIC.h"
 #endif
-#if defined(ENABLE_RAM) 
-void FormatRamDisk(void);
-INT32  InitRAMDisk(UINT32 uStartAddr, UINT32 uDiskSize);
-#endif
-#include "W55FA92_reg.h"
+
+#include "W55FA95_reg.h"
 
 #ifdef ENABLE_GNAND
 static NDISK_T ptNDisk;
@@ -107,9 +105,6 @@ extern VOID  fsGetErrorDescription(INT nErrCode, CHAR *szDescription, INT bIsPri
 extern INT   fsBIG5toUnicode(VOID *bstr, VOID *ustr);
 extern void  FAT_dump_sector_cache(void);
 
-
-#define RAM_DISK_SIZE 	((1024*1024)*8)
-INT8 i8RamDisk[RAM_DISK_SIZE];
 
 /* imported from WBFILE_DISK.C */
 extern PDISK_T		*_fs_ptPDiskList;
@@ -396,27 +391,10 @@ static INT  Action_DIR(CHAR *suDirName)
 						tFileInfo.ucWDateMonth, tFileInfo.ucWDateDay, (tFileInfo.ucWDateYear+80)%100 ,
 						tFileInfo.ucWTimeHour, tFileInfo.ucWTimeMin, szLongName);
 		else
-		{
-			#if 0
 			printf("%s %s %10d  %02d-%02d-%04d  %02d:%02d  %s\n",
 						szMainName, szExtName, tFileInfo.n64FileSize,
 						tFileInfo.ucWDateMonth, tFileInfo.ucWDateDay, (tFileInfo.ucWDateYear+80)%100 ,
 						tFileInfo.ucWTimeHour, tFileInfo.ucWTimeMin, szLongName);
-		#if 0				
-			printf("\n%s %s %10d  %02d-%02d-%04d  ",
-						szMainName, szExtName, tFileInfo.n64FileSize,
-						tFileInfo.ucWDateMonth, tFileInfo.ucWDateDay, (tFileInfo.ucWDateYear+80)%100);
-			printf("%02d:%02d  %s\n",
-						tFileInfo.ucWTimeHour, tFileInfo.ucWTimeMin, szLongName);		
-		#endif				
-			#else
-			printf("%s %s %10d  %02d-%02d-%04d  ",
-						szMainName, szExtName, tFileInfo.n64FileSize,
-						tFileInfo.ucWDateMonth, tFileInfo.ucWDateDay, (tFileInfo.ucWDateYear+80)%100);
-			printf("%02d:%02d  %s\n",
-						tFileInfo.ucWTimeHour, tFileInfo.ucWTimeMin, szLongName);
-			#endif			
-		}				
 	} while (!fsFindNext(&tFileInfo));
 	
 	fsFindClose(&tFileInfo);
@@ -710,9 +688,9 @@ static INT  Action_Compare(CHAR *suFileName1, CHAR *szAsciiName1,
 	}	
 	
 
-//	fsCloseFile(hFile1);
-//	fsCloseFile(hFile2);
-//	return -1;
+	fsCloseFile(hFile1);
+	fsCloseFile(hFile2);
+	return -1;
 }
 
 
@@ -1229,7 +1207,7 @@ void  CommandShell()
 					UINT32 u32BlockSize, u32FreeSize, u32DiskSize;
 					UINT32 u32RemainingSize;
 					char chr;
-					#if defined(ENABLE_SD_ONE_PART)||defined(ENABLE_SD_TWO_PART)||defined(ENABLE_SD_FOUR_PART) || defined(ENABLE_SDIO_1)
+					#if defined(ENABLE_SD_ONE_PART)||defined(ENABLE_SD_TWO_PART)||defined(ENABLE_SD_FOUR_PART) 	
 					PDISK_T		*pDiskList;
 						
 					fsSetReservedArea(RESERVED_SIZE/512);	//Reserved 20480 sector=10MB.
@@ -1240,15 +1218,6 @@ void  CommandShell()
 					chr = getchar();
 					if( (chr == 'Y') || (chr == 'y') )
 					{
-					#ifdef ENABLE_SDIO_1  					
-						pDiskList = fsGetFullDiskInfomation();
-						fsFormatFlashMemoryCard(pDiskList);
-						fsReleaseDiskInformation(pDiskList);
-						fsDiskFreeSpace('C', &u32BlockSize, &u32FreeSize, &u32DiskSize);   
-						printf("block_size = %d\n", u32BlockSize);   
-						printf("free_size = %d\n", u32FreeSize);   
-						printf("disk_size = %d\n", u32DiskSize);  
-					#endif		
 					#ifdef ENABLE_SD_ONE_PART 					
 						pDiskList = fsGetFullDiskInfomation();
 						fsFormatFlashMemoryCard(pDiskList);
@@ -1316,12 +1285,6 @@ void  CommandShell()
 						printf("block_size = %d\n", u32BlockSize);   
 						printf("free_size = %d\n", u32FreeSize);   
 						printf("disk_size = %d\n", u32DiskSize);   	
-					#endif		
-					#ifdef ENABLE_RAM	
-						memset((char*)i8RamDisk, 0, RAM_DISK_SIZE);
-						InitRAMDisk((UINT32)&i8RamDisk, RAM_DISK_SIZE)	;
-						FormatRamDisk();
-						fsSetVolumeLabel('D', "RAM", strlen("RAM")); 					
 					#endif						
 					#ifdef ENABLE_GNAND
 						printf("Disk Size = %d\n", ((PDISK_T *)(ptNDisk.pDisk))->uDiskSize);
@@ -1459,11 +1422,8 @@ void GetDiskInformation(void)
 		ptPDiskPtr = ptPDiskPtr->ptPDiskAllLink;
 	}
 	fsReleaseDiskInformation(pDiskList);  
-	
+	fsReleaseDiskInformation(pDiskList);
 }
-
-
-
 #endif
 /*
 void fscopyAndCompare(void)
@@ -1474,49 +1434,6 @@ void fscopyAndCompare(void)
 
 }
 */
-
-void FormatRamDisk(void)
-{
-	PDISK_T       *pDiskList, *ptPDiskPtr;
-	PARTITION_T   *ptPartition;
-	INT           nDiskIdx = 0;
-	INT           nPartIdx;
-	ptPDiskPtr = pDiskList = fsGetFullDiskInfomation();
-	while (ptPDiskPtr != NULL)
-	{
-		printf("\n\n=== Disk %d (%s) ======================\n", 
-		nDiskIdx++, (ptPDiskPtr->nDiskType & 
-		DISK_TYPE_USB_DEVICE) ? "USB" : "IDE");
-		printf("    name:     [%s%s]\n", ptPDiskPtr->szManufacture, 
-		ptPDiskPtr->szProduct);
-		printf("    head:     [%d]\n", ptPDiskPtr->nHeadNum);
-		printf("    sector:   [%d]\n", ptPDiskPtr->nSectorNum);
-		printf("    cylinder: [%d]\n", ptPDiskPtr->nCylinderNum);
-		printf("    size:     [%d MB]\n", ptPDiskPtr->uDiskSize / 1024);
-				
-		ptPartition = ptPDiskPtr->ptPartList;
-		nPartIdx = 1;
-		while (ptPartition != NULL)
-		{
-			printf("\n    --- Partition %d --------------------\n", 
-			nPartIdx++);
-			printf("        active: [%s]\n", 
-			(ptPartition->ucState & 0x80) ? "Yes" : "No");
-			printf("        size:   [%d MB]\n", 
-			(ptPartition->uTotalSecN / 1024) / 2);
-			printf("        start:  [%d]\n", ptPartition->uStartSecN);
-			printf("        type:   ");
-			ptPartition = ptPartition->ptNextPart;
-		}
-		ptPDiskPtr = ptPDiskPtr->ptPDiskAllLink;
-		fsFormatFlashMemoryCard(ptPDiskPtr);
-	}	
-	fsReleaseDiskInformation(pDiskList);  
-}
-
-
-INT  InitRAMDisk(UINT32 uStartAddr, UINT32 uDiskSize);
-INT  UMAS_InitUmasDriver(void);
 int main()
 {
     	WB_UART_T 	uart;
@@ -1534,7 +1451,7 @@ int main()
 	//sysEnableCache(CACHE_WRITE_BACK);
 	
 	u32ExtFreq = sysGetExternalClock();
-	uart.uart_no =	WB_UART_1;
+	sysUartPort(1);
 	uart.uiFreq = u32ExtFreq;	//use APB clock
     	uart.uiBaudrate = 115200;
     	uart.uiDataBits = WB_DATA_BITS_8;
@@ -1544,7 +1461,7 @@ int main()
     	sysInitializeUART(&uart);
     	
     	u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);
-	printf("PLL out frequency %d Khz\n", u32PllOutHz);	
+	printf("PLL out frequency %d Hz\n", u32PllOutHz);	
 
 
 	sysSetTimerReferenceClock (TIMER0, u32ExtFreq);
@@ -1553,18 +1470,19 @@ int main()
 	sysprintf("fsInitFileSystem.\n");
 	fsInitFileSystem();
 	
-
-
-	
 #ifdef ENABLE_USB_HOST
 	/* Depend on the board's layout */
-	//USB_PortInit(HOST_NORMAL_PORT0_ONLY);
-	//USB_PortInit(HOST_NORMAL_TWO_PORT);	
-	//USB_PortInit(HOST_LIKE_PORT0);
-	//USB_PortInit(HOST_LIKE_PORT1);	
+	//USB_PortInit(HOST_LIKE_PORT1_0, HOST_LIKE_PORT2_DISABLE);
 
+	outp32(REG_APBCLK, 0xFFFFFFFF);
+	USB_PortInit(HOST_LIKE_PORT1_DISABLE, HOST_LIKE_PORT0_3);
 	InitUsbSystem();       
 	UMAS_InitUmasDriver();
+	{
+		UINT32 t0;
+		t0 = sysGetTicks(TIMER0);
+		while (sysGetTicks(TIMER0) - t0 < 300);	// wait hard disk ready 
+	}
 #endif	
 
 #if defined(ENABLE_SD)||defined(ENABLE_SD_TWO_PART)
@@ -1576,16 +1494,7 @@ int main()
 		while(1);
 	}	
 #endif			
-#ifdef ENABLE_SDIO_1
-	sicIoctl(SIC_SET_CLOCK, u32PllOutHz/1000, 0, 0);    // clock from PLL
-	sdioOpen();
-	if (sdioSdOpen1()<=0)
-	{
-		printf("Error in initializing SD card !! \n");						
-		while(1);
-	}	
-#endif
-#if defined(ENABLE_SD_ONE_PART)
+#ifdef ENABLE_SD_ONE_PART	
 	fsAssignDriveNumber('C', DISK_TYPE_SD_MMC, 0, 1);
 #endif
 #ifdef ENABLE_SD_TWO_PART
@@ -1598,17 +1507,6 @@ int main()
 	fsAssignDriveNumber('E', DISK_TYPE_SD_MMC, 0, 3);
 	fsAssignDriveNumber('F', DISK_TYPE_SD_MMC, 0, 4);
 #endif
-#if defined(ENABLE_SDIO_1)
-	fsAssignDriveNumber('C', DISK_TYPE_SD_MMC, 0, 1);
-#endif
-
-#ifdef ENABLE_RAM	
-	memset((char*)i8RamDisk, 0, RAM_DISK_SIZE);
-	InitRAMDisk((UINT32)&i8RamDisk, RAM_DISK_SIZE)	;
-	FormatRamDisk();
-	fsSetVolumeLabel('D', "RAM", strlen("RAM")); 
-	//fsAssignDriveNumber('D', DISK_TYPE_HARD_DISK, 1, 1);
-#endif 
 
 #ifdef ENABLE_GNAND
 	{	

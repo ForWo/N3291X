@@ -1,19 +1,20 @@
 /*-----------------------------------------------------------------------------------*/
 /* Nuvoton Technology Corporation confidential                                       */
 /*                                                                                   */
-/* Copyright (c) 2013 by Nuvoton Technology Corporation                              */
+/* Copyright (c) 2008 by Nuvoton Technology Corporation                              */
 /* All rights reserved                                                               */
 /*                                                                                   */
 /*-----------------------------------------------------------------------------------*/
 #include <stdlib.h>
 #include <string.h>
 
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
 #include "turbowriter.h"
 
 #define OPT_FIRST_4BLOCKS_ECC4
 
+//#define DEBUG
 //#define DBG_PRINTF  sysprintf
 #define DBG_PRINTF(...)
 
@@ -26,12 +27,12 @@
 #define BCH_PADDING_LEN_512     32
 #define BCH_PADDING_LEN_1024    64
 // define the BCH parity code lenght for 512 bytes data pattern
-#define BCH_PARITY_LEN_T4       8
-#define BCH_PARITY_LEN_T8       15
-#define BCH_PARITY_LEN_T12      23
-#define BCH_PARITY_LEN_T15      29
+#define BCH_PARITY_LEN_T4  8
+#define BCH_PARITY_LEN_T8  15
+#define BCH_PARITY_LEN_T12 23
+#define BCH_PARITY_LEN_T15 29
 // define the BCH parity code lenght for 1024 bytes data pattern
-#define BCH_PARITY_LEN_T24      45
+#define BCH_PARITY_LEN_T24 45
 
 // return 0 for R/B timeout
 // return 1 for Ready
@@ -85,7 +86,7 @@ void sicSMsetBCH(FMI_SM_INFO_T *pSM, int inIBR)
 {
     outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_BCH_TSEL);     // clear BCH select
 
-    //--- Set registers that depend on page size. According to FA92 sepc, the correct order is
+    //--- Set registers that depend on page size. According to FA95 sepc, the correct order is
     //--- 1. SMCR_BCH_TSEL  : to support T24, MUST set SMCR_BCH_TSEL before SMCR_PSIZE.
     //--- 2. SMCR_PSIZE     : set SMCR_PSIZE will auto change SMRE_REA128_EXT to default value.
     //--- 3. SMRE_REA128_EXT: to use non-default value, MUST set SMRE_REA128_EXT after SMCR_PSIZE.
@@ -467,7 +468,7 @@ INT fmiSM_ReadID(FMI_SM_INFO_T *pSM)
            // 2012/3/8, To support Micron MT29F16G08CBACA NAND flash
             if ((tempID[0]==0x2C)&&(tempID[1]==0x48)&&(tempID[2]==0x04)&&(tempID[3]==0x4A)&&(tempID[4]==0xA5))
             {
-                pSM->uBlockPerFlash  = 2047;    // block index with 0-base. = physical blocks - 1
+                pSM->uBlockPerFlash  = 2047;        // block index with 0-base. = physical blocks - 1
                 pSM->uPagePerBlock   = 256;
                 pSM->nPageSize       = NAND_PAGE_4KB;
                 pSM->uSectorPerBlock = pSM->nPageSize / 512 * pSM->uPagePerBlock;
@@ -481,7 +482,7 @@ INT fmiSM_ReadID(FMI_SM_INFO_T *pSM)
            // 2012/3/27, To support Micron MT29F32G08CBACA NAND flash
             else if ((tempID[0]==0x2C)&&(tempID[1]==0x68)&&(tempID[2]==0x04)&&(tempID[3]==0x4A)&&(tempID[4]==0xA9))
             {
-                pSM->uBlockPerFlash  = 4095;    // block index with 0-base. = physical blocks - 1
+                pSM->uBlockPerFlash  = 4095;        // block index with 0-base. = physical blocks - 1
                 pSM->uPagePerBlock   = 256;
                 pSM->nPageSize       = NAND_PAGE_4KB;
                 pSM->uSectorPerBlock = pSM->nPageSize / 512 * pSM->uPagePerBlock;
@@ -492,10 +493,10 @@ INT fmiSM_ReadID(FMI_SM_INFO_T *pSM)
                 pSM->uSectorPerFlash = 8183808; // = pSM->uSectorPerBlock * NDISK_info->nLBPerZone / 1000 * 999
                 break;
             }
-            // 2013/9/25, To support MXIC MX30LF1208AA NAND flash
+            // 2014/7/30, To support MXIC MX30LF1208AA NAND flash
             else if ((tempID[0]==0xC2)&&(tempID[1]==0xF0)&&(tempID[2]==0x80)&&(tempID[3]==0x1D))
             {
-                pSM->uBlockPerFlash  = 511;     // block index with 0-base. = physical blocks - 1
+                pSM->uBlockPerFlash  = 511;         // block index with 0-base. = physical blocks - 1
                 pSM->uPagePerBlock   = 64;
                 pSM->nPageSize       = NAND_PAGE_2KB;
                 pSM->uSectorPerBlock = pSM->nPageSize / 512 * pSM->uPagePerBlock;
@@ -511,11 +512,11 @@ INT fmiSM_ReadID(FMI_SM_INFO_T *pSM)
                 break;
             }
 
-            DBG_PRINTF("ERROR: SM ID not support!! [%02x][%02x][%02x][%02x][%02x]\n", tempID[0], tempID[1], tempID[2], tempID[3], tempID[4]);
+            ERR_PRINTF("ERROR: NAND ID not support!![%02x][%02x][%02x][%02x]\n", tempID[0], tempID[1], tempID[2], tempID[3]);
             return -1;
     }
 
-    DBG_PRINTF("SM ID [%02x][%02x][%02x][%02x][%02x]\n", tempID[0], tempID[1], tempID[2], tempID[3], tempID[4]);
+    DBG_PRINTF("NAND ID [%02x][%02x][%02x][%02x]\n", tempID[0], tempID[1], tempID[2], tempID[3]);
     return 0;
 }
 
@@ -527,13 +528,13 @@ INT fmiSM2BufferM(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT8 ucColAddr)
     outpw(REG_SMISR, SMISR_RB0_IF);
 
     outpw(REG_SMCMD, 0x00);     // read command
-    outpw(REG_SMADDR, ucColAddr);       // CA0 - CA7
+    outpw(REG_SMADDR, ucColAddr);   // CA0 - CA7
     outpw(REG_SMADDR, uSector & 0xff);  // PA0 - PA7
     if (!pSM->bIsMulticycle)
         outpw(REG_SMADDR, ((uSector >> 8) & 0xff)|0x80000000);      // PA8 - PA15
     else
     {
-        outpw(REG_SMADDR, (uSector >> 8) & 0xff);                   // PA8 - PA15
+        outpw(REG_SMADDR, (uSector >> 8) & 0xff);       // PA8 - PA15
         outpw(REG_SMADDR, ((uSector >> 16) & 0xff)|0x80000000);     // PA16 - PA17
     }
 
@@ -615,7 +616,7 @@ static VOID fmiSM_CorrectData_BCH(UINT8 ucFieidIndex, UINT8 ucErrorCnt, UINT8* p
             parity_len  = BCH_PARITY_LEN_T4;
             break;
         default:
-            DBG_PRINTF("ERROR: fmiSM_CorrectData_BCH(): invalid SMCR_BCH_TSEL = 0x%08X\n", (UINT32)(inpw(REG_SMCSR) & SMCR_BCH_TSEL));
+            ERR_PRINTF("ERROR: fmiSM_CorrectData_BCH(): invalid SMCR_BCH_TSEL = 0x%08X\n", (UINT32)(inpw(REG_SMCSR) & SMCR_BCH_TSEL));
             return;
     }
 
@@ -864,13 +865,13 @@ INT fmiSM_Read_512(FMI_SM_INFO_T *pSM, UINT32 uSector, UINT32 uDAddr)
                     else if (((uStatus & 0x03)==0x02)
                           ||((uStatus & 0x03)==0x03))   // uncorrectable error or ECC error
                     {
-                        DBG_PRINTF("SM uncorrectable error is encountered, %4x !!\n", uStatus);
+                        ERR_PRINTF("SM uncorrectable error is encountered, %4x !!\n", uStatus);
                         uError = 1;
                     }
                 }
                 else
                 {
-                    DBG_PRINTF("Wrong BCH setting for page-512 NAND !!\n");
+                    ERR_PRINTF("Wrong BCH setting for page-512 NAND !!\n");
                 }
 
                 outpw(REG_SMISR, SMISR_ECC_FIELD_IF);       // clear ECC_FLD_Error
@@ -937,21 +938,23 @@ INT sicSMInit()
     if (!bIsNandInit)
     {
         // enable SM
-        outp32(REG_FMICR, FMI_SM_EN);
-
         // select CS port 0
-        outp32(REG_GPDFUN0, (inp32(REG_GPDFUN0) & (~0xF0F00000)) | 0x20200000);   // enable NRE/RB0 pins
-        outp32(REG_GPDFUN1, (inp32(REG_GPDFUN1) & (~0x0000000F)) | 0x00000002);   // enable NWR pins
-        outp32(REG_GPEFUN1, (inp32(REG_GPEFUN1) & (~0x000FFF0F)) | 0x00022202);   // enable CS0/ALE/CLE/ND3 pins
-        //outp32(REG_SMCSR, inp32(REG_SMCSR) & (~SMCR_CS0));
-        //outp32(REG_SMCSR, inp32(REG_SMCSR) |  SMCR_CS1);
-        outp32(REG_SMCSR, (inp32(REG_SMCSR) & (~SMCR_CS0)) | SMCR_CS1);
+        outpw(REG_GPDFUN, inpw(REG_GPDFUN) | 0x0003CC00);       // enable NAND NWR/NRD/RB0 pins
+        outpw(REG_GPEFUN, inpw(REG_GPEFUN) | 0x00F30000);       // enable NAND ALE/CLE/CS0 pins
+        outpw(REG_SMCSR, inpw(REG_SMCSR) & ~SMCR_CS0);
+        outpw(REG_SMCSR, inpw(REG_SMCSR) |  SMCR_CS1);
+
+        outpw(REG_FMICR, FMI_SM_EN);
 
         /* init SM interface */
         outp32(REG_SMCSR, inp32(REG_SMCSR) | SMCR_SM_SWRST);
-        outp32(REG_SMCSR, inp32(REG_SMCSR) | SMCR_ECC_EN | SMCR_ECC_CHK | SMCR_REDUN_AUTO_WEN | SMCR_ECC_3B_PROTECT); /// enable ECC/ECC_CHK/Auto_Write/3B_PROTECT
+        outp32(REG_SMCSR, inp32(REG_SMCSR) & ~SMCR_SM_SWRST);
+
+        outp32(REG_SMCSR, inp32(REG_SMCSR) | SMCR_ECC_EN | SMCR_ECC_CHK | SMCR_REDUN_AUTO_WEN); /// enable ECC/ECC_CHK/Auto_Write
 
         outp32(REG_SMREAREA_CTL, inp32(REG_SMREAREA_CTL) & ~SMRE_MECC); // disable to mask ECC parithenable BCH ECC algorithm
+
+        outp32(REG_SMCSR, inp32(REG_SMCSR) | SMCR_ECC_3B_PROTECT);
 
         /* set timing */
         outpw(REG_SMTCR, 0x20305);
@@ -989,7 +992,7 @@ INT sicSMInit()
         {
             systemAreaSize = 4;
         }
-        DBG_PRINTF("systemAreaSize = %d blocks\n", systemAreaSize);
+        sysprintf("systemAreaSize = %d blocks\n", systemAreaSize);
     }
     return 0;
 }
@@ -1055,7 +1058,7 @@ INT sicSMpread(INT chipSel, INT PBA, INT page, UINT8 *buff)
 
     if (status)
     {
-        DBG_PRINTF("read NAND page fail !!!\n");
+        ERR_PRINTF("read NAND page fail !!!\n");
     }
 
 #ifdef OPT_FIRST_4BLOCKS_ECC4
@@ -1069,8 +1072,8 @@ INT sicSMpread(INT chipSel, INT PBA, INT page, UINT8 *buff)
 VOID fmiInitDevice()
 {
     // Enable NAND Card Host Controller operation and driving clock.
-    outpw(REG_AHBCLK, inp32(REG_AHBCLK) | SIC_CKE | NAND_CKE & (~SD_CKE));  // enable NAND engine clock
-    //outpw(REG_AHBCLK, inp32(REG_AHBCLK) & ~SD_CKE);             // disable SD engine clock
+    outpw(REG_AHBCLK, inp32(REG_AHBCLK) | SIC_CKE | NAND_CKE);  // enable NAND engine clock
+    outpw(REG_AHBCLK, inp32(REG_AHBCLK) & ~SD_CKE);             // disable SD engine clock
 
     // DMAC Initial
     outpw(REG_DMACCSR, inpw(REG_DMACCSR) | DMAC_EN);
@@ -1091,6 +1094,22 @@ INT CheckBadBlockMark(UINT32 block)
 
     // 2013/11/20, the block is invalid if first byte of first page is not 0xFF.
     if ((inpw(REG_SMRA_0) & 0xFF) != 0xFF)
+        return Fail;
+    else
+        return Successful;
+}
+
+
+INT CheckBadBlockMark_512(UINT32 block)
+{
+    unsigned char *buf;
+
+    buf = (UINT8 *)((UINT32)dummy_buffer | 0x80000000);
+
+    sicSMpread(0, block, 0, buf);
+
+    // 2013/11/20, the block is invalid if sixth byte of first page is not 0xFF.
+    if ((inpw(REG_SMRA_1)&0x0000FF00) != 0xFF)
         return Fail;
     else
         return Successful;

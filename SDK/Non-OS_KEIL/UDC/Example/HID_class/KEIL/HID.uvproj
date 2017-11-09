@@ -151,7 +151,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -377,7 +377,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc>--entry Reset_Go</Misc>
@@ -416,19 +416,24 @@
           <GroupName>Library Group</GroupName>
           <Files>
             <File>
-              <FileName>w55fa92_UDC_Fullspeed.lib</FileName>
+              <FileName>w55fa95_UDC_Fullspeed.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\lib\w55fa92_UDC_Fullspeed.lib</FilePath>
+              <FilePath>..\..\..\lib\w55fa95_UDC_Fullspeed.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_ts_adc.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\TouchADC\Lib\w55fa92_ts_adc.lib</FilePath>
+              <FilePath>..\..\..\..\VPOST\Lib\W55FA95_VPOST.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_kpi_11x1_lcd.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\..\KPI\lib\w55fa95_kpi_11x1_lcd.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -579,7 +584,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -593,7 +598,7 @@
             <DriverSelection>-1</DriverSelection>
           </Flash1>
           <Flash2></Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
         </Utilities>
         <TargetArmAds>
@@ -777,7 +782,7 @@
               <MiscControls></MiscControls>
               <Define>HID_MOUSE HID_KEYPAD</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\lib;..\..\..\..\SYSLIB\Lib;..\..\..\..\TouchADC\Lib</IncludePath>
+              <IncludePath>..\..\..\lib;..\..\..\..\SYSLIB\Lib;..\..\..\..\KPI\lib;..\..\..\..\VPOST\Lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -805,7 +810,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc>--entry Reset_Go</Misc>
@@ -844,19 +849,24 @@
           <GroupName>Library Group</GroupName>
           <Files>
             <File>
-              <FileName>w55fa92_UDC_Fullspeed.lib</FileName>
+              <FileName>w55fa95_UDC_Fullspeed.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\lib\w55fa92_UDC_Fullspeed.lib</FilePath>
+              <FilePath>..\..\..\lib\w55fa95_UDC_Fullspeed.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_ts_adc.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\TouchADC\Lib\w55fa92_ts_adc.lib</FilePath>
+              <FilePath>..\..\..\..\VPOST\Lib\W55FA95_VPOST.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_kpi_11x1_lcd.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\..\KPI\lib\w55fa95_kpi_11x1_lcd.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -1007,7 +1017,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -1233,7 +1243,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc>--entry Reset_Go</Misc>
@@ -1272,19 +1282,24 @@
           <GroupName>Library Group</GroupName>
           <Files>
             <File>
-              <FileName>w55fa92_UDC_Fullspeed.lib</FileName>
+              <FileName>w55fa95_UDC_Fullspeed.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\lib\w55fa92_UDC_Fullspeed.lib</FilePath>
+              <FilePath>..\..\..\lib\w55fa95_UDC_Fullspeed.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_ts_adc.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\TouchADC\Lib\w55fa92_ts_adc.lib</FilePath>
+              <FilePath>..\..\..\..\VPOST\Lib\W55FA95_VPOST.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_kpi_11x1_lcd.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\..\KPI\lib\w55fa95_kpi_11x1_lcd.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -1435,7 +1450,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -1633,7 +1648,7 @@
               <MiscControls></MiscControls>
               <Define>HID_KEYBOARD HID_KEYPAD</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\lib;..\..\..\..\SYSLIB\Lib;..\..\..\..\TouchADC\Lib</IncludePath>
+              <IncludePath>..\..\..\lib;..\..\..\..\SYSLIB\Lib;..\..\..\..\KPI\lib;..\..\..\..\VPOST\Lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1661,7 +1676,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc>--entry Reset_Go</Misc>
@@ -1700,19 +1715,24 @@
           <GroupName>Library Group</GroupName>
           <Files>
             <File>
-              <FileName>w55fa92_UDC_Fullspeed.lib</FileName>
+              <FileName>w55fa95_UDC_Fullspeed.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\lib\w55fa92_UDC_Fullspeed.lib</FilePath>
+              <FilePath>..\..\..\lib\w55fa95_UDC_Fullspeed.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_ts_adc.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\TouchADC\Lib\w55fa92_ts_adc.lib</FilePath>
+              <FilePath>..\..\..\..\VPOST\Lib\W55FA95_VPOST.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_kpi_11x1_lcd.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\..\KPI\lib\w55fa95_kpi_11x1_lcd.lib</FilePath>
             </File>
           </Files>
         </Group>

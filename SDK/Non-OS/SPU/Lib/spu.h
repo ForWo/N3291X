@@ -10,7 +10,7 @@
 #include "wbio.h"
 #include "wblib.h"
 #include "wbtypes.h"
-#include "w55fa92_spu.h"
+#include "w55fa95_spu.h"
 
 
 
@@ -61,14 +61,14 @@ typedef union tagFF16_16
 extern UINT8	*_pucPlayAudioBuff;
 
 VOID spuDacOn(UINT8 level);
-VOID spuSetDacSlaveMode(void);
-VOID spuDacOff(void);
+VOID spuDacOff(VOID);
+VOID spuSetDacSlaveMode(VOID);
 VOID spuStartPlay(PFN_DRVSPU_CB_FUNC *fnCallBack, UINT8 *data);
-VOID spuStopPlay(void);
+VOID spuStopPlay(VOID);
 VOID spuIoctl(UINT32 cmd, UINT32 arg0, UINT32 arg1);
 VOID spuOpen(UINT32 u32SampleRate);
-VOID spuClose (void);
+VOID spuClose (VOID);
 VOID spuEqOpen (E_DRVSPU_EQ_BAND eEqBand, E_DRVSPU_EQ_GAIN eEqGain);
-VOID spuEqClose (void);
+VOID spuEqClose (VOID);
 
 #endif

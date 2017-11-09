@@ -7,14 +7,11 @@
 #include "wbio.h"
 #include "wblib.h"
 
-#include "w55fa92_sic.h"
-#include "W55fa92_AudioRec.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "spu.h"
 
 #include "AviLib.h"
-
-extern VOID spuSetDacSlaveMode(void);
 
 //#pragma import(__use_no_semihosting_swi)
 
@@ -46,45 +43,37 @@ void  mp3_play_callback(MV_CFG_T *ptMvCfg)
 int main()
 {
     WB_UART_T 	uart;
-    UINT32		u32ExtFreq;
-    UINT32		u32PllOutHz;
 	CHAR		suFileName[128];
 	INT			nStatus;
-	UINT8		buf;
 
 	
 	/* CACHE_ON	*/
 	sysEnableCache(CACHE_WRITE_BACK);
 
 	/*-----------------------------------------------------------------------*/
-	/*  CPU/HCLK/APB:  192/96/48                                             */
+	/*  CPU/HCLK/APB:  300/150/75                                             */
 	/*-----------------------------------------------------------------------*/
-  sysSetDramClock(eSYS_MPLL, 288000000, 288000000);
-	sysSetSystemClock(eSYS_UPLL, 		//E_SYS_SRC_CLK eSrcClk,
-					192000000,		//UINT32 u32PllHz,
-					192000000);		//UINT32 u32SysHz,
-
-	u32ExtFreq = sysGetExternalClock();
+	sysSetSystemClock(eSYS_UPLL,
+    									300000000,
+    									300000000);
 
 	/*-----------------------------------------------------------------------*/
 	/*  Init UART, N,8,1, 115200                                             */
 	/*-----------------------------------------------------------------------*/
-	sysUartPort(1);
-	uart.uiFreq = u32ExtFreq;					//use XIN clock
+	uart.uiFreq = 12000000;					//use XIN clock
     uart.uiBaudrate = 115200;
     uart.uiDataBits = WB_DATA_BITS_8;
     uart.uiStopBits = WB_STOP_BITS_1;
     uart.uiParity = WB_PARITY_NONE;
 	uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-	uart.uart_no = WB_UART_1;
     sysInitializeUART(&uart);
 	sysprintf("UART initialized.\n");
 
 	/*-----------------------------------------------------------------------*/
 	/*  Init timer                                                           */
 	/*-----------------------------------------------------------------------*/
-	sysSetTimerReferenceClock (TIMER0, u32ExtFreq);
-	sysStartTimer(TIMER0, 100, PERIODIC_MODE);		/* 100 ticks/per sec ==> 1tick/10ms */
+	sysSetTimerReferenceClock (TIMER0, sysGetExternalClock());
+	sysStartTimer(TIMER0, 100, PERIODIC_MODE);
 
 	/*-----------------------------------------------------------------------*/
 	/*  Init FAT file system                                                 */
@@ -95,19 +84,13 @@ int main()
 	/*-----------------------------------------------------------------------*/
 	/*  Init SD card                                                         */
 	/*-----------------------------------------------------------------------*/
-	u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);
-	sicIoctl(SIC_SET_CLOCK, u32PllOutHz/1000, 0, 0);	// clock from PLL
+	sicIoctl(SIC_SET_CLOCK, 200000, 0, 0);
 	sicOpen();
 	sysprintf("total sectors (%x)\n", sicSdOpen0());
 	
-	//FIXME
-	outp32(REG_APBCLK, inp32(REG_APBCLK) | ADC_CKE);
-	outp32(REG_CLKDIV3, (inp32(REG_CLKDIV3) & ~(ADC_N1 | ADC_S| ADC_N0)) );                              /* Fed to ADC in 12MHz=External clock */
-	DrvAUR_AudioI2cRead((E_AUR_ADC_ADDR)0x21, (UINT8*) &buf);
-	DrvAUR_AudioI2cWrite((E_AUR_ADC_ADDR)0x21, buf & ~0x40); // enable ADC VMID bias
 	spuOpen(eDRVSPU_FREQ_8000);
-	spuDacOn(2);
-	sysDelay(30);
+	spuDacOn(1);
+	sysDelay(100);
 	spuSetDacSlaveMode();
 
 	/*-----------------------------------------------------------------------*/

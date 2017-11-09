@@ -6,7 +6,7 @@
 
 #include "jpegcodec.h"
 #include "nvtfat.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "jpegSample.h"
           
 extern CHAR g_u8String[100];          
@@ -18,7 +18,7 @@ UINT32 g_u32EncWidth = 640, g_u32EncHeight = 480;       /* Encode Width & Height
 
 UINT8 __align(32) g_au8BitstreamBuffer[0x100000];		/* The buffer for encoding output */
                   
-VOID JpegEncTest (void)
+VOID JpegEncTest (VOID)
 {
 	INT		nWriteLen, nStatus, nReadLen;
 	INT		hFile;

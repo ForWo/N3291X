@@ -115,7 +115,7 @@
         <tDllPa></tDllPa>
         <tDlgDll></tDlgDll>
         <tDlgPa></tDlgPa>
-        <tIfile>..\..\..\N32926\N32926.ini</tIfile>
+        <tIfile>..\..\..\N32916\N32916.ini</tIfile>
         <pMon>Segger\JLTAgdi.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
@@ -185,8 +185,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>22</TopLine>
-      <CurrentLine>28</CurrentLine>
+      <TopLine>120</TopLine>
+      <CurrentLine>125</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\Src\I2S_example.c</PathWithFileName>
       <FilenameWithoutPath>I2S_example.c</FilenameWithoutPath>
@@ -199,8 +199,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>16</TopLine>
-      <CurrentLine>22</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\Src\standalone.c</PathWithFileName>
       <FilenameWithoutPath>standalone.c</FilenameWithoutPath>
@@ -208,21 +208,7 @@
     <File>
       <GroupNumber>1</GroupNumber>
       <FileNumber>3</FileNumber>
-      <FileType>2</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>29</TopLine>
-      <CurrentLine>38</CurrentLine>
-      <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\wb_init.s</PathWithFileName>
-      <FilenameWithoutPath>wb_init.s</FilenameWithoutPath>
-    </File>
-    <File>
-      <GroupNumber>1</GroupNumber>
-      <FileNumber>4</FileNumber>
-      <FileType>4</FileType>
+      <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
@@ -230,8 +216,22 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\Lib\w55fa92_i2s.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_i2s.lib</FilenameWithoutPath>
+      <PathWithFileName>..\Src\w55fa95_nau8822.c</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_nau8822.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>4</FileNumber>
+      <FileType>2</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>33</TopLine>
+      <CurrentLine>38</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\Src\wb_init.s</PathWithFileName>
+      <FilenameWithoutPath>wb_init.s</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -244,8 +244,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_syslib.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\Lib\w55fa95_i2s.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_i2s.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -258,8 +258,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\NVTFAT\lib\W55FA92_nvtfat.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_nvtfat.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\I2C\lib\w55fa95_i2c.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_i2c.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -272,8 +272,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SIC\Lib\W55FA92_SIC.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_SIC.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_syslib.lib</FilenameWithoutPath>
     </File>
   </Group>
 

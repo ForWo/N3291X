@@ -39,7 +39,7 @@ UINT32 volatile g_u32PwmHz;
 /* Description:                                                                                            */
 /*               ISR to handle PWM0 interrupt event           		                                       */
 /*---------------------------------------------------------------------------------------------------------*/
-static VOID PWM_ISR (void)
+static VOID PWM_ISR (VOID)
 { 
     UINT32 volatile u32RegPIIR,u32RegCCR0,u32RegCCR1;
 
@@ -536,10 +536,18 @@ VOID PWM_ClearCaptureIntStatus(UINT8 u8Capture, UINT8 u8IntType)
 /* Description:                                                                                            */
 /*               Enable PWM engine clock and reset PWM											 	   	   */		
 /*---------------------------------------------------------------------------------------------------------*/
-VOID PWM_Open(void)
+VOID PWM_Open(VOID)
 { 
-
-	g_u32PwmHz = EXTERNAL_CRYSTAL_CLOCK;
+   	UINT32 u32Clock;
+	
+	u32Clock = inp32(REG_CHIPCFG) & COPMODE;			
+	
+	u32Clock =  (u32Clock & 0x04) >> 2;	
+	
+	if(u32Clock) 
+		g_u32PwmHz = 12000000;
+	else
+		g_u32PwmHz = 27000000;	
 		
 	outp32(REG_CLKDIV5, (inp32(REG_CLKDIV5) & ~(PWM_N1|PWM_S|PWM_N0)));	
 						
@@ -566,14 +574,14 @@ VOID PWM_Open(void)
 BOOL PWM_SetClockSetting(E_SYS_SRC_CLK eSrcClk, UINT32 u32PllDiver, UINT32 u32EngineDiver)
 {
 	UINT32 u32Source, u32Clock;	
-	 			
+	 	
+	if(eSrcClk == eSYS_X32K)
+		return FALSE;
+	
 	switch(eSrcClk)
 	{
 		case eSYS_EXT:
 			u32Source = 0;
-			break;
-		case eSYS_MPLL:
-			u32Source = 0x08;
 			break;
 		case eSYS_APLL:
 			u32Source = 0x10;
@@ -593,8 +601,15 @@ BOOL PWM_SetClockSetting(E_SYS_SRC_CLK eSrcClk, UINT32 u32PllDiver, UINT32 u32En
 		outp32(REG_CLKDIV5, (inp32(REG_CLKDIV5) & ~(PWM_N1|PWM_S|PWM_N0)) | (u32Source | ((u32EngineDiver -1) << 5)));		
 	else
 		outp32(REG_CLKDIV5, (inp32(REG_CLKDIV5) & ~(PWM_N1|PWM_S|PWM_N0)) | (u32Source | ((u32EngineDiver -1) << 5) | (u32PllDiver - 1)));	
-		
-	u32Clock = EXTERNAL_CRYSTAL_CLOCK;
+	
+	u32Clock = inp32(REG_CHIPCFG) & COPMODE;			
+	
+	u32Clock =  (u32Clock & 0x04) >> 2;	
+	
+	if(u32Clock) 
+		u32Clock = 12000000;
+	else
+		u32Clock = 27000000;		
 	
 	if(eSrcClk == eSYS_EXT)
 		g_u32PwmHz = u32Clock / u32EngineDiver;				
@@ -629,7 +644,7 @@ UINT32 PWM_GetEngineClock(E_SYS_SRC_CLK* peSrcClk)
 			*peSrcClk = eSYS_EXT;
 			break;
 		case 1:
-			*peSrcClk = eSYS_MPLL;
+			*peSrcClk = eSYS_X32K;
 			break;
 		case 2:
 			*peSrcClk = eSYS_APLL;
@@ -656,7 +671,7 @@ UINT32 PWM_GetEngineClock(E_SYS_SRC_CLK* peSrcClk)
 /* Description:                                                                                            */
 /*               Disable PWM engine clock and the I/O enable											   */		
 /*---------------------------------------------------------------------------------------------------------*/
-VOID PWM_Close(void)
+VOID PWM_Close(VOID)
 {
 	outp32(POE, 0);
 	outp32(CAPENR,0x0);
@@ -941,7 +956,7 @@ VOID PWM_SetTimerIO(UINT8 u8Timer, BOOL bEnable)
 		else
 			outp32(POE, inp32(POE)  | (1 << (u8Timer & 0x07)));	
 			
-		outp32(REG_GPDFUN0, (inp32(REG_GPDFUN0) & ~(0xF << ((u8Timer & 0x07) * 4))) | (0x2 << ((u8Timer & 0x07) * 4)));
+		outp32(REG_GPDFUN, (inp32(REG_GPDFUN) & ~(0x3 << ((u8Timer & 0x07) * 2))) | (0x2 << ((u8Timer & 0x07) * 2)));
 			
 	}
 	else
@@ -950,7 +965,7 @@ VOID PWM_SetTimerIO(UINT8 u8Timer, BOOL bEnable)
 			outp32(CAPENR, inp32(CAPENR) & ~(1 << (u8Timer & 0x07)));			
 		else
 			outp32(POE, inp32(POE) & ~(1 << (u8Timer & 0x07)));
-		outp32(REG_GPDFUN0, (inp32(REG_GPDFUN0) & ~(0xF << ((u8Timer & 0x07) * 4))));	
+		outp32(REG_GPDFUN, (inp32(REG_GPDFUN) & ~(0x3 << ((u8Timer & 0x07) * 2))));	
 	}
 }
 

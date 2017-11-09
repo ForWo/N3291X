@@ -21,7 +21,7 @@
   </DaveTm>
 
   <Target>
-    <TargetName>SD_GIANTPLUS_QVGA</TargetName>
+    <TargetName>NAND_AMPIRE_WVGA_18_IN</TargetName>
     <ToolsetNumber>0x4</ToolsetNumber>
     <ToolsetName>ARM-ADS</ToolsetName>
     <TargetOption>
@@ -43,7 +43,7 @@
         <PageWidth>79</PageWidth>
         <PageLength>66</PageLength>
         <TabStop>8</TabStop>
-        <ListingPath>.\NVT_Loader_Data\SD_GIANTPLUS_QVGA\</ListingPath>
+        <ListingPath>.\NVT_Loader_Data\NAND_AMPIRE_WVGA_18_IN\</ListingPath>
       </OPTLEX>
       <ListingPage>
         <CreateCListing>1</CreateCListing>
@@ -151,7 +151,7 @@
   </Target>
 
   <Target>
-    <TargetName>NAND_GAINTPLUS_QVGA</TargetName>
+    <TargetName>SD_AMPIRE_WVGA_18_IN</TargetName>
     <ToolsetNumber>0x4</ToolsetNumber>
     <ToolsetName>ARM-ADS</ToolsetName>
     <TargetOption>
@@ -173,7 +173,7 @@
         <PageWidth>79</PageWidth>
         <PageLength>66</PageLength>
         <TabStop>8</TabStop>
-        <ListingPath>.\NVT_Loader_Data\NAND_GIANTPLUS_QVGA\</ListingPath>
+        <ListingPath>.\NVT_Loader_Data\SD_AMPIRE_WVGA_18_IN\</ListingPath>
       </OPTLEX>
       <ListingPage>
         <CreateCListing>1</CreateCListing>
@@ -288,7 +288,7 @@
     <File>
       <GroupNumber>1</GroupNumber>
       <FileNumber>1</FileNumber>
-      <FileType>1</FileType>
+      <FileType>2</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
@@ -296,8 +296,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\board_gaintplus_demo.c</PathWithFileName>
-      <FilenameWithoutPath>board_gaintplus_demo.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\heap.s</PathWithFileName>
+      <FilenameWithoutPath>heap.s</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -310,8 +310,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_avi.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_avi.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\AdapterCtl.c</PathWithFileName>
+      <FilenameWithoutPath>AdapterCtl.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -324,8 +324,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_boot_from_nand.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_boot_from_nand.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\avi.c</PathWithFileName>
+      <FilenameWithoutPath>avi.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -338,8 +338,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_boot_from_sd.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_boot_from_sd.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\LcmCtl.c</PathWithFileName>
+      <FilenameWithoutPath>LcmCtl.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -352,8 +352,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_Keypad.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_Keypad.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\main.c</PathWithFileName>
+      <FilenameWithoutPath>main.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -366,8 +366,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_main.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_main.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\mass.c</PathWithFileName>
+      <FilenameWithoutPath>mass.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -380,8 +380,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_mass.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_mass.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\nand_post_process.c</PathWithFileName>
+      <FilenameWithoutPath>nand_post_process.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -394,8 +394,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_Voltagedetection.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_Voltagedetection.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\NVT_I2C.c</PathWithFileName>
+      <FilenameWithoutPath>NVT_I2C.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -408,8 +408,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\NVT_vpost.c</PathWithFileName>
-      <FilenameWithoutPath>NVT_vpost.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\NVT_mp3.c</PathWithFileName>
+      <FilenameWithoutPath>NVT_mp3.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -422,13 +422,13 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\standalone.c</PathWithFileName>
-      <FilenameWithoutPath>standalone.c</FilenameWithoutPath>
+      <PathWithFileName>..\src\NVT_BatteryDect.c</PathWithFileName>
+      <FilenameWithoutPath>NVT_BatteryDect.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
       <FileNumber>11</FileNumber>
-      <FileType>2</FileType>
+      <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
@@ -436,8 +436,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\src\heap.s</PathWithFileName>
-      <FilenameWithoutPath>heap.s</FilenameWithoutPath>
+      <PathWithFileName>..\src\NVT_Update.c</PathWithFileName>
+      <FilenameWithoutPath>NVT_Update.c</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -456,6 +456,20 @@
     <File>
       <GroupNumber>1</GroupNumber>
       <FileNumber>13</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\src\standalone.c</PathWithFileName>
+      <FilenameWithoutPath>standalone.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>14</FileNumber>
       <FileType>2</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -469,22 +483,8 @@
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
-      <FileNumber>14</FileNumber>
-      <FileType>2</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <ColumnNumber>37</ColumnNumber>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>32</TopLine>
-      <CurrentLine>58</CurrentLine>
-      <bDave2>0</bDave2>
-      <PathWithFileName>..\src\wb_init.s</PathWithFileName>
-      <FilenameWithoutPath>wb_init.s</FilenameWithoutPath>
-    </File>
-    <File>
-      <GroupNumber>1</GroupNumber>
       <FileNumber>15</FileNumber>
-      <FileType>4</FileType>
+      <FileType>2</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
@@ -492,8 +492,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\SYSLIB\Lib\W55FA92_syslib.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_syslib.lib</FilenameWithoutPath>
+      <PathWithFileName>..\src\wb_init.s</PathWithFileName>
+      <FilenameWithoutPath>wb_init.s</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -506,40 +506,12 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\AudioRecord\Lib\AudioRecord.lib</PathWithFileName>
-      <FilenameWithoutPath>AudioRecord.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\AVI\Lib\AviLib_800x480.lib</PathWithFileName>
+      <FilenameWithoutPath>AviLib_800x480.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
       <FileNumber>17</FileNumber>
-      <FileType>4</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
-      <bDave2>0</bDave2>
-      <PathWithFileName>..\..\TouchADC\Lib\w55fa92_ts_adc.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_ts_adc.lib</FilenameWithoutPath>
-    </File>
-    <File>
-      <GroupNumber>1</GroupNumber>
-      <FileNumber>18</FileNumber>
-      <FileType>4</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
-      <bDave2>0</bDave2>
-      <PathWithFileName>..\..\AVI\Lib\AviLib_320x240.lib</PathWithFileName>
-      <FilenameWithoutPath>AviLib_320x240.lib</FilenameWithoutPath>
-    </File>
-    <File>
-      <GroupNumber>1</GroupNumber>
-      <FileNumber>19</FileNumber>
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -553,7 +525,7 @@
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
-      <FileNumber>20</FileNumber>
+      <FileNumber>18</FileNumber>
       <FileType>4</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -567,6 +539,34 @@
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
+      <FileNumber>19</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\GPIO\lib\w55fa95_gpio.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_gpio.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>20</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\KPI\lib\w55fa95_kpi_11x1_lcd.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_kpi_11x1_lcd.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
       <FileNumber>21</FileNumber>
       <FileType>4</FileType>
       <tvExp>0</tvExp>
@@ -576,8 +576,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\GPIO\lib\w55fa92_gpio.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_gpio.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\KPI\lib\w55fa95_kpi_1x3_gpio.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_kpi_1x3_gpio.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -590,8 +590,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\NVTFAT\lib\W55FA92_nvtfat.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_nvtfat.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\KPI\lib\w55fa95_kpi_1x4_gpio.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_kpi_1x4_gpio.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -604,8 +604,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\JPEG\LIB\w55fa92_jpeglib.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_jpeglib.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\KPI\lib\w55fa95_kpi_1x4_gpio_g.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_kpi_1x4_gpio_g.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -618,8 +618,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\GNAND\Lib\w55fa92_GNAND.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_GNAND.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\KPI\lib\w55fa95_kpi_1x6_gpio.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_kpi_1x6_gpio.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -632,8 +632,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\SIC\Lib\W55FA92_SIC.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_SIC.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\UDC\lib\w55fa95_MSC_NAND.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_MSC_NAND.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -646,8 +646,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\SPU\Lib\w55fa92_spu.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_spu.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\UDC\lib\w55fa95_MSC_SD.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_MSC_SD.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -660,8 +660,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\UDC\lib\w55fa92_MSC_NAND.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_MSC_NAND.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\UDC\lib\w55fa95_UDC.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_UDC.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -674,8 +674,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\UDC\lib\w55fa92_MSC_SD.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_MSC_SD.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\VPOST\Lib\W55FA95_VPOST_AMPIRE_800x480_18B.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_VPOST_AMPIRE_800x480_18B.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -688,8 +688,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\UDC\lib\w55fa92_UDC.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_UDC.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\ADC\Lib\W55FA95_adc.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_adc.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -702,8 +702,176 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_GIANTPLUS_GPM1006D.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\GNAND\Lib\w55fa95_GNAND.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_GNAND.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>31</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\I2C\lib\w55fa95_i2c.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_i2c.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>32</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\JPEG\LIB\w55fa95_jpeglib.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_jpeglib.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>33</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\NVTFAT\lib\W55FA95_nvtfat.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_nvtfat.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>34</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\RTC\LIB\w55fa95_RTClib.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_RTClib.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>35</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\SIC\Lib\W55FA95_SIC.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_SIC.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>36</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\SIC\Lib\W55FA95_SIC_KLE.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_SIC_KLE.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>37</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\SIC\Lib\W55FA95_SIC_KLE_MUL2.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_SIC_KLE_MUL2.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>38</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\SPU\Lib\w55fa95_spu.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_spu.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>39</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\SPU\Lib\w55fa95_spu_KLE.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_spu_KLE.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>40</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\SYSLIB\Lib\W55FA95_syslib.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_syslib.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>41</FileNumber>
+      <FileType>4</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\UDC\lib\w55fa95_UDC_Fullspeed.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_UDC_Fullspeed.lib</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>42</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\src\SpeakerCtl.c</PathWithFileName>
+      <FilenameWithoutPath>SpeakerCtl.c</FilenameWithoutPath>
     </File>
   </Group>
 

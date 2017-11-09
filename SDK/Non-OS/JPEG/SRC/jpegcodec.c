@@ -19,10 +19,6 @@ UINT32 volatile	g_u32BufferCount,g_u32DecInputWaitAddr;
 UINT16 volatile g_u16BufferSize, g_u16ReserveSize;
 UINT32 volatile g_u32OutputFormat,g_u32windowSizeX,g_u32windowSizeY;
 
-
-PFN_JPEG_CALLBACK pfnJpegDecodeComplete = NULL;
-PFN_JPEG_CALLBACK pfnJpegDecodeError = NULL;
-PFN_JPEG_CALLBACK pfnJpegEncodeComplete = NULL;
 PFN_JPEG_HEADERDECODE_CALLBACK pfnJpegHeaderDecode = NULL;
 PFN_JPEG_DECWAIT_CALLBACK pfnJpegDecInputWait = NULL;
 PFN_JPEG_DECWAIT_CALLBACK pfnJpegDecOutputWait = NULL;
@@ -291,12 +287,9 @@ void jpegISR(void)
 		jpegInfo.image_size[0] = JPEG_GET_ENC_PRIMARY_BITSTREAM_SIZE();		
     	jpegInfo.image_size[1] = JPEG_GET_ENC_THUMBNAIL_BITSTREAM_SIZE();	
     	/* Clear interrupt status */  	
-    	JPEG_CLEAR_INT(ENC_INTS);      	    	
+    	JPEG_CLEAR_INT(ENC_INTS);   
     	    	
-		g_bWait = FALSE;		    		
-		
-		if(pfnJpegEncodeComplete!= NULL)
-			pfnJpegEncodeComplete();		
+		g_bWait = FALSE;		    	
     }
     /* It's Decode Complete Interrupt */
     else if(u32interruptStatus &DEC_INTS) 
@@ -318,22 +311,16 @@ void jpegISR(void)
         JPEG_CLEAR_INT(DEC_INTS);
         JPEG_CLEAR_INT(JPG_DOW_INTS); 
                 
-		g_bWait = FALSE;		      
-		
-		if(pfnJpegDecodeComplete!= NULL)
-			pfnJpegDecodeComplete();		  
+		g_bWait = FALSE;		        
     }
     /* It's Decode Error Interrupt */
     else if(u32interruptStatus & DER_INTS)     
     {     
     	/* Clear interrupt status */  
-     	JPEG_CLEAR_INT(DER_INTS);           	     	                   	     	
+     	JPEG_CLEAR_INT(DER_INTS);      
      	     	
 		g_bWait = FALSE;
-		g_jpegError = TRUE;     	
-    	
-		if(pfnJpegDecodeError!= NULL)
-			pfnJpegDecodeError();  		
+		g_jpegError = TRUE;     	 
     }
     else if (u32interruptStatus & IPW_INTS)
     {
@@ -359,7 +346,7 @@ void jpegISR(void)
 
 }
 
-INT jpegWait(void)
+INT jpegWait(VOID)
 {
 	while(1)
 	{
@@ -374,7 +361,7 @@ INT jpegWait(void)
 }
 
 
-BOOL jpegIsReady(void)
+BOOL jpegIsReady(VOID)
 {
 	if (g_bWait == FALSE)
 		return TRUE;
@@ -403,7 +390,7 @@ UINT32 jpegPower(UINT32 u32Index, UINT32 u32Exp)
 	return u32Index;
 }
 
-INT jpegOpen(void)
+INT jpegOpen(VOID)
 {	
 	UINT32 u32JPGDiv;
 	UINT32 u32JPGSource;
@@ -418,22 +405,18 @@ INT jpegOpen(void)
 
 	u32JPGDiv = 0;
 	
-	if(u32JPGSource > 130000000)
+	if(u32JPGSource > 100000000)
 	{
-		if(u32JPGSource % 130000000)
+		if(u32JPGSource % 100000000)
 		{
-			u32JPGDiv = (u32JPGSource / 130000000);
+			u32JPGDiv = (u32JPGSource / 100000000);
 		}
 		else
-			u32JPGDiv = (u32JPGSource / 130000000) - 1;
+			u32JPGDiv = (u32JPGSource / 100000000) - 1;
 	}
-	/* Note:APB_N[3] must be set to logic "HIGH" to configure clock divide number for enerating the PCLKof APB bus and controllers in APB bus */
-	outp32(REG_CLKDIV4, (inp32(REG_CLKDIV4) & ~JPG_N) | ((u32JPGDiv & 0x7) << 24) | 0x800);
-	
-	sysprintf("jpeg engine is %dHz\n",u32JPGSource / (u32JPGDiv+1));
-	
+	outp32(REG_CLKDIV4, (inp32(REG_CLKDIV4) & ~JPG_N) | ((u32JPGDiv & 0x7) << 24));
 	// 3.Reset IP
-	outp32(REG_AHBIPRST, JPG_RST);
+	outp32(REG_AHBIPRST, JPGRST);
 	outp32(REG_AHBIPRST, 0);	
 	// 4.Configure IP according to inputted arguments (check CLKSEL)
 	sysInstallISR(IRQ_LEVEL_1, IRQ_JPG, (PVOID)jpegISR);	
@@ -444,7 +427,7 @@ INT jpegOpen(void)
 	return E_SUCCESS;
 }
 
-VOID jpegInit(void)
+VOID jpegInit(VOID)
 {
 	/* Set the default values of the JPEG registers */
 	g_bScale = FALSE;
@@ -541,14 +524,10 @@ INT jpegSetDecodeMode(UINT32 u32OutputFormat)
 		case JPEG_DEC_PRIMARY_PLANAR_YUV:
 		case JPEG_DEC_PRIMARY_PACKET_YUV422:
 		case JPEG_DEC_PRIMARY_PACKET_RGB555:
-		case JPEG_DEC_PRIMARY_PACKET_RGB555R1:		
-		case JPEG_DEC_PRIMARY_PACKET_RGB555R2:
 		case JPEG_DEC_THUMBNAIL_PLANAR_YUV:
 		case JPEG_DEC_THUMBNAIL_PACKET_YUV422:
 		case JPEG_DEC_THUMBNAIL_PACKET_RGB555:
 		case JPEG_DEC_PRIMARY_PACKET_RGB565:
-		case JPEG_DEC_PRIMARY_PACKET_RGB565R1:		
-		case JPEG_DEC_PRIMARY_PACKET_RGB565R2:		
 		case JPEG_DEC_PRIMARY_PACKET_RGB888:
 			outp32(REG_JITCR, u32OutputFormat);
 			outp32(REG_JMCR,inp32(REG_JMCR) & ~ENC_DEC);
@@ -563,7 +542,7 @@ INT jpegSetDecodeMode(UINT32 u32OutputFormat)
 	return E_SUCCESS;
 }
 
-VOID jpegDecodeTrigger(void)
+VOID jpegDecodeTrigger(VOID)
 {
     g_bWait = TRUE;
     g_jpegError	= FALSE;
@@ -595,7 +574,7 @@ VOID jpegDecodeTrigger(void)
 	outp32(REG_JMCR, ~JPG_EN & inp32(REG_JMCR));
 }
 
-VOID jpegEncodeTrigger(void)
+VOID jpegEncodeTrigger(VOID)
 {
     g_bWait = TRUE;
     g_jpegError = FALSE;
@@ -1123,23 +1102,13 @@ VOID jpegIoctl(UINT32 cmd, UINT32 arg0, UINT32 arg1)
 			pu32Tmp = (PUINT32) arg0;
 			*pu32Tmp = inp32(JDOWFBS);							
 			break;	
-		case JPEG_IOCTL_SET_DECODE_COMPLETE_CALBACKFUN:
-			pfnJpegDecodeComplete = (PFN_JPEG_CALLBACK) arg0;
-			break;
-		case JPEG_IOCTL_SET_ENCODE_COMPLETE_CALBACKFUN:
-			pfnJpegEncodeComplete = (PFN_JPEG_CALLBACK) arg0;
-			break;
-		case JPEG_IOCTL_SET_DECODE_ERROR_CALBACKFUN:
-			pfnJpegDecodeError = (PFN_JPEG_CALLBACK) arg0;
-			break;									
 		default:
 			break;
 	}
 }
 
-VOID jpegClose(void)
+VOID jpegClose(VOID)
 {
-
 	/* Reset JPEG (JMCR [1]) */
 	outp32(REG_JMCR,0x00000002);
 	outp32(REG_JMCR,0x00000000);

@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>VPE_LCM_QVGA</TargetName>
+      <TargetName>VPE_MMU_GW_480x272</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -43,14 +43,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\demo_Data\VPE_LCM_QVGA\</OutputDirectory>
+          <OutputDirectory>.\demo_Data\VPE_MMU_GW_480x272\</OutputDirectory>
           <OutputName>demo</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\demo_Data\VPE_LCM_QVGA\</ListingPath>
+          <ListingPath>.\demo_Data\VPE_MMU_GW_480x272\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -151,7 +151,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -347,9 +347,9 @@
             <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>LCM_320X240</Define>
+              <Define>LCM_480X272</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\Lib;..\..\..\..\SYSLIB\Lib;..\..\..\..\NVTFAT\lib;..\..\..\..\SIC\Lib;..\..\..\..\VPOST\Lib;..\..\demo;..\..\..\..\GNAND\Lib</IncludePath>
+              <IncludePath>..\..\..\Lib;..\..\..\..\SYSLIB\Lib;..\..\..\..\GNAND\Lib;..\..\..\..\NVTFAT\lib;..\..\..\..\SIC\Lib;..\..\demo;..\..\..\..\VPOST\Lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -377,10 +377,10 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc>--entry Reset_Go</Misc>
+            <Misc>--entry 0</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -421,29 +421,29 @@
               <FilePath>..\..\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_VPE.lib</FileName>
+              <FileName>W55FA95_VPE.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\Lib\W55FA92_VPE.lib</FilePath>
+              <FilePath>..\..\..\Lib\W55FA95_VPE.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_nvtfat.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\..\NVTFAT\lib\W55FA95_nvtfat.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_nvtfat.lib</FileName>
+              <FileName>W55FA95_SIC.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\NVTFAT\lib\W55FA92_nvtfat.lib</FilePath>
+              <FilePath>..\..\..\..\SIC\Lib\W55FA95_SIC.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_SIC.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\SIC\Lib\W55FA92_SIC.lib</FilePath>
+              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_GIANTPLUS_GPM1006D.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</FilePath>
+              <FilePath>..\..\..\..\VPOST\Lib\W55FA95_VPOST.lib</FilePath>
             </File>
           </Files>
         </Group>

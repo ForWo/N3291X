@@ -1,0 +1,1 @@
+move .\PWMLib_Data\Release\w55fa95_PWMlib.lib ..\..\..\Lib

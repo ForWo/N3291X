@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include "wblib.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
@@ -180,7 +179,7 @@ int ProcessOptionalINI(char *fileName)
         if (status < 0)     // read file error. Coulde be end of file.
             break;
 NextMark2:
-        if ((strcmp(Cmd, "[USER_DEFINE]") == 0) ||(strcmp(Cmd, "[N3292 USER_DEFINE]") == 0)  )
+        if ((strcmp(Cmd, "[USER_DEFINE]") == 0) ||(strcmp(Cmd, "[N3291 USER_DEFINE]") == 0)  )
         {
             do {
                 status = readLine(FileHandle, Cmd);

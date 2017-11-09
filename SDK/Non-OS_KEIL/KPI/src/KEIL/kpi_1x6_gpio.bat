@@ -1,0 +1,1 @@
+move .\kpi_Data\kpi_1x6_gpio\w55fa95_kpi_1x6_gpio.lib ..\..\Lib

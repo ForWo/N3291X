@@ -65,9 +65,7 @@ FIQ_Addr        DCD     FIQ_Handler
 Undefined_Handler
         B       Undefined_Handler
 SWI_Handler1
-;        B       SWI_Handler1     
-		mov 	r0, #0
-		movs	pc, lr
+        B       SWI_Handler1     
 Prefetch_Handler
         B       Prefetch_Handler
 Abort_Handler
@@ -84,22 +82,22 @@ Reset_Go
 ; Initial Stack Pointer register
 ;--------------------------------
 ;INIT_STACK 
- MSR	CPSR_c, #UDF_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #UDF_MODE | I_BIT | F_BIT
  LDR     SP, =UND_Stack
 
- MSR	CPSR_c, #ABT_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #ABT_MODE | I_BIT | F_BIT
  LDR     SP, =Abort_Stack
 
- MSR	CPSR_c, #IRQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #IRQ_MODE | I_BIT | F_BIT
  LDR     SP, =IRQ_Stack
 
- MSR	CPSR_c, #FIQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #FIQ_MODE | I_BIT | F_BIT
  LDR     SP, =FIQ_Stack
 
- MSR	CPSR_c, #SYS_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SYS_MODE | I_BIT | F_BIT
  LDR     SP, =USR_Stack
 
- MSR	CPSR_c, #SVC_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SVC_MODE | I_BIT | F_BIT
  LDR     SP, =SVC_Stack
 
 ;------------------------------------------------------

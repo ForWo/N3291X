@@ -44,7 +44,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\gpio_Data\Release\</OutputDirectory>
-          <OutputName>w55fa92_gpio</OutputName>
+          <OutputName>w55fa95_gpio</OutputName>
           <CreateExecutable>0</CreateExecutable>
           <CreateLib>1</CreateLib>
           <CreateHexFile>0</CreateHexFile>
@@ -349,7 +349,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\lib;..\..\..\SYSLIB\Lib</IncludePath>
+              <IncludePath>..\..\Lib;..\..\..\SYSLIB\Lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

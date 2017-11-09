@@ -19,7 +19,7 @@ F_BIT		EQU		0x40
 ;----------------------------
 ; System / User Stack Memory
 ;----------------------------
-RAM_Limit       	EQU     	0x4000000          	; For unexpanded hardw5are board
+RAM_Limit       	EQU     	0x2000000          	; For unexpanded hardw5are board
 USR_Stack	EQU		RAM_Limit
 UND_Stack	EQU		USR_Stack-2560
 Abort_Stack	EQU		UND_Stack-2560
@@ -82,22 +82,22 @@ Reset_Go
 ; Initial Stack Pointer register
 ;--------------------------------
 ;INIT_STACK 
- MSR	CPSR_c, #UDF_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #UDF_MODE | I_BIT | F_BIT
  LDR     SP, =UND_Stack
 
- MSR	CPSR_c, #ABT_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #ABT_MODE | I_BIT | F_BIT
  LDR     SP, =Abort_Stack
 
- MSR	CPSR_c, #IRQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #IRQ_MODE | I_BIT | F_BIT
  LDR     SP, =IRQ_Stack
 
- MSR	CPSR_c, #FIQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #FIQ_MODE | I_BIT | F_BIT
  LDR     SP, =FIQ_Stack
 
- MSR	CPSR_c, #SYS_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SYS_MODE | I_BIT | F_BIT
  LDR     SP, =USR_Stack
 
- MSR	CPSR_c, #SVC_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SVC_MODE | I_BIT | F_BIT
  LDR     SP, =SVC_Stack
 
 ;------------------------------------------------------
@@ -107,6 +107,7 @@ Reset_Go
 	BIC r0, r0, #0x2000		; Clear bit13 in r1
 	MCR p15, 0, r0 , c1, c0     ; cp15 register 1 := r0
 	
+;IF SYS_INIT={FALSE}
  IF :DEF:SYS_INIT
 ;-----------------------------
 ; system initialization 

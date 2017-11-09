@@ -44,7 +44,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\i2c_Data\Single_Task\</OutputDirectory>
-          <OutputName>w55fa92_i2c</OutputName>
+          <OutputName>w55fa95_i2c</OutputName>
           <CreateExecutable>0</CreateExecutable>
           <CreateLib>1</CreateLib>
           <CreateHexFile>0</CreateHexFile>
@@ -349,7 +349,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\lib;..\..\..\SYSLIB\Lib</IncludePath>
+              <IncludePath>..\..\Lib;..\..\..\SYSLIB\Lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

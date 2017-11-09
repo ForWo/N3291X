@@ -28,7 +28,7 @@
 #include <string.h>
 #include "wblib.h"
 
-#include "w55fa92_i2c.h"
+#include "w55fa95_i2c.h"
 
 
 /* If test I2C on module board, should configure switch of GPIOH pins. */
@@ -44,7 +44,7 @@
 
 
 //------------------------- Program -------------------------//
-void i2cExample (void)
+void i2cExample (VOID)
 {
 	unsigned char data[TXSIZE], value[TXSIZE];
 	int i, j, err, cnt;
@@ -133,13 +133,12 @@ exit_test:
 	return;
 }	
 
-int main (void)
+int main (VOID)
 {
 	WB_UART_T uart;
 	UINT32 u32ExtFreq;
 
 	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */	
-	uart.uart_no = WB_UART_1; 
 	uart.uiFreq = u32ExtFreq;
 	uart.uiBaudrate = 115200;
 	uart.uiDataBits = WB_DATA_BITS_8;

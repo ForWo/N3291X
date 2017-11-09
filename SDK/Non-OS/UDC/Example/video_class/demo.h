@@ -1,5 +1,6 @@
+#ifndef _VIDEOIN_DEMO
+#define _VIDEOIN_DEMO
 
-#include "W55FA92_VideoIn.h"
 
 #define OPT_UART
 #ifdef OPT_UART
@@ -10,18 +11,18 @@
 
 #define	OPT_ENCODE_WIDTH		640			//35K pixel
 #define	OPT_ENCODE_HEIGHT		480	
-#define OPT_STRIDE				640
+#define OPT_STRIDE				480
 #define OPT_LCM_WIDTH			640
 #define OPT_LCM_HEIGHT			480
 
-#define OPT_CROP_WIDTH			640
-#define OPT_CROP_HEIGHT			480
-#define OPT_PREVIEW_WIDTH		640
-#define OPT_PREVIEW_HEIGHT		480
+#define OPT_CROP_WIDTH		640
+#define OPT_CROP_HEIGHT		480
+#define OPT_PREVIEW_WIDTH		366
+#define OPT_PREVIEW_HEIGHT		272
 
 void VideoIn_InterruptHandler(void);
 
-UINT32 Smpl_OV7725_VGA(UINT8* pu8FrameBuffer0, UINT8* pu8FrameBuffer1);
+UINT32 Smpl_NT99141_VGA(UINT8* pu8FrameBuffer0, UINT8* pu8FrameBuffer1);
 
 /* Buffer for Packet & Planar format */
 extern UINT8 u8PlanarFrameBuffer0[];
@@ -34,26 +35,16 @@ extern UINT8 u8PacketFrameBuffer2[];
 /* Current Width & Height */
 extern UINT16 u16CurWidth, u16CurHeight;
 
-extern VINDEV_T Vin;
-extern VINDEV_T* pVin;
-
 void Delay(UINT32 nCount);
 
-UINT32 Smpl_OV9660(void);
-UINT32 Smpl_OV7670(void);
-UINT32 Smpl_OV7725(void);
-UINT32 Smpl_NT99141(void);
-UINT32 Smpl_NT99050(void);
-UINT32 Smpl_NT99160(void);
-
 /* UVC Main */
-VOID uvc_main(void);
+VOID uvc_main(VOID);
 /* UVC event */
-VOID uvcdEvent(void);
+VOID uvcdEvent(VOID);
 /* Change VideoIN Setting for Frame size or Buffer Address */
 VOID ChangeFrame(BOOL bChangeSize, UINT32 u32Address, UINT16 u16Width,UINT16 u16Height);
 /* VideoIN Buffer Address Control when Frame End */
-VOID VideoInFrameEnd_InterruptHandler(void);
+VOID VideoInFrameEnd_InterruptHandler(VOID);
 /* Get Image Buffer for USB transfer */
 INT GetImageBuffer(VOID);
 /* JPEG Encode function */
@@ -75,3 +66,5 @@ I2C_Read_8bitSlaveAddr_8bitReg_8bitData(
 	UINT8 uAddr, 
 	UINT8 uRegAddr
 );
+
+#endif /* !_VIDEOIN_DEMO */

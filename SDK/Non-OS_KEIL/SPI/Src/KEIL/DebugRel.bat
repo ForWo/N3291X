@@ -1,1 +1,1 @@
-move .\dev_spi_Data\DebugRel\w55fa92_SPI.lib ..\..\Lib
+move .\dev_spi_Data\DebugRel\w55fa95_SPI.lib ..\..\Lib

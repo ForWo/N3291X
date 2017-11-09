@@ -1,1 +1,1 @@
-move .\VPE_Data\DebugRel\W55FA92_VPE.lib ..\..\..\Lib
+move .\VPE_Data\DebugRel\W55FA95_VPE.lib ..\..\..\Lib

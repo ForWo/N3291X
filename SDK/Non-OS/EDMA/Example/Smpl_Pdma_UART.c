@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "wblib.h"
-#include "w55fa92_edma.h"
+#include "w55fa95_edma.h"
 
 static INT32 g_PdmaCh = 0;
 
@@ -15,7 +15,9 @@ volatile BOOL bIsBufferDone=0;
 volatile BOOL bIsUARTDone=FALSE;
 
 void PdmaCallback_UART(UINT32 u32WrapStatus)
-{	
+{
+	UINT32 u32Period, u32Attack, u32Recovery, u32Hold;
+	UINT32 i;
 	
 	if(u32WrapStatus==256)
 	{

@@ -6,7 +6,7 @@
 
 #include "jpegcodec.h"
 #include "nvtfat.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "jpegSample.h"
 
 CHAR g_u8String[100];
@@ -15,7 +15,7 @@ UINT32 g_u32StringIndex;
 /*-----------------------------------------------------------------------*/
 /*  Header Decode Complete Callback function                             */
 /*-----------------------------------------------------------------------*/            
-BOOL JpegDecHeaderComplete(void)                  
+BOOL JpegDecHeaderComplete(VOID)                  
 {	
 	UINT32 u32FrameBuffer;		
 	JPEG_INFO_T jpegInfo;
@@ -404,7 +404,7 @@ INT32 ParsingJPEG(PUINT8 JPEG_Buffer,UINT32 Length, PUINT32 pu32Width, PUINT32 p
                 case 0xCA:case 0xCB:case 0xCD:case 0xCE:
                 case 0xCF:
 						return ERR_MODE;				/* SOF Marker(Not Baseline Mode) */
-//						break;
+						break;
                 case 0xDB:								/* DQT Marker (Define Quantization Table) */
 						if(index + 1 > Length)
 							return ERR_FORMAT;			/* Wrong file format */
@@ -605,7 +605,7 @@ INT32 ParsingJPEG(PUINT8 JPEG_Buffer,UINT32 Length, PUINT32 pu32Width, PUINT32 p
 		                   	}
 		                }
 	                    return i32Result;	
-//						break;
+						break;
 				}
 				case 0xC4:      //DHT Marker (Define Huffman Table)
 				{
@@ -716,7 +716,7 @@ CHAR *intToStr(UINT32 u32quotient)
     return g_szOutputString;
 }      
       
-UINT32 GetData(void)
+UINT32 GetData(VOID)
 {
 	UINT8 u8Data;
 	UINT32 u32Data;
@@ -744,7 +744,7 @@ UINT32 GetData(void)
 	return u32Data;
 }
 
-VOID GetString(void)
+VOID GetString(VOID)
 {	
 	UINT8 u8Data;
 	

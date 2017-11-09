@@ -35,26 +35,11 @@
 #include "wblib.h"
 
 
-#include "w55fa92_reg.h"
-#include "w55fa92_spi.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_spi.h"
 
 static PFN_DRVSPI_CALLBACK g_pfnSPI0callback = NULL;
 static PFN_DRVSPI_CALLBACK g_pfnSPI1callback = NULL;
-
-#ifdef __FreeRTOS__
-/* Scheduler include files. */
-#include "FreeRTOS.h"
-#include "semphr.h"
-
-// the semaphore used to wake the PDMA task when data transfer is finish
-INT Spi0CsInit, Spi1CsInit;
-xSemaphoreHandle xSpi0CsSemaphore, xSpi1CsSemaphore;
-
-#ifdef __RAK439__
-extern void FLASH_LOCK();
-extern void FLASH_UNLOCK();
-#endif
-#endif
 
 
 /*-----------------------------------------------------------------------------------*/
@@ -113,7 +98,7 @@ int spiTxLen(int port, int count, int bitLen)
 	else
 		reg = inpw(REG_SPI1_CNTRL);
 
-	if ((count < 0) || (count > 7))
+	if ((count < 0) || (count > 3))
 		return -1;
 
 	if ((bitLen <= 0) || (bitLen > 32))
@@ -123,7 +108,7 @@ int spiTxLen(int port, int count, int bitLen)
 		reg = reg & 0xffffff07;
 	else
 		reg = (reg & 0xffffff07) | (bitLen << 3);
-	reg = (reg & 0xff1fffff) | (count << 21);
+	reg = (reg & 0xfffffcff) | (count << 8);
 
 	if (port == 0)
 		outpw(REG_SPI0_CNTRL, reg);
@@ -146,25 +131,6 @@ void spiSetClock(int port, int clock_by_MHz, int output_by_kHz)
 }
 
 /*-----------------------------------------------------------------------------------*/
-VOID spiSetByteEndin(UINT8 u8Port, E_DRVSPI_OPERATION eOP)
-{
-	if (u8Port == 0)
-	{
-		if(eOP == eDRVSPI_ENABLE)
-			outpw(REG_SPI0_CNTRL, inpw(REG_SPI0_CNTRL) |BYTE_ENDIN);
-		else
-			outpw(REG_SPI0_CNTRL, inpw(REG_SPI0_CNTRL) & ~BYTE_ENDIN);
-	}
-	else
-	{
-		if(eOP == eDRVSPI_ENABLE)
-			outpw(REG_SPI1_CNTRL, inpw(REG_SPI1_CNTRL) |BYTE_ENDIN);
-		else
-			outpw(REG_SPI1_CNTRL, inpw(REG_SPI1_CNTRL) & ~BYTE_ENDIN);
-	}
-}
-
-/*-----------------------------------------------------------------------------------*/
 VOID spiEnableInt(UINT8 u8Port)
 {
 	if(u8Port == 0)
@@ -183,7 +149,7 @@ VOID spiDisableInt(UINT8 u8Port)
 }	
 
 /*-----------------------------------------------------------------------------------*/
-VOID spi0IRQHandler(void)
+VOID spi0IRQHandler(VOID)
 {
     outpw(REG_SPI0_CNTRL, inpw(REG_SPI0_CNTRL) |IFG);
 	
@@ -194,7 +160,7 @@ VOID spi0IRQHandler(void)
 }
 
 /*-----------------------------------------------------------------------------------*/
-VOID spi1IRQHandler(void)
+VOID spi1IRQHandler(VOID)
 {
     outpw(REG_SPI1_CNTRL, inpw(REG_SPI1_CNTRL) |IFG);
 	
@@ -253,8 +219,7 @@ INT32 spiOpen(SPI_INFO_T *pInfo)
 			outpw(REG_APBIPRST, inpw(REG_APBIPRST) & ~SPI0RST);
 			for (i=0; i<200; i++);
 
-			outpw(REG_GPDFUN1, (inpw(REG_GPDFUN1)  & ~0xFFFF0000) | 0x22220000);	// enable spi0 pin cs0 function
-			outpw(REG_GPDFUN0, (inpw(REG_GPDFUN0)  & ~0x000F0000) | 0x00020000);	// enable spi0 pin cs1 function
+			outpw(REG_GPDFUN, (inpw(REG_GPDFUN) & ~0xFF000000) | 0xAA000000);	// enable spi0 pin function
 
 			if (pInfo->bIsSlaveMode)
 				outpw(REG_SPI0_CNTRL, inpw(REG_SPI0_CNTRL) | 0x40000);
@@ -309,7 +274,7 @@ INT32 spiOpen(SPI_INFO_T *pInfo)
 			outpw(REG_APBIPRST, inpw(REG_APBIPRST) & ~SPI1RST);
 			for (i=0; i<200; i++);
 
-			outpw(REG_GPBFUN1, (inpw(REG_GPBFUN1) & ~0x000FFFF0) | 0x00011110);
+			outpw(REG_GPBFUN, (inpw(REG_GPBFUN) & ~0x03FC0000) | 0x01540000);	// enable spi1 pin function
 
 			if (pInfo->bIsSlaveMode)			
 				outpw(REG_SPI1_CNTRL, inpw(REG_SPI1_CNTRL) | 0x40000);			
@@ -538,295 +503,5 @@ INT spiWrite(INT port, INT TxBitLen, INT len, CHAR *pSrc)
 	return Successful;
 }
 
-/*-----------------------------------------------------------------------------------*/
-INT spiSSEnable(UINT32 spiPort, UINT32 SSPin, UINT32 ClockMode)
-{
-	UINT reg;
 
-#ifdef __FreeRTOS__
-	if(spiPort == 0)	
-#ifdef __RAK439__
-		// flash wait for RAK439 idle
-		if(SSPin == 0)
-			FLASH_LOCK();
-#else
-		// wait the CS is idle
-		while (xSemaphoreTake(xSpi0CsSemaphore, portMAX_DELAY) != pdPASS ) ;	
-	else
-		while (xSemaphoreTake(xSpi1CsSemaphore, portMAX_DELAY) != pdPASS ) ;
-#endif
-#endif
-	reg = inpw(REG_SPI0_CNTRL+0x400*spiPort) & ~0x806;
-	switch (ClockMode) {
-	case 0:
-		outpw(REG_SPI0_CNTRL+0x400*spiPort, reg | 0x004);
-		break;
-	case 1:
-		outpw(REG_SPI0_CNTRL+0x400*spiPort, reg | 0x002);
-		break;
-	case 2:
-		outpw(REG_SPI0_CNTRL+0x400*spiPort, reg | 0x802);
-		break;
-	case 3:
-		outpw(REG_SPI0_CNTRL+0x400*spiPort, reg | 0x804);
-	}
- 
-	outpw(REG_SPI0_SSR+0x400*spiPort, inpw(REG_SPI0_SSR+0x400*spiPort) | (0x01<<SSPin));	
-
-	return Successful;
-}
-
-/*-----------------------------------------------------------------------------------*/
-INT spiSSDisable(UINT32 spiPort, UINT32 SSPin)
-{
-	outpw(REG_SPI0_SSR+0x400*spiPort, inpw(REG_SPI0_SSR+0x400*spiPort) & ~(0x01<<SSPin));
-
-#ifdef __FreeRTOS__	
-	if (spiPort == 0)	
-#ifdef __RAK439__	
-		// free the mutext which is shared with RAK439 lib
-		if(SSPin == 0)
-			FLASH_UNLOCK();
-#else	
-		// free the CS
-		xSemaphoreGive(xSpi0CsSemaphore);	
-	else
-		xSemaphoreGive(xSpi1CsSemaphore);
-#endif
-#endif
-
-	return Successful;
-}
-
-/*-----------------------------------------------------------------------------------*/
-INT spiTransfer(UINT32 port, UINT32 TxBitLen, UINT32 len, PUINT8 RxBuf , PUINT8 TxBuf)
-{
-	UINT i, transfer_len, u32TxNum;
-	PUINT pU32Rx, pU32Tx;
-	PUINT16 pU16Rx, pU16Tx;
-	PUINT8 pU8Rx, pU8Tx;
-
-	//sysprintf("len=%d\n", len);		
-	switch (TxBitLen)
-	{
-		case SPI_32BIT:
-			pU32Rx = (PUINT)RxBuf;
-			pU32Tx = (PUINT)TxBuf;
-			
-			transfer_len = len / 4;
-			if ( transfer_len )
-			{					
-				outpw(REG_SPI0_CNTRL+0x400*port, inpw(REG_SPI0_CNTRL+0x400*port) |BYTE_ENDIN);
-				
-				u32TxNum = transfer_len%8;
-				if ( !u32TxNum )
-					u32TxNum = 8;
-
-				outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM | Tx_BIT_LEN)) |((u32TxNum-1) << 21));
-
-				for ( i=0; i<u32TxNum  ; i++ )
-				{
-					if (pU32Tx != NULL)
-						outpw((REG_SPI0_TX0+0x400*port) + (i<<2), *pU32Tx++);							
-					//else
-						//outpw((REG_SPI0_TX0+0x400*port) + (i<<2), 0xffffffff);							
-				}			
-				spiActive(port);
-				
-				if (pU32Rx != NULL) 
-				for ( i=0; i< u32TxNum ; i++ )
-					*pU32Rx++ = inpw((REG_SPI0_RX0+0x400*port) + (i<<2));
-
-				transfer_len -= u32TxNum;
-
-				u32TxNum = 8;
-				outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM | Tx_BIT_LEN)) |((u32TxNum-1) << 21));
-				
-				while ( transfer_len > 0 )
-				{														
-					for ( i=0; i<u32TxNum  ; i++ )
-					{
-						if (pU32Tx != NULL)
-							outpw((REG_SPI0_TX0+0x400*port) + (i<<2), *pU32Tx++);							
-						//else
-							//outpw((REG_SPI0_TX0+0x400*port) + (i<<2), 0xffffffff);							
-					}				
-					spiActive(port);
-					
-					if (pU32Rx != NULL) 
-					for ( i=0; i< u32TxNum ; i++ )
-						*pU32Rx++ = inpw((REG_SPI0_RX0+0x400*port) + (i<<2));
-
-					transfer_len -= u32TxNum;											
-				}
-			
-				outpw(REG_SPI0_CNTRL+0x400*port, inpw(REG_SPI0_CNTRL+0x400*port) & ~BYTE_ENDIN);
-				
-			}
-
-			transfer_len = len % 4;
-			if ( transfer_len )
-			{
-				pU8Rx = (PUINT8)pU32Rx;
-				pU8Tx = (PUINT8)pU32Tx;
-
-				outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM | Tx_BIT_LEN)) |(0x08 << 3));
-
-				for ( i=0; i<transfer_len; i++ )
-				{
-					if (pU8Tx != NULL) 
-						outpw(REG_SPI0_TX0+0x400*port, pU8Tx[i]);						
-					//else
-						//outpw(REG_SPI0_TX0+0x400*port, 0xff);
-					
-					spiActive(port);
-					if (pU8Rx != NULL) 
-						pU8Rx[i] = inpw(REG_SPI0_RX0+0x400*port)&0xFF ;
-				}
-			}
-			break;
-
-		case SPI_16BIT:
-			pU16Rx = (PUINT16)RxBuf;
-			pU16Tx = (PUINT16)TxBuf;
-			
-			transfer_len = len / 2;
-			if ( transfer_len )
-			{
-				outpw(REG_SPI0_CNTRL+0x400*port, inpw(REG_SPI0_CNTRL+0x400*port) |BYTE_ENDIN);
-
-				u32TxNum = transfer_len%8;
-				if ( !u32TxNum )
-					u32TxNum = 8;
-
-				outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM | Tx_BIT_LEN)) |(((u32TxNum-1) << 21) |(16<<0x03)));
-
-				for ( i=0; i<u32TxNum  ; i++ )
-				{
-					if (pU16Tx != NULL)
-						outpw((REG_SPI0_TX0+0x400*port) + (i<<2), *pU16Tx++);							
-					//else
-						//outpw((REG_SPI0_TX0+0x400*port) + (i<<2), 0xffff);							
-				}
-				spiActive(port);
-				
-				if (pU16Rx != NULL) 
-				for ( i=0; i< u32TxNum ; i++ )
-					*pU16Rx++ = inpw((REG_SPI0_RX0+0x400*port) + (i<<2))&0xFFFF;
-
-				transfer_len -= u32TxNum;
-
-				u32TxNum = 8;
-				outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM | Tx_BIT_LEN)) |(((u32TxNum-1) << 21) |(16<<0x03)));
-				
-				while ( transfer_len > 0 )
-				{						
-					for ( i=0; i<u32TxNum  ; i++ )
-					{
-						if (pU16Tx != NULL)
-							outpw((REG_SPI0_TX0+0x400*port) + (i<<2), *pU16Tx++);							
-						//else
-							//outpw((REG_SPI0_TX0+0x400*port) + (i<<2), 0xffff);							
-					}
-					spiActive(port);
-					
-					if (pU16Rx != NULL) 
-					for ( i=0; i< u32TxNum ; i++ )
-						*pU16Rx++ = inpw((REG_SPI0_RX0+0x400*port) + (i<<2))&0xFFFF;
-
-					transfer_len -= u32TxNum;
-				}
-
-				outpw(REG_SPI0_CNTRL+0x400*port, inpw(REG_SPI0_CNTRL+0x400*port) & ~BYTE_ENDIN);
-			}
-
-			transfer_len = len % 2;
-			if ( transfer_len )
-			{
-				pU8Rx = (PUINT8)pU16Rx;
-				pU8Tx = (PUINT8)pU16Tx;
-
-				outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM | Tx_BIT_LEN)) |(0x08 << 3));
-
-				for ( i=0; i<transfer_len; i++ )
-				{
-					if (pU8Tx != NULL) 
-						outpw(REG_SPI0_TX0+0x400*port, pU8Tx[i]);						
-					//else
-						//outpw(REG_SPI0_TX0+0x400*port, 0xff);
-					
-					spiActive(port);
-					if (pU8Rx != NULL) 
-						pU8Rx[i] = inpw(REG_SPI0_RX0+0x400*port)&0xFF ;
-				}
-			}
-			break;
-
-		case SPI_8BIT:
-			pU8Rx = RxBuf;
-			pU8Tx = TxBuf;
-			
-			transfer_len = len;		
-
-			u32TxNum = transfer_len%8;
-			if ( !u32TxNum )
-				u32TxNum = 8;
-
-			outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM | Tx_BIT_LEN)) |(((u32TxNum-1) << 21) |(8<<0x03)));
-
-			if (pU8Tx != NULL)
-			for ( i=0; i<u32TxNum  ; i++ )
-				outpw((REG_SPI0_TX0+0x400*port) + (i<<2), *pU8Tx++);
-
-			spiActive(port);				
-			
-			if (pU8Rx != NULL) 
-			for ( i=0; i< u32TxNum ; i++ )
-				*pU8Rx++ = inpw((REG_SPI0_RX0+0x400*port) + (i<<2))&0xFF;
-
-			transfer_len -= u32TxNum;
-
-			u32TxNum = 8;
-			outpw(REG_SPI0_CNTRL+0x400*port, (inpw(REG_SPI0_CNTRL+0x400*port) & ~(Tx_NUM)) |((u32TxNum-1) << 21));
-										
-			while ( transfer_len > 0 )
-			{					
-				if (pU8Tx != NULL)
-				for ( i=0; i<u32TxNum  ; i++ )
-					outpw((REG_SPI0_TX0+0x400*port) + (i<<2), *pU8Tx++);
-				
-				spiActive(port);	
-				
-				if (pU8Rx != NULL) 
-				for ( i=0; i< u32TxNum ; i++ )
-					*pU8Rx++ = inpw((REG_SPI0_RX0+0x400*port) + (i<<2))&0xFF;
-
-				transfer_len -= u32TxNum;
-			}				
-			break;
-	}		
-		
-	return Successful;
-}
-
-/*-----------------------------------------------------------------------------------*/
-INT spiRtosInit(INT32 spiPort)
-{
-#ifdef __FreeRTOS__
-	// create the semaphore used for SPI two CS
-	if (spiPort == 0)
-		if (Spi0CsInit == 0) {
-			xSpi0CsSemaphore = xSemaphoreCreateBinary();
-			xSemaphoreGive(xSpi0CsSemaphore);
-			Spi0CsInit = 1;
-		}
-	else
-		if (Spi1CsInit == 0) {
-			xSpi1CsSemaphore = xSemaphoreCreateBinary();
-			xSemaphoreGive(xSpi1CsSemaphore);
-			Spi1CsInit = 1;
-		}
-#endif
-	return Successful;
-}
 

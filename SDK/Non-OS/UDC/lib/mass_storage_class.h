@@ -1,4 +1,4 @@
-#include "w55fa92_gnand.h"
+#include "w55fa95_gnand.h"
 
 typedef void (*PFN_MSCD_CDROM_CALLBACK)(PUINT32 pu32address, UINT32 u32Offset, UINT32 u32LengthInByte);
 
@@ -44,7 +44,7 @@ typedef void (*PFN_MSCD_CDROM_CALLBACK)(PUINT32 pu32address, UINT32 u32Offset, U
 
 
 /* extern functions */
-VOID mscdInit(void);
+VOID mscdInit(VOID);
 /* The callback function is Plug detection for mscdMassEvent (Retrun vale - TRUE:Run mscdMassEvent;FALSE:Exit mscdMassEvent) */
 void mscdMassEvent(PFN_USBD_EXIT_CALLBACK* callback_func);
 void mscdHighSpeedInit(void);

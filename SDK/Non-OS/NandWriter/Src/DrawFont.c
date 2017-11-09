@@ -1,16 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_sic.h"
-#include "w55fa92_gnand.h"
+#include "w55fa95_sic.h"
+#include "w55fa95_gnand.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
 
-#include "w55fa92_vpost.h"
-#include "w55fa92_gpio.h"
+#include "w55fa95_vpost.h"
+#include "w55fa95_gpio.h"
 
 #define  LAST_LINE  11
 
@@ -26,6 +26,11 @@ __align(32) UINT16 FrameBuffer[_LCM_WIDTH_*_LCM_HEIGHT_];
 #define dbgprintf(...)
 #endif
 
+#ifdef __KLE_DEMO__
+    extern void LcmPowerInit(void);
+    extern void LcmPowerEnable(void);
+    extern void LcmSaturationInit(void);
+#endif
 
 //***********************************************************************************
 // initVPost :
@@ -36,6 +41,10 @@ void initVPost(PUINT16 fb)
     LCDFORMATEX lcdInfo;
     static BOOL bIsInitVpost=FALSE;
 
+#ifdef __KLE_DEMO__
+    LcmPowerInit();
+    LcmPowerEnable();
+#endif
     if(bIsInitVpost==FALSE)
     {
         bIsInitVpost = TRUE;
@@ -46,7 +55,14 @@ void initVPost(PUINT16 fb)
         //lcmFill2Dark(fb);
         vpostLCMInit(&lcdInfo, (UINT32*)fb);
         //backLightControl();
+#ifdef __KLE_DEMO__
+        outp32(REG_SDOPM, (inp32(REG_SDOPM) & ~(PCHMODE|OPMODE)) | OPMODE);
+        outp32(REG_LCM_COLORSET, inp32(REG_LCM_COLORSET) | BIT31);
+#endif
     }
+#ifdef __KLE_DEMO__
+    LcmSaturationInit();
+#endif
 }
 
 
@@ -285,7 +301,7 @@ void Draw_Init(void)
     DemoFont_ChangeFontColor(&s_sDemo_Font, COLOR_RGB16_WHITE);
     Draw_InitialBorder(&s_sDemo_Font);
 
-    // Draw the Boarder for "W55FA92 NandWriter (..)"
+    // Draw the Boarder for "W55FA95 NandWriter (..)"
     s_sRect.u32StartX =0;
     s_sRect.u32StartY = 0;
     s_sRect.u32EndX = _LCM_WIDTH_,
@@ -294,7 +310,7 @@ void Draw_Init(void)
                     &s_sRect,
                     2);
 
-    sprintf(Array1, "W55FA92 NandWriter (v%d.%d)",MAJOR_VERSION_NUM, MINOR_VERSION_NUM);
+    sprintf(Array1, "W55FA95 NandWriter (v%d.%d)",MAJOR_VERSION_NUM, MINOR_VERSION_NUM);
     Draw_Font(COLOR_RGB16_WHITE, &s_sDemo_Font,
                     0,
                     0,

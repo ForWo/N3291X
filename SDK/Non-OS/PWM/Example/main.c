@@ -72,7 +72,7 @@ int main()
 	UINT32 u32Frequency;
 	
 	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */	
-	uart.uart_no = WB_UART_1;
+	
 	uart.uiFreq = u32ExtFreq;
     uart.uiBaudrate = 115200;
     uart.uiDataBits = WB_DATA_BITS_8;

@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>N32926_QVGA</TargetName>
+      <TargetName>N32915_WSVGA</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -43,14 +43,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\SpiWriter_Data\N32926_QVGA\</OutputDirectory>
-          <OutputName>SpiWriter(S)_QVGA</OutputName>
+          <OutputDirectory>.\SpiWriter_Data\N32915_WSVGA\</OutputDirectory>
+          <OutputName>SpiWriter(S)_WSVGA</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\SpiWriter_Data\N32926_QVGA\</ListingPath>
+          <ListingPath>.\SpiWriter_Data\N32915_WSVGA\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -151,7 +151,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -347,9 +347,9 @@
             <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>_DEMO_QVGA_ __Security__</Define>
+              <Define>_DEMO_WSVGA_ __Security__</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\SYSLIB\Lib;..\..\..\SIC\Lib;..\..\..\NVTFAT\lib;..\..\..\GPIO\lib;..\..\..\SPU\Lib;..\..\..\VPOST\Lib;..\..\..\Font\Lib;..\..\..\GNAND\Lib;..\..\..\SPI\Lib</IncludePath>
+              <IncludePath>..\..\..\SIC\Lib;..\..\..\NVTFAT\lib;..\..\..\SYSLIB\Lib;..\..\..\GNAND\Lib;..\..\..\Font\Lib;..\..\..\VPOST\Lib;..\..\..\GPIO\lib;..\..\..\SPU\Lib;..\..\..\SPI\lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -377,10 +377,10 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc>--entry Reset_Go</Misc>
+            <Misc>--entry 0</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -431,39 +431,57 @@
               <FilePath>..\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_SIC.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\SIC\Lib\W55FA95_SIC.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_SIC.lib</FileName>
+              <FileName>W55FA95_nvtfat.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SIC\Lib\W55FA92_SIC.lib</FilePath>
+              <FilePath>..\..\..\NVTFAT\lib\W55FA95_nvtfat.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_nvtfat.lib</FileName>
+              <FileName>w55fa95_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\NVTFAT\lib\W55FA92_nvtfat.lib</FilePath>
+              <FilePath>..\..\..\GPIO\lib\w55fa95_gpio.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_gpio.lib</FileName>
+              <FileName>w55fa95_spu.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\GPIO\lib\w55fa92_gpio.lib</FilePath>
+              <FilePath>..\..\..\SPU\Lib\w55fa95_spu.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_spu.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SPU\Lib\w55fa92_spu.lib</FilePath>
+              <FilePath>..\..\..\VPOST\Lib\W55FA95_VPOST.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_GIANTPLUS_GPM1006D.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</FilePath>
+              <FilePath>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
             <File>
               <FileName>Font_QVGA.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\..\..\Font\Lib\Font_QVGA.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
             </File>
             <File>
               <FileName>Font_SVGA.lib</FileName>
@@ -492,24 +510,6 @@
               <FileName>Font_WSVGA.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\..\..\Font\Lib\Font_WSVGA.lib</FilePath>
-              <FileOption>
-                <CommonProperty>
-                  <UseCPPCompiler>2</UseCPPCompiler>
-                  <RVCTCodeConst>0</RVCTCodeConst>
-                  <RVCTZI>0</RVCTZI>
-                  <RVCTOtherData>0</RVCTOtherData>
-                  <ModuleSelection>0</ModuleSelection>
-                  <IncludeInBuild>0</IncludeInBuild>
-                  <AlwaysBuild>2</AlwaysBuild>
-                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
-                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
-                  <PublicsOnly>2</PublicsOnly>
-                  <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument></CustomArgument>
-                  <IncludeLibraryModules></IncludeLibraryModules>
-                </CommonProperty>
-                <FileArmAds/>
-              </FileOption>
             </File>
             <File>
               <FileName>Rootkey.c</FileName>
@@ -517,16 +517,16 @@
               <FilePath>..\Rootkey.c</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_Secureic.lib</FileName>
+              <FileName>w55fa95_Secureic.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SPI\Lib\w55fa92_Secureic.lib</FilePath>
+              <FilePath>..\..\..\SPI\Lib\w55fa95_Secureic.lib</FilePath>
             </File>
           </Files>
         </Group>
       </Groups>
     </Target>
     <Target>
-      <TargetName>N32926_NoLCM</TargetName>
+      <TargetName>N32915_NoLCM</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -562,14 +562,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\SpiWriter_Data\N32926_QVGA\</OutputDirectory>
+          <OutputDirectory>.\SpiWriter_Data\N32915_WSVGA\</OutputDirectory>
           <OutputName>SpiWriter(S)</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\SpiWriter_Data\N32926_QVGA\</ListingPath>
+          <ListingPath>.\SpiWriter_Data\N32915_WSVGA\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -670,7 +670,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -868,7 +868,7 @@
               <MiscControls></MiscControls>
               <Define>__Security__ __NoLCM__</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\SYSLIB\Lib;..\..\..\SIC\Lib;..\..\..\NVTFAT\lib;..\..\..\GPIO\lib;..\..\..\SPU\Lib;..\..\..\VPOST\Lib;..\..\..\Font\Lib;..\..\..\GNAND\Lib;..\..\..\SPI\Lib</IncludePath>
+              <IncludePath>..\..\..\SIC\Lib;..\..\..\NVTFAT\lib;..\..\..\SYSLIB\Lib;..\..\..\GNAND\Lib;..\..\..\Font\Lib;..\..\..\VPOST\Lib;..\..\..\GPIO\lib;..\..\..\SPU\Lib;..\..\..\SPI\lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -896,10 +896,10 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc>--entry Reset_Go</Misc>
+            <Misc>--entry 0</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -990,34 +990,29 @@
               <FilePath>..\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_SIC.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\SIC\Lib\W55FA95_SIC.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_SIC.lib</FileName>
+              <FileName>W55FA95_nvtfat.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SIC\Lib\W55FA92_SIC.lib</FilePath>
+              <FilePath>..\..\..\NVTFAT\lib\W55FA95_nvtfat.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_nvtfat.lib</FileName>
+              <FileName>w55fa95_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\NVTFAT\lib\W55FA92_nvtfat.lib</FilePath>
+              <FilePath>..\..\..\GPIO\lib\w55fa95_gpio.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_gpio.lib</FileName>
+              <FileName>w55fa95_spu.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\GPIO\lib\w55fa92_gpio.lib</FilePath>
+              <FilePath>..\..\..\SPU\Lib\w55fa95_spu.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_spu.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SPU\Lib\w55fa92_spu.lib</FilePath>
-            </File>
-            <File>
-              <FileName>W55FA92_GIANTPLUS_GPM1006D.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</FilePath>
+              <FilePath>..\..\..\VPOST\Lib\W55FA95_VPOST.lib</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -1036,6 +1031,11 @@
                 </CommonProperty>
                 <FileArmAds/>
               </FileOption>
+            </File>
+            <File>
+              <FileName>W55FA95_syslib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
             <File>
               <FileName>Font_QVGA.lib</FileName>
@@ -1112,9 +1112,9 @@
               <FilePath>..\Rootkey.c</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_Secureic.lib</FileName>
+              <FileName>w55fa95_Secureic.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SPI\Lib\w55fa92_Secureic.lib</FilePath>
+              <FilePath>..\..\..\SPI\Lib\w55fa95_Secureic.lib</FilePath>
             </File>
           </Files>
         </Group>

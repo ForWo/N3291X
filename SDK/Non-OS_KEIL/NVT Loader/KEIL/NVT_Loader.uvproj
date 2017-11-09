@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>SD_GIANTPLUS_QVGA</TargetName>
+      <TargetName>NAND_AMPIRE_WVGA_18_IN</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -43,14 +43,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\NVT_Loader_Data\SD_GIANTPLUS_QVGA\</OutputDirectory>
-          <OutputName>NVT_SDU0_Fast_GIANTPLUS_QVGA</OutputName>
+          <OutputDirectory>.\NVT_Loader_Data\NAND_AMPIRE_WVGA_18_IN\</OutputDirectory>
+          <OutputName>NVT_NAND_AMPIRE_WVGA_18B_IN</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\NVT_Loader_Data\SD_GIANTPLUS_QVGA\</ListingPath>
+          <ListingPath>.\NVT_Loader_Data\NAND_AMPIRE_WVGA_18_IN\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -336,7 +336,7 @@
             <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
-            <OneElfS>1</OneElfS>
+            <OneElfS>0</OneElfS>
             <Strict>0</Strict>
             <EnumInt>0</EnumInt>
             <PlainCh>0</PlainCh>
@@ -347,9 +347,9 @@
             <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>__LCM_320x240__ __ENABLE_SD_CARD_0__ __NVT_DEV_DEMO_SD__</Define>
+              <Define>__LCM_800x480__ __NVT_MP_WVGA_IN_DEMO__ __ENABLE_NAND_0__</Define>
               <Undefine></Undefine>
-              <IncludePath>..\inc;..\..\SYSLIB\Lib;..\..\AudioRecord\Lib;..\..\TouchADC\Lib;..\..\AVI\Lib;..\..\GPIO\lib;..\..\NVTFAT\lib;..\..\JPEG\LIB;..\..\GNAND\Lib;..\..\SIC\Lib;..\..\SPU\Lib;..\..\UDC\lib;..\..\VPOST\Lib</IncludePath>
+              <IncludePath>..\..\ADC\Lib;..\..\AVI\Lib;..\..\GPIO\lib;..\..\KPI\lib;..\..\UDC\lib;..\..\VPOST\Lib;..\..\GNAND\Lib;..\..\I2C\lib;..\..\JPEG\LIB;..\..\NVTFAT\lib;..\..\RTC\LIB;..\..\SIC\Lib;..\..\GNAND\Lib;..\..\SPU\Lib;..\..\SYSLIB\Lib;..\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -391,19 +391,39 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
-              <FileName>board_gaintplus_demo.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\board_gaintplus_demo.c</FilePath>
+              <FileName>heap.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>..\src\heap.s</FilePath>
             </File>
             <File>
-              <FileName>NVT_avi.c</FileName>
+              <FileName>AdapterCtl.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_avi.c</FilePath>
+              <FilePath>..\src\AdapterCtl.c</FilePath>
             </File>
             <File>
-              <FileName>NVT_boot_from_nand.c</FileName>
+              <FileName>avi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_boot_from_nand.c</FilePath>
+              <FilePath>..\src\avi.c</FilePath>
+            </File>
+            <File>
+              <FileName>LcmCtl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\LcmCtl.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>mass.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\mass.c</FilePath>
+            </File>
+            <File>
+              <FileName>nand_post_process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\nand_post_process.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -446,49 +466,114 @@
               </FileOption>
             </File>
             <File>
-              <FileName>NVT_boot_from_sd.c</FileName>
+              <FileName>NVT_I2C.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_boot_from_sd.c</FilePath>
+              <FilePath>..\src\NVT_I2C.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
             <File>
-              <FileName>NVT_Keypad.c</FileName>
+              <FileName>NVT_mp3.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_Keypad.c</FilePath>
+              <FilePath>..\src\NVT_mp3.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
             <File>
-              <FileName>NVT_main.c</FileName>
+              <FileName>NVT_BatteryDect.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_main.c</FilePath>
+              <FilePath>..\src\NVT_BatteryDect.c</FilePath>
             </File>
             <File>
-              <FileName>NVT_mass.c</FileName>
+              <FileName>NVT_Update.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_mass.c</FilePath>
-            </File>
-            <File>
-              <FileName>NVT_Voltagedetection.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\NVT_Voltagedetection.c</FilePath>
-            </File>
-            <File>
-              <FileName>NVT_vpost.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\NVT_vpost.c</FilePath>
-            </File>
-            <File>
-              <FileName>standalone.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\standalone.c</FilePath>
-            </File>
-            <File>
-              <FileName>heap.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>..\src\heap.s</FilePath>
+              <FilePath>..\src\NVT_Update.c</FilePath>
             </File>
             <File>
               <FileName>stack.s</FileName>
               <FileType>2</FileType>
               <FilePath>..\src\stack.s</FilePath>
+            </File>
+            <File>
+              <FileName>standalone.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\standalone.c</FilePath>
             </File>
             <File>
               <FileName>vectors.s</FileName>
@@ -501,24 +586,9 @@
               <FilePath>..\src\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>AviLib_800x480.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
-            </File>
-            <File>
-              <FileName>AudioRecord.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\AudioRecord\Lib\AudioRecord.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_ts_adc.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\TouchADC\Lib\w55fa92_ts_adc.lib</FilePath>
-            </File>
-            <File>
-              <FileName>AviLib_320x240.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\AVI\Lib\AviLib_320x240.lib</FilePath>
+              <FilePath>..\..\AVI\Lib\AviLib_800x480.lib</FilePath>
             </File>
             <File>
               <FileName>ima_adpcm_codec.lib</FileName>
@@ -531,24 +601,19 @@
               <FilePath>..\..\AVI\Lib\mp3lib.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_gpio.lib</FileName>
+              <FileName>w55fa95_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\GPIO\lib\w55fa92_gpio.lib</FilePath>
+              <FilePath>..\..\GPIO\lib\w55fa95_gpio.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_nvtfat.lib</FileName>
+              <FileName>w55fa95_kpi_11x1_lcd.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\NVTFAT\lib\W55FA92_nvtfat.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_11x1_lcd.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_jpeglib.lib</FileName>
+              <FileName>w55fa95_kpi_1x3_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\JPEG\LIB\w55fa92_jpeglib.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_GNAND.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\GNAND\Lib\w55fa92_GNAND.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x3_gpio.lib</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -569,19 +634,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>W55FA92_SIC.lib</FileName>
+              <FileName>w55fa95_kpi_1x4_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\SIC\Lib\W55FA92_SIC.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_spu.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\SPU\Lib\w55fa92_spu.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_MSC_NAND.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\UDC\lib\w55fa92_MSC_NAND.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x4_gpio.lib</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -602,26 +657,237 @@
               </FileOption>
             </File>
             <File>
-              <FileName>w55fa92_MSC_SD.lib</FileName>
+              <FileName>w55fa95_kpi_1x4_gpio_g.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\UDC\lib\w55fa92_MSC_SD.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x4_gpio_g.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
             </File>
             <File>
-              <FileName>w55fa92_UDC.lib</FileName>
+              <FileName>w55fa95_kpi_1x6_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\UDC\lib\w55fa92_UDC.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x6_gpio.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
             </File>
             <File>
-              <FileName>W55FA92_GIANTPLUS_GPM1006D.lib</FileName>
+              <FileName>w55fa95_MSC_NAND.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</FilePath>
+              <FilePath>..\..\UDC\lib\w55fa95_MSC_NAND.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_MSC_SD.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\UDC\lib\w55fa95_MSC_SD.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>w55fa95_UDC.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\UDC\lib\w55fa95_UDC.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_VPOST_AMPIRE_800x480_18B.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\VPOST\Lib\W55FA95_VPOST_AMPIRE_800x480_18B.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_adc.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\ADC\Lib\W55FA95_adc.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_GNAND.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\GNAND\Lib\w55fa95_GNAND.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_i2c.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\I2C\lib\w55fa95_i2c.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_jpeglib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\JPEG\LIB\w55fa95_jpeglib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_nvtfat.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\NVTFAT\lib\W55FA95_nvtfat.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_RTClib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\RTC\LIB\w55fa95_RTClib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_SIC.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SIC\Lib\W55FA95_SIC.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>W55FA95_SIC_KLE.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SIC\Lib\W55FA95_SIC_KLE.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_SIC_KLE_MUL2.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SIC\Lib\W55FA95_SIC_KLE_MUL2.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>w55fa95_spu.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SPU\Lib\w55fa95_spu.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_spu_KLE.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SPU\Lib\w55fa95_spu_KLE.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>W55FA95_syslib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_UDC_Fullspeed.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\UDC\lib\w55fa95_UDC_Fullspeed.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>SpeakerCtl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\SpeakerCtl.c</FilePath>
             </File>
           </Files>
         </Group>
       </Groups>
     </Target>
     <Target>
-      <TargetName>NAND_GAINTPLUS_QVGA</TargetName>
+      <TargetName>SD_AMPIRE_WVGA_18_IN</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -657,14 +923,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\NVT_Loader_Data\NAND_GIANTPLUS_QVGA\</OutputDirectory>
-          <OutputName>NVT_NAND_Fast_GIANTPLUS_QVGA</OutputName>
+          <OutputDirectory>.\NVT_Loader_Data\SD_AMPIRE_WVGA_18_IN\</OutputDirectory>
+          <OutputName>NVT_SD0_AMPIRE_WVGA_18B_IN</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\NVT_Loader_Data\NAND_GIANTPLUS_QVGA\</ListingPath>
+          <ListingPath>.\NVT_Loader_Data\SD_AMPIRE_WVGA_18_IN\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -950,7 +1216,7 @@
             <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
-            <OneElfS>1</OneElfS>
+            <OneElfS>0</OneElfS>
             <Strict>0</Strict>
             <EnumInt>0</EnumInt>
             <PlainCh>0</PlainCh>
@@ -961,9 +1227,9 @@
             <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>__LCM_320x240__ __ENABLE_NAND_0__ __NVT_DEV_DEMO_NAND__</Define>
+              <Define>__LCM_800x480__ __ICE__ __NVT_MP_WVGA_IN_DEMO__ __ENABLE_SD_CARD_0__</Define>
               <Undefine></Undefine>
-              <IncludePath>..\inc;..\..\SYSLIB\Lib;..\..\AudioRecord\Lib;..\..\TouchADC\Lib;..\..\AVI\Lib;..\..\GPIO\lib;..\..\NVTFAT\lib;..\..\JPEG\LIB;..\..\GNAND\Lib;..\..\SIC\Lib;..\..\SPU\Lib;..\..\UDC\lib;..\..\VPOST\Lib</IncludePath>
+              <IncludePath>..\..\ADC\Lib;..\..\AVI\Lib;..\..\GPIO\lib;..\..\KPI\lib;..\..\UDC\lib;..\..\VPOST\Lib;..\..\GNAND\Lib;..\..\I2C\lib;..\..\JPEG\LIB;..\..\NVTFAT\lib;..\..\RTC\LIB;..\..\SIC\Lib;..\..\GNAND\Lib;..\..\SPU\Lib;..\..\SYSLIB\Lib;..\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1005,24 +1271,39 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
-              <FileName>board_gaintplus_demo.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\board_gaintplus_demo.c</FilePath>
+              <FileName>heap.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>..\src\heap.s</FilePath>
             </File>
             <File>
-              <FileName>NVT_avi.c</FileName>
+              <FileName>AdapterCtl.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_avi.c</FilePath>
+              <FilePath>..\src\AdapterCtl.c</FilePath>
             </File>
             <File>
-              <FileName>NVT_boot_from_nand.c</FileName>
+              <FileName>avi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_boot_from_nand.c</FilePath>
+              <FilePath>..\src\avi.c</FilePath>
             </File>
             <File>
-              <FileName>NVT_boot_from_sd.c</FileName>
+              <FileName>LcmCtl.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_boot_from_sd.c</FilePath>
+              <FilePath>..\src\LcmCtl.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>mass.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\mass.c</FilePath>
+            </File>
+            <File>
+              <FileName>nand_post_process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\nand_post_process.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -1065,44 +1346,114 @@
               </FileOption>
             </File>
             <File>
-              <FileName>NVT_Keypad.c</FileName>
+              <FileName>NVT_I2C.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_Keypad.c</FilePath>
+              <FilePath>..\src\NVT_I2C.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
             <File>
-              <FileName>NVT_main.c</FileName>
+              <FileName>NVT_mp3.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_main.c</FilePath>
+              <FilePath>..\src\NVT_mp3.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
+                  </Cads>
+                </FileArmAds>
+              </FileOption>
             </File>
             <File>
-              <FileName>NVT_mass.c</FileName>
+              <FileName>NVT_BatteryDect.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_mass.c</FilePath>
+              <FilePath>..\src\NVT_BatteryDect.c</FilePath>
             </File>
             <File>
-              <FileName>NVT_Voltagedetection.c</FileName>
+              <FileName>NVT_Update.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\NVT_Voltagedetection.c</FilePath>
-            </File>
-            <File>
-              <FileName>NVT_vpost.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\NVT_vpost.c</FilePath>
-            </File>
-            <File>
-              <FileName>standalone.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\standalone.c</FilePath>
-            </File>
-            <File>
-              <FileName>heap.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>..\src\heap.s</FilePath>
+              <FilePath>..\src\NVT_Update.c</FilePath>
             </File>
             <File>
               <FileName>stack.s</FileName>
               <FileType>2</FileType>
               <FilePath>..\src\stack.s</FilePath>
+            </File>
+            <File>
+              <FileName>standalone.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\standalone.c</FilePath>
             </File>
             <File>
               <FileName>vectors.s</FileName>
@@ -1115,42 +1466,9 @@
               <FilePath>..\src\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>AviLib_800x480.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
-            </File>
-            <File>
-              <FileName>AudioRecord.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\AudioRecord\Lib\AudioRecord.lib</FilePath>
-              <FileOption>
-                <CommonProperty>
-                  <UseCPPCompiler>2</UseCPPCompiler>
-                  <RVCTCodeConst>0</RVCTCodeConst>
-                  <RVCTZI>0</RVCTZI>
-                  <RVCTOtherData>0</RVCTOtherData>
-                  <ModuleSelection>0</ModuleSelection>
-                  <IncludeInBuild>0</IncludeInBuild>
-                  <AlwaysBuild>2</AlwaysBuild>
-                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
-                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
-                  <PublicsOnly>2</PublicsOnly>
-                  <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument></CustomArgument>
-                  <IncludeLibraryModules></IncludeLibraryModules>
-                </CommonProperty>
-                <FileArmAds/>
-              </FileOption>
-            </File>
-            <File>
-              <FileName>w55fa92_ts_adc.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\TouchADC\Lib\w55fa92_ts_adc.lib</FilePath>
-            </File>
-            <File>
-              <FileName>AviLib_320x240.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\AVI\Lib\AviLib_320x240.lib</FilePath>
+              <FilePath>..\..\AVI\Lib\AviLib_800x480.lib</FilePath>
             </File>
             <File>
               <FileName>ima_adpcm_codec.lib</FileName>
@@ -1163,44 +1481,19 @@
               <FilePath>..\..\AVI\Lib\mp3lib.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_gpio.lib</FileName>
+              <FileName>w55fa95_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\GPIO\lib\w55fa92_gpio.lib</FilePath>
+              <FilePath>..\..\GPIO\lib\w55fa95_gpio.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_nvtfat.lib</FileName>
+              <FileName>w55fa95_kpi_11x1_lcd.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\NVTFAT\lib\W55FA92_nvtfat.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_11x1_lcd.lib</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_jpeglib.lib</FileName>
+              <FileName>w55fa95_kpi_1x3_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\JPEG\LIB\w55fa92_jpeglib.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_GNAND.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\GNAND\Lib\w55fa92_GNAND.lib</FilePath>
-            </File>
-            <File>
-              <FileName>W55FA92_SIC.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\SIC\Lib\W55FA92_SIC.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_spu.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\SPU\Lib\w55fa92_spu.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_MSC_NAND.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\UDC\lib\w55fa92_MSC_NAND.lib</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_MSC_SD.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\UDC\lib\w55fa92_MSC_SD.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x3_gpio.lib</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -1221,14 +1514,253 @@
               </FileOption>
             </File>
             <File>
-              <FileName>w55fa92_UDC.lib</FileName>
+              <FileName>w55fa95_kpi_1x4_gpio.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\UDC\lib\w55fa92_UDC.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x4_gpio.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
             </File>
             <File>
-              <FileName>W55FA92_GIANTPLUS_GPM1006D.lib</FileName>
+              <FileName>w55fa95_kpi_1x4_gpio_g.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</FilePath>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x4_gpio_g.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>w55fa95_kpi_1x6_gpio.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\KPI\lib\w55fa95_kpi_1x6_gpio.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>w55fa95_MSC_NAND.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\UDC\lib\w55fa95_MSC_NAND.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>w55fa95_MSC_SD.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\UDC\lib\w55fa95_MSC_SD.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_UDC.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\UDC\lib\w55fa95_UDC.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_VPOST_AMPIRE_800x480_18B.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\VPOST\Lib\W55FA95_VPOST_AMPIRE_800x480_18B.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_adc.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\ADC\Lib\W55FA95_adc.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_GNAND.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\GNAND\Lib\w55fa95_GNAND.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_i2c.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\I2C\lib\w55fa95_i2c.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_jpeglib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\JPEG\LIB\w55fa95_jpeglib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_nvtfat.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\NVTFAT\lib\W55FA95_nvtfat.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_RTClib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\RTC\LIB\w55fa95_RTClib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_SIC.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SIC\Lib\W55FA95_SIC.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>W55FA95_SIC_KLE.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SIC\Lib\W55FA95_SIC_KLE.lib</FilePath>
+            </File>
+            <File>
+              <FileName>W55FA95_SIC_KLE_MUL2.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SIC\Lib\W55FA95_SIC_KLE_MUL2.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>w55fa95_spu.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SPU\Lib\w55fa95_spu.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_spu_KLE.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SPU\Lib\w55fa95_spu_KLE.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>W55FA95_syslib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_UDC_Fullspeed.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\UDC\lib\w55fa95_UDC_Fullspeed.lib</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>0</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
+                </CommonProperty>
+                <FileArmAds/>
+              </FileOption>
+            </File>
+            <File>
+              <FileName>SpeakerCtl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\SpeakerCtl.c</FilePath>
             </File>
           </Files>
         </Group>

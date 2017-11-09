@@ -55,15 +55,11 @@
 #define SPI_ERR_ID			0xFFFF1200	/* SPI library ID */
 #define PWM_ERR_ID			0xFFFF1300	/* PWM library ID */
 #define AES_ERR_ID	        0xFFFF1400  /* AES library ID */
-#define	BLT_ERR_ID			0xFFFF1500	/* BLT library ID */
 #define UART_ERR_ID			0xFFFF1700	/* UART library ID */
 #define LCD_ERR_ID			0xFFFF1800	/* LCD library ID */
 #define ADC_ERR_ID			0xFFFF1A00	/* ADC library ID */
 #define VPE_ERR_ID			0xFFFF1B00	/* VPE library ID */	
 #define TIC_ERR_ID			0xFFFF1C00	/* TIC library ID */	
-#define CRC_ERR_ID			0xFFFF1D00	/* CRC library ID */	
-#define RSC_ERR_ID			0xFFFF1E00	/* RSC library ID */	
-#define RFC_ERR_ID			0xFFFF1F00	/* RFC library ID */	
 #define FAT_ERR_ID			0xFFFF8200	/* FAT file system library ID */
 #define FONT_ERR_ID			0xFFFF8400	/* FONT library ID */
 

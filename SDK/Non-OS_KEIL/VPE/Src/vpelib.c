@@ -26,10 +26,52 @@
  *     None
  **************************************************************************/
 
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_vpe.h"
+#include "w55fa95_vpe.h"
 
+BOOL bIsVPEPageFault = FALSE;
+BOOL bIsVPEPageMiss = FALSE;
+extern PUINT32 pu32TLBEntry;
+//#define DBG_PRINTF(...)
+#define DBG_PRINTF	sysprintf
+
+extern UINT32 vpeFindMatchAddr(UINT32 u32PageFaultVirAddr, PUINT32 pu32ComIdx);
+extern void vpeSetTtbEntry(UINT32 u32Entry, UINT32 u32Level1Entry);
+
+void vpePageFaultCallback(void)
+{
+	UINT32 u32PageFaultVirtAddr; 
+	UINT32 u32ComIdx;
+	UINT32 u32PageFaultIdx; 
+	bIsVPEPageFault = TRUE;
+	
+	u32PageFaultVirtAddr = inp32(REG_VMMU_PFTVA);		
+	u32PageFaultIdx = vpeFindMatchAddr(u32PageFaultVirtAddr, &u32ComIdx);		
+	vpeSetTtbEntry(u32ComIdx, *(pu32TLBEntry+u32PageFaultIdx));			
+	DBG_PRINTF("***********************************************\n"); 
+	DBG_PRINTF("Update Table index 		= %d\n", u32ComIdx); 
+	DBG_PRINTF("Page Fault Virtual Address  	= 0x%x\n", u32PageFaultVirtAddr);														
+	DBG_PRINTF("MMU[%d]				= 0x%x\n", u32PageFaultIdx, *(pu32TLBEntry+u32PageFaultIdx));
+	outp32(REG_VMMU_CMD, inp32(REG_VMMU_CMD) | RESUME);	//resume		
+}	
+void vpePageMissCallback(void)
+{
+	UINT32 u32PageMissVirtuAddr; 
+//	UINT32 u32PagMissPhyAddr;
+	UINT32 u32ComIdx;
+	UINT32 u32PageMissIdx; 
+	bIsVPEPageMiss = TRUE;
+	
+	u32PageMissVirtuAddr = inp32(REG_VMMU_PFTVA); //In linux must converstion to physical address
+	u32PageMissIdx = vpeFindMatchAddr(u32PageMissVirtuAddr, &u32ComIdx);		
+	vpeSetTtbEntry(u32ComIdx, *(pu32TLBEntry+u32PageMissIdx));	
+	DBG_PRINTF("---------------------Page Miss-----------------------------------------------\n"); 
+	DBG_PRINTF("Update Table index 		= %d\n", u32ComIdx); 
+	DBG_PRINTF("Page Fault Virtual Address  	= 0x%x\n", u32PageMissVirtuAddr);
+	DBG_PRINTF("MMU[%d]				= 0x%x\n", u32PageMissIdx, *(pu32TLBEntry+u32PageMissIdx));
+	outp32(REG_VMMU_CMD, inp32(REG_VMMU_CMD) | RESUME);	//resume	
+}	
 /* 
 	
 */
@@ -49,41 +91,49 @@ void vpeInIntHandler(void)
 	{//VPE complete
 		if(vpeIntHandlerTable[0]!=0)	
 			vpeIntHandlerTable[0]();			/* Clear Interrupt */
-		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | MB_INTS | PG_MISS | PF_INTS)));			
+		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | MB_INTS | LL_INTS | PFT_INTS)));			
 		return;
 	}	
-	if( (u32VpeInt&PF_INTS) == PF_INTS)
+	if( (u32VpeInt&PFT_INTS) == PFT_INTS)
 	{//Page Fault
-		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | MB_INTS | PG_MISS | VP_INTS)));	/* Clear Interrupt */	
+		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | MB_INTS | LL_INTS | VP_INTS)));	/* Clear Interrupt */	
+		#if 0
 		if(vpeIntHandlerTable[1]!=0)	
 			vpeIntHandlerTable[1]();					
+		#else
+		vpePageFaultCallback();
+		#endif	
 		return;	
 	}	
-	if( (u32VpeInt&PG_MISS) == PG_MISS)
+	if( (u32VpeInt&LL_INTS) == LL_INTS)
 	{//Page Missing
-		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | MB_INTS | PF_INTS |VP_INTS)));	/* Clear Interrupt */
+		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | MB_INTS | PFT_INTS |VP_INTS)));	/* Clear Interrupt */
+		#if 0
 		if(vpeIntHandlerTable[2]!=0)	
 			vpeIntHandlerTable[2]();			
+		#else
+		vpePageMissCallback();
+		#endif	
 		return;
 	}	
 	if( (u32VpeInt&MB_INTS) == MB_INTS)
 	{//MB complete, Invalid due to JPEG OTF removed 
 		if(vpeIntHandlerTable[3]!=0)	
 			vpeIntHandlerTable[3]();			
-		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | PG_MISS | PF_INTS |VP_INTS)));	/* Clear Interrupt */	
+		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | DE_INTS | LL_INTS | PFT_INTS |VP_INTS)));	/* Clear Interrupt */	
 		outp32(REG_VPE_TG, inp32(REG_VPE_TG)&~0x01);
 	}
 	if( (u32VpeInt&DE_INTS) == DE_INTS)
 	{//Decode error,  Invalid due to JPEG OTF removed 
 		if(vpeIntHandlerTable[4]!=0)	
 			vpeIntHandlerTable[4]();			/* Clear Interrupt */
-		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | MB_INTS| PG_MISS | PF_INTS |VP_INTS)));		
+		outp32(REG_VPE_INTS, (u32VpeInt & ~(TA_INTS | MB_INTS| LL_INTS | PFT_INTS |VP_INTS)));		
 	}
 	if( (u32VpeInt&TA_INTS) == TA_INTS)
 	{//DMA abort
 		if(vpeIntHandlerTable[5]!=0)	
 			vpeIntHandlerTable[5]();			/* Clear Interrupt */
-		outp32(REG_VPE_INTS, (u32VpeInt & ~(DE_INTS | MB_INTS| PG_MISS | PF_INTS |VP_INTS)));		
+		outp32(REG_VPE_INTS, (u32VpeInt & ~(DE_INTS | MB_INTS| LL_INTS | PFT_INTS |VP_INTS)));		
 	}
 }
 /*-----------------------------------------------------------------------------------------------------------
@@ -103,25 +153,15 @@ void vpeInIntHandler(void)
 static INT vpeOpenCount = 0;
 ERRCODE vpeOpen(void)
 {
-
-//	UINT32 u32PllFreq;
-//	UINT32 u32VpeDiv;
-/* VPE without engine clock. It is always same as HCLK */	
-//	sysGetExternalClock();
-//	u32PllFreq = sysGetPLLOutputHz(eSYS_UPLL, sysGetExternalClock());
-//	u32VpeDiv = u32PllFreq / WorkingFreq;  	
-//	outp32(REG_CLKDIV5, u32VpeDiv-1);
-	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | HCLK3_CKE | GVE_CKE | VPE_CKE);
 	if(vpeOpenCount>0)
 	{
 		return ERR_VPE_OPEN;
 	}
+	outp32(REG_AHBCLK, inp32(REG_AHBCLK) |GVE_CKE | HCLK3_CKE | VPE_CKE | GE_CKE );
 	outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) | VPE_RST);
 	outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) & ~VPE_RST);	
-	outp32(REG_VPE_CMD, inp32(REG_VPE_CMD) | BUSRT | BIT13 | BIT12);	//Burst write- Dual buffer //Lost Block 
-	
-	vpeOpenCount = vpeOpenCount+1;
-	
+	outp32(REG_VPE_CMD, inp32(REG_VPE_CMD) | BUSRT | BIT13 | BIT12);	//Burst write- Dual buffer //Lost Block 	
+	vpeOpenCount = vpeOpenCount+1;	
 	sysInstallISR(IRQ_LEVEL_1, 
 						IRQ_VPE, 
 						(PVOID)vpeInIntHandler);						

@@ -151,7 +151,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -377,7 +377,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc>--entry Reset_Go</Misc>
@@ -411,19 +411,19 @@
           <GroupName>Library Group</GroupName>
           <Files>
             <File>
+              <FileName>W55FA95_syslib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>w55fa95_UDC.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\lib\w55fa95_UDC.lib</FilePath>
+            </File>
+            <File>
               <FileName>VirtualCom.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\VirtualCom.c</FilePath>
-            </File>
-            <File>
-              <FileName>w55fa92_UDC.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\..\lib\w55fa92_UDC.lib</FilePath>
-            </File>
-            <File>
-              <FileName>W55FA92_syslib.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
             </File>
           </Files>
         </Group>

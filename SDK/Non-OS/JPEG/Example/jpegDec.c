@@ -6,9 +6,9 @@
 
 #include "jpegcodec.h"
 #include "nvtfat.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "jpegSample.h"
-#include "w55fa92_vpost.h"
+#include "w55fa95_vpost.h"
 
 extern LCDFORMATEX lcdInfo;
 
@@ -37,7 +37,7 @@ UINT32 g_u32OpwBufferIndex = 0;									/* Decode output Buffer index */
 /*-----------------------------------------------------------------------*/
 /*  Decode Function          				                             */
 /*-----------------------------------------------------------------------*/  
-VOID JpegDecTest (void)
+VOID JpegDecTest (VOID)
 {	
 	INT 	len;
 	UINT32 u32BitstreamSize;
@@ -225,18 +225,6 @@ VOID JpegDecTest (void)
 				case JPEG_DEC_PRIMARY_PACKET_RGB565:
 					strcat(decodePath, "PACKET_RGB565_"); 
 					break;	
-				case JPEG_DEC_PRIMARY_PACKET_RGB555R1:
-					strcat(decodePath, "PACKET_RGB555_R1_"); 	
-					break;
-				case JPEG_DEC_PRIMARY_PACKET_RGB565R1:
-					strcat(decodePath, "PACKET_RGB565_R1_"); 
-					break;	
-				case JPEG_DEC_PRIMARY_PACKET_RGB555R2:
-					strcat(decodePath, "PACKET_RGB555_R2_"); 	
-					break;
-				case JPEG_DEC_PRIMARY_PACKET_RGB565R2:
-					strcat(decodePath, "PACKET_RGB565_R2_"); 
-					break;											
 				case JPEG_DEC_PRIMARY_PACKET_RGB888:
 					strcat(decodePath, "PACKET_RGB888_"); 						
 					break;		

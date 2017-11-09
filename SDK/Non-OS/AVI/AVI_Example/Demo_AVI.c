@@ -7,8 +7,8 @@
 #include "wbio.h"
 #include "wblib.h"
 
-#include "w55fa92_vpost.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_vpost.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "AviLib.h"
 #include "spu.h"
@@ -16,7 +16,7 @@
 
 //#pragma import(__use_no_semihosting_swi)
 //#define VPOST_FRAME_BUFSZ		(640*480*2)
-#define VPOST_FRAME_BUFSZ		(720*480*2)
+#define VPOST_FRAME_BUFSZ		(800*480*2)
 
 static __align(256) UINT8  _VpostFrameBufferPool[VPOST_FRAME_BUFSZ];
 static UINT8   *_VpostFrameBuffer;
@@ -47,28 +47,26 @@ int main()
 	LCDFORMATEX lcdformatex;
 	CHAR		suFileName[128];
 	INT			nStatus;
+	UINT32 u32ExtFreq;
+	UINT32 u32PllOutHz;	
 
 	
 	/* CACHE_ON	*/
 	sysEnableCache(CACHE_WRITE_BACK);
 
 	/*-----------------------------------------------------------------------*/
-	/*  CPU/HCLK/APB:  192/96/48                                             */
+	/*  CPU/HCLK/APB:  300/150/75                                             */
 	/*-----------------------------------------------------------------------*/
-  sysSetDramClock(eSYS_MPLL, 288000000, 288000000);
-	sysSetSystemClock(eSYS_UPLL, 		//E_SYS_SRC_CLK eSrcClk,
-					192000000,		//UINT32 u32PllHz,
-					192000000);		//UINT32 u32SysHz,
+	sysSetSystemClock(eSYS_UPLL,
+    									300000000,
+    									300000000);
 
 	/*-----------------------------------------------------------------------*/
 	/*  Init UART, N,8,1, 115200                                             */
 	/*-----------------------------------------------------------------------*/
-	uart.uart_no = WB_UART_1;	
-#if 1	
-	uart.uiFreq = 12000000;					//use XIN clock
-#else
-	uart.uiFreq = 27000000;	
-#endif	
+	u32ExtFreq = sysGetExternalClock();
+	
+	uart.uiFreq = u32ExtFreq;					//use XIN clock
     uart.uiBaudrate = 115200;
     uart.uiDataBits = WB_DATA_BITS_8;
     uart.uiStopBits = WB_STOP_BITS_1;
@@ -82,7 +80,7 @@ int main()
 	/*-----------------------------------------------------------------------*/
 	/*  Init timer                                                           */
 	/*-----------------------------------------------------------------------*/
-	sysSetTimerReferenceClock (TIMER0, 12000000);
+	sysSetTimerReferenceClock (TIMER0, u32ExtFreq);
 	sysStartTimer(TIMER0, 100, PERIODIC_MODE);
 
 	/*-----------------------------------------------------------------------*/
@@ -94,13 +92,14 @@ int main()
 	/*-----------------------------------------------------------------------*/
 	/*  Init SD card                                                         */
 	/*-----------------------------------------------------------------------*/
-	sicIoctl(SIC_SET_CLOCK, sysGetPLLOutputHz(eSYS_UPLL, sysGetExternalClock())/1000, 0, 0);    // clock from PLL
+	u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);
+	sicIoctl(SIC_SET_CLOCK, u32PllOutHz/1000, 0, 0);    // clock from PLL
 	sicOpen();
 	sysprintf("total sectors (%x)\n", sicSdOpen0());
 	
 	spuOpen(eDRVSPU_FREQ_8000);
-	spuDacOn(1);	
-//	sysDelay(100);	
+	spuDacOn(1);
+	sysDelay(100);	
 	spuSetDacSlaveMode();	
 
 #if 0

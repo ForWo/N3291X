@@ -30,7 +30,7 @@
 #include "wblib.h"
 #endif
 
-#include "w55fa92_i2c.h"
+#include "w55fa95_i2c.h"
 #include "DrvI2CH.h"
 
 #define CONFIG_GPB13_SCK_GPB14_SDA
@@ -139,7 +139,7 @@ static INT _i2cSetSpeed(INT sp)
 	UINT32 u32ApbKHz;	
 	
 	if( sp != 100 && sp != 400)
-		return(I2C_ERR_NOTTY);	
+		return(I2C_ERR_NOTTY);		
 
 #ifdef OPT_FPGA_DEBUG
 	u32ApbKHz =  EXT_CRYSTAL;
@@ -211,7 +211,7 @@ static VOID _i2cReset(i2c_dev *dev)
 /*                                                                                   */
 /*-----------------------------------------------------------------------------------*/
 
-INT32 i2cOpen(void)  
+INT32 i2cOpen(VOID)  
 {
 	i2c_dev *dev;
 	
@@ -224,9 +224,9 @@ INT32 i2cOpen(void)
 #ifdef OPT_FPGA_DEBUG
 	outpw(REG_AHBCLK, inpw(REG_AHBCLK) | SD_CKE);
 	outpw(REG_APBCLK, inpw(REG_APBCLK) | I2C_CKE);	
-#else	
+#else
 	outpw(REG_APBCLK, inpw(REG_APBCLK) |I2C_CKE);
-#endif	
+#endif
 	
 	outpw(REG_I2C_CSR, inpw(REG_I2C_CSR) | I2C_EN);
 				
@@ -258,17 +258,17 @@ INT32 i2cOpen(void)
 /*                                                                                   */
 /*-----------------------------------------------------------------------------------*/
 
-INT32 i2cClose(void)  
+INT32 i2cClose(VOID)  
 {
 	i2c_dev *dev;
 
 	outpw(REG_I2C_CSR, inpw(REG_I2C_CSR) & ~I2C_EN);
-	
+
 #ifdef OPT_FPGA_DEBUG
 	outpw(REG_AHBCLK, inpw(REG_AHBCLK) & ~SD_CKE);
 	outpw(REG_APBCLK, inpw(REG_APBCLK) & ~I2C_CKE);	
-#else	
-	outpw(REG_APBCLK, inpw(REG_APBCLK) & ~I2C_CKE);	
+#else
+	outpw(REG_APBCLK, inpw(REG_APBCLK) & ~I2C_CKE);
 #endif
 	dev = (i2c_dev *)( (UINT32)&i2c_device );	
 		
@@ -701,7 +701,7 @@ INT32 i2cIoctl(UINT32 cmd, UINT32 arg0, UINT32 arg1)
 /*                                                                                   */
 /*-----------------------------------------------------------------------------------*/
 
-INT32 i2cExit(void)
+INT32 i2cExit(VOID)
 {
 	return(0);
 }
@@ -724,16 +724,20 @@ INT32 i2cExit(void)
 /*                                                                                   */
 /*-----------------------------------------------------------------------------------*/
 
-INT32  i2cInit(void)  
+INT32  i2cInit(VOID)  
 {
 	/* Configure GPIO pins to I2C mode */	
 #ifdef CONFIG_GPB13_SCK_GPB14_SDA
-	outpw(REG_GPBFUN1, (inpw(REG_GPBFUN1) & ~(MF_GPB13 | MF_GPB14)) | 0x02200000);	//gpiob(13,14)	
+	outpw(REG_GPBFUN, inpw(REG_GPBFUN) | (MF_GPB13 | MF_GPB14));	//gpiob(13,14)	
 #elif defined CONFIG_GPA10_SCK_GPA11_SDA
-	outpw(REG_GPAFUN1, (inpw(REG_GPAFUN1) & ~(MF_GPA10 | MF_GPA11)) | 0x2200);	
+	outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~(MF_GPA10 | MF_GPA11));
+	outpw(REG_GPAFUN, (inpw(REG_GPAFUN) & ~(MF_GPA8 | MF_GPA9)) | 0xA0000);	
 #elif defined CONFIG_GPG2_SCK_GPG5_SDA
-	outpw(REG_SHRPIN_TVDAC, inpw(REG_SHRPIN_TVDAC) & ~ SMTVDACAEN);
-	outpw(REG_GPGFUN0, (inpw(REG_GPGFUN0) & ~(MF_GPG2 | MF_GPG5)) | 0x100400);
+	outpw(REG_SHRPIN_TVDAC, inpw(REG_SHRPIN_TVDAC) & ~SMTVDACAEN);
+	outpw(REG_GPHFUN, (inpw(REG_GPHFUN) & ~(MF_GPH1 | MF_GPH2)) | 0x14);
+#elif defined CONFIG_GPG12_SCK_GPG15_SDA
+	outpw(0xB00000F8, inpw(0xB00000F8) & ~0x40000000);
+	outpw(REG_GPGFUN, (inpw(REG_GPGFUN) & ~(MF_GPG12 | MF_GPG15)) | 0xC3000000);
 #endif
 	
 	outpw(REG_APBIPRST, inpw(REG_APBIPRST) | I2CRST);	//reset i2c

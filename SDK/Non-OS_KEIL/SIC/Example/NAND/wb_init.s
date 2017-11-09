@@ -34,7 +34,7 @@ USR_Stack		EQU		RAM_Limit
 
 
         EXPORT	Vector_Table
-Vector_Table
+Vector_Table		
         B       Reset_Go    ; Modified to be relative jumb for external boot
         LDR     PC, Undefined_Addr
         LDR     PC, SWI_Addr
@@ -44,7 +44,7 @@ Vector_Table
         LDR     PC, IRQ_Addr
         LDR     PC, FIQ_Addr
 
-
+        
 Reset_Addr      DCD     Reset_Go
 Undefined_Addr  DCD     Undefined_Handler
 SWI_Addr        DCD     SWI_Handler1
@@ -65,9 +65,7 @@ FIQ_Addr        DCD     FIQ_Handler
 Undefined_Handler
         B       Undefined_Handler
 SWI_Handler1
-;        B       SWI_Handler1
-		mov 	r0, #0
-		movs	pc, lr
+        B       SWI_Handler1     
 Prefetch_Handler
         B       Prefetch_Handler
 Abort_Handler
@@ -77,113 +75,113 @@ IRQ_Handler
 FIQ_Handler
         B       FIQ_Handler
 
-
+	
 Reset_Go
 
 ;--------------------------------
 ; Initial Stack Pointer register
 ;--------------------------------
-;INIT_STACK
- MSR	CPSR_c, #UDF_MODE :OR: I_BIT :OR: F_BIT
+;INIT_STACK 
+ MSR	CPSR_c, #UDF_MODE | I_BIT | F_BIT
  LDR     SP, =UND_Stack
 
- MSR	CPSR_c, #ABT_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #ABT_MODE | I_BIT | F_BIT
  LDR     SP, =Abort_Stack
 
- MSR	CPSR_c, #IRQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #IRQ_MODE | I_BIT | F_BIT
  LDR     SP, =IRQ_Stack
 
- MSR	CPSR_c, #FIQ_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #FIQ_MODE | I_BIT | F_BIT
  LDR     SP, =FIQ_Stack
 
- MSR	CPSR_c, #SYS_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SYS_MODE | I_BIT | F_BIT
  LDR     SP, =USR_Stack
 
- MSR	CPSR_c, #SVC_MODE :OR: I_BIT :OR: F_BIT
+ MSR	CPSR_c, #SVC_MODE | I_BIT | F_BIT
  LDR     SP, =SVC_Stack
 
 ;------------------------------------------------------
-; Set the normal exception vector of CP15 control bit
-;------------------------------------------------------
+; Set the normal exception vector of CP15 control bit    
+;------------------------------------------------------    
 	MRC	p15, 0, r0 , c1, c0   	; r0 := cp15 register 1
 	BIC r0, r0, #0x2000		; Clear bit13 in r1
 	MCR p15, 0, r0 , c1, c0     ; cp15 register 1 := r0
-
+	
  IF :DEF:SYS_INIT
 ;-----------------------------
-; system initialization
+; system initialization 
 ;------------------------------
 ;LDR	r0, =0xFFF00004
 
 
  ldr	r0, =0xFFF00004
  ldr	r1, =0x00000540
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF0000C
  ldr	r1, =0x00004F47 ; 240MHz: 4F47, 192MHz: 3F47
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0XFFF00010
  ldr	r1, =0x001FFFFF
- str	r1, [r0]
+ str	r1, [r0] 
 
- ldr	r0, =0xFFF00014
+ ldr	r0, =0xFFF00014 
  ldr	r1, =0x104514BB
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF00020
  ldr	r1, =0x00000009
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF00030
  ldr	r1, =0x00000000
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0XFFF00034
  ldr	r1, =0x00000000
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF00038
  ldr	r1, =0x000001AB
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF0003C
  ldr	r1, =0x00000050	;CPU:AHP:APB 1:2:4 0x50, CPU:AHB:APB 1:1:2 0x41
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF00040
  ldr	r1, =0x60000000
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF01000
  ldr	r1, =0x00154201
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF01004
  ldr	r1, =0x4006FFF6
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF01010
  ldr	r1, =0x000090CD	;16M: 90CC, 32M: 90CD
- str	r1, [r0]
+ str	r1, [r0] 
 
- ldr	r0, =0xFFF01018
+ ldr	r0, =0xFFF01018 
  ldr	r1, =0x0000015B
- str	r1, [r0]
+ str	r1, [r0] 
 
- ldr	r0, =0xFFF01020
+ ldr	r0, =0xFFF01020 
  ldr	r1, =0x80007FFD
- str	r1, [r0]
+ str	r1, [r0] 
 
  ldr	r0, =0xFFF01028
  ldr	r1, =0x00000027
- str	r1, [r0]
+ str	r1, [r0] 
 
 
  ldr	r0, =0xFFF0001C
  ldr	r1, =0x00000080
- str	r1, [r0]
+ str	r1, [r0] 
 
  ENDIF
 
@@ -191,7 +189,7 @@ Reset_Go
 	IMPORT	__main
 ;-----------------------------
 ;	enter the C code
-;-----------------------------
+;-----------------------------	
 	B   __main
 
 	END

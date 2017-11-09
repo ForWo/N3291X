@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "usbd.h"
 #include "nvtfat.h"
 #include "mass_storage_class.h"
 #include "mscd.h"
 
 #define USB_VID		0x0416		/* Vendor ID */ 
-#define USB_PID		0x0092		/* Product ID */
+#define USB_PID		0x0095		/* Product ID */
 
 #define DATA_CODE	"20170606"
 
@@ -28,23 +28,23 @@ UINT8 Flash_Identify(UINT8 tLUN);
 extern INT32 volatile usb_halt_ep;
 #ifdef TEST_CDROM
 PFN_MSCD_CDROM_CALLBACK pfnMSC_CDROM_CALLBACK;
-VOID mscdCommand_43(void);
+VOID mscdCommand_43(VOID);
 void mscdCDRead(UINT32 lba, UINT32 len);
-void mscdCommand_46(void);
-VOID mscdCommand_51(void);
-VOID mscdCommand_4A(void);
-VOID mscdCommand_A4(void);
-void mscdModeSense_Command_CDROM(void);
+void mscdCommand_46(VOID);
+VOID mscdCommand_51(VOID);
+VOID mscdCommand_4A(VOID);
+VOID mscdCommand_A4(VOID);
+void mscdModeSense_Command_CDROM(VOID);
 BOOL volatile bFirstCMD = 0xFF, bIsDeviceReady = FALSE;
 extern UINT8 CD_Tracks[];
 #endif
 #ifdef TEST_SD
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #endif
 
 #ifdef TEST_SM
-#include "w55fa92_gnand.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_gnand.h"
+#include "w55fa95_sic.h"
 NDISK_T *ptMassNDisk;
 NDISK_T *ptMassNDisk1;
 NDISK_T *ptMassNDisk2;
@@ -205,7 +205,7 @@ __align(4) UINT8 MSC_StringDescriptor3[] =
 {
 	0x1A,				 	/* bLength (Dafault Value is 0x1A, the value will be set to actual value according to the Descriptor size wehn calling mscdInit) */
 	0x03,					/* bDescriptorType */
-	'0', 0, '0', 0,	'0', 0, '0', 0,	'0', 0, '0', 0,	'5', 0, '5', 0,	'F', 0, 'A', 0,	'9', 0, '2', 0	
+	'0', 0, '0', 0,	'0', 0, '0', 0,	'0', 0, '0', 0,	'5', 0, '5', 0,	'F', 0, 'A', 0,	'9', 0, '5', 0	
 };
 
 UINT32 volatile g_u32MscStorageAddr, g_u32MscMassAddr;
@@ -2316,7 +2316,7 @@ void mscdModeSense_Command(void)
 }
 
 /* USB Reset Callback function */
-VOID MSC_Reset(void)
+VOID MSC_Reset(VOID)
 {
 	mscdInfo.Bulk_First_Flag=0;
 	mscdInfo._usbd_Less_MPS=0;
@@ -2448,7 +2448,7 @@ void mscdUSB2SDRAM_Bulk(UINT32 DRAM_Addr ,UINT32 Tran_Size)
 }
 
 /* USB Class Data IN Callback function for Get MaxLun Command */
-VOID MSC_ClassDataIn(void)
+VOID MSC_ClassDataIn(VOID)
 {
 	if (_usb_cmd_pkt.bRequest == GET_MAX_LUN)
 	{		
@@ -2474,7 +2474,7 @@ VOID MSC_ClassDataIn(void)
 }
 
 /* USB Class Data OUT Callback function for BOT MSC Reset Request */
-VOID MSC_ClassDataOut(void)
+VOID MSC_ClassDataOut(VOID)
 {
 	if(_usb_cmd_pkt.bRequest == BULK_ONLY_MASS_STORAGE_RESET)
 	{
@@ -2536,7 +2536,7 @@ void mscdHighSpeedInit()
 }
 
 /* MSC Full Speed Init */
-VOID mscdFullSpeedInit(void)
+VOID mscdFullSpeedInit(VOID)
 {
 	usbdInfo.usbdMaxPacketSize = 0x40;
 	/* bulk in */
@@ -2562,6 +2562,7 @@ VOID mscdMassEvent(PFN_USBD_EXIT_CALLBACK* callback_func)
 #ifdef TEST_SD
 	INT32 IsSDInsert0,IsSDInsert1,IsSDInsert2;
 #endif		
+
 	if(g_mscd_block_mode && callback_func == NULL)
 		return;
 	
@@ -2896,7 +2897,7 @@ UINT8 mscdFlashInit(NDISK_T *pDisk, INT SDsector)
 	mscdInfo.F_NAND1_LUN = 0xFF;    
 	mscdInfo.F_NAND2_LUN = 0xFF;
 	mscdInfo.F_RAM_LUN = 0xFF;    
-	mscdInfo.F_CDROM_LUN = 0xFF;		
+	mscdInfo.F_CDROM_LUN = 0xFF;	
 	mscdInfo.F_SPI_LUN = 0xFF;		
     mscdInfo.Mass_LUN = 0;
 
@@ -3576,9 +3577,9 @@ VOID mscdSdUserCardDetectPin(UINT32 u32SdPort, BOOL bEnable, UINT32 u32GpioPort,
 #endif
 
 /* MSC Init */
-VOID mscdInit(void)
+VOID mscdInit(VOID)
 {
-	sysprintf("N3292 MSC Library (%s)\n",DATA_CODE);
+	sysprintf("N3291 MSC Library (%s)\n",DATA_CODE);
 	/* Set Endpoint map */
 	usbdInfo.i32EPA_Num = 1;	/* Endpoint 1 */
 	usbdInfo.i32EPB_Num = 2;	/* Endpoint 2 */
@@ -3656,7 +3657,7 @@ VOID mscdInit(void)
 	
 }
 
-VOID mscdDeinit(void)
+VOID mscdDeinit(VOID)
 {
 #ifdef TEST_SD
 	if(g_MSC_SD_PORT_ENABLE & MSC_SD_PORT0)
@@ -3903,7 +3904,7 @@ UINT8 Write_Sector(UINT32 sector,UINT8 *buffer)
 static UINT8 Command_51_01[8] = {
  	0x00, 0x20, 0x01, 0x01, 0x02, 0x02, 0x02, 0x80 };
 
-VOID mscdCommand_51(void)
+VOID mscdCommand_51(VOID)
 {
 	UINT8 j;
     UINT32 tmpval=mscdInfo.Mass_Base_Addr;
@@ -3924,7 +3925,7 @@ VOID mscdCommand_51(void)
 static UINT8 Command_4A_01[8] = {
  	0x00, 0x02, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-VOID mscdCommand_4A(void)
+VOID mscdCommand_4A(VOID)
 {
 	UINT8 j;
 	UINT32 tmpval=mscdInfo.Mass_Base_Addr;
@@ -3945,7 +3946,7 @@ VOID mscdCommand_4A(void)
 static UINT8 Command_A4_01[8] = {
  	0x00, 0x06, 0x00, 0x00, 0x64, 0xFE, 0x01, 0x00 };
 
-VOID mscdCommand_A4(void)
+VOID mscdCommand_A4(VOID)
 {
 	UINT8 j;
 	UINT32 tmpval=mscdInfo.Mass_Base_Addr;
@@ -4072,7 +4073,7 @@ static __inline UINT16 get_be16(UINT8 *buf)
 }
 
 
-VOID mscdCommand_46(void)
+VOID mscdCommand_46(VOID)
 {
 	UINT32 len;
 	UINT8 *buff;
@@ -4233,7 +4234,7 @@ static UINT8 Command_43_02[20] = {
 	0x00, 0x00, 0x06, 0x02 };
 
 
-VOID mscdCommand_43(void)
+VOID mscdCommand_43(VOID)
 {
 	UINT8 j;
 	UINT32 tmpval=mscdInfo.Mass_Base_Addr;
@@ -4314,7 +4315,7 @@ UINT8 ModeSense_1A[12] = {
 	0x1A, 0x0A, 0x00, 0x03
 };
 
-void mscdModeSense_Command_CDROM(void)
+void mscdModeSense_Command_CDROM(VOID)
 {
 	UINT8 len;
 	len = CBW_In.CBWD.dCBWDataTferLh.c32;							

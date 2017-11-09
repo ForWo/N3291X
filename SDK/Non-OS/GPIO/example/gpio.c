@@ -29,7 +29,7 @@
 #include <string.h>
 
 #include "wblib.h"
-#include "w55fa92_gpio.h"
+#include "w55fa95_gpio.h"
 
 
 int main(void)
@@ -37,7 +37,6 @@ int main(void)
 	WB_UART_T uart;
 	UINT32 u32ExtFreq;	
 	int i;
-	unsigned int ii=0;
 /*
 	sysSetSystemClock(eSYS_UPLL, 	//E_SYS_SRC_CLK eSrcClk,
 						240000000,		//UINT32 u32PllKHz,
@@ -46,7 +45,6 @@ int main(void)
 	sysSetAPBClock(48000000);
 */
 	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */	
-	uart.uart_no = WB_UART_1;
 	uart.uiFreq = u32ExtFreq;
 	uart.uiBaudrate = 115200;
 	uart.uiDataBits = WB_DATA_BITS_8;
@@ -60,8 +58,7 @@ int main(void)
 	gpio_setportdir(GPIO_PORTB, 0xf, 0xf);
 	
 	sysprintf("start gpio test... \n");
-//	while(1) {
-	while(ii++<1000000) {
+	while(1) {
 		for(i = 0; i < 0xf; i++) {
 			gpio_setportval(GPIO_PORTB, 0xf, i);
 			sysDelay(100);	

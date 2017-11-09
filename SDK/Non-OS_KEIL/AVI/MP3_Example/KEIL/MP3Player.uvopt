@@ -115,7 +115,7 @@
         <tDllPa></tDllPa>
         <tDlgDll></tDlgDll>
         <tDlgPa></tDlgPa>
-        <tIfile>..\..\..\N32926\N32926.ini</tIfile>
+        <tIfile>..\..\..\N32916\N32916.ini</tIfile>
         <pMon>Segger\JLTAgdi.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
@@ -131,13 +131,13 @@
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
-          <Key>JLTDLG</Key>
-          <Name></Name>
+          <Key>JLTAgdi</Key>
+          <Name>-O1070 -J1 -Y1000 -Z1 -FO7 -FDF8002000 -FC800 -FN0</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
-          <Key>JLTAgdi</Key>
-          <Name>-O296 -J1 -Y1000 -Z0 -FO7 -FDF8002000 -FC800 -FN0</Name>
+          <Key>JLTDLG</Key>
+          <Name></Name>
         </SetRegEntry>
       </TargetDriverDllRegistry>
       <Breakpoint/>
@@ -185,8 +185,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>111</TopLine>
-      <CurrentLine>145</CurrentLine>
+      <TopLine>100</TopLine>
+      <CurrentLine>131</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\Demo_MP3.c</PathWithFileName>
       <FilenameWithoutPath>Demo_MP3.c</FilenameWithoutPath>
@@ -213,7 +213,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>29</TopLine>
+      <TopLine>33</TopLine>
       <CurrentLine>38</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\wb_init.s</PathWithFileName>
@@ -230,8 +230,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\Lib\AviLib_320x240.lib</PathWithFileName>
-      <FilenameWithoutPath>AviLib_320x240.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\Lib\AviLib_800x480.lib</PathWithFileName>
+      <FilenameWithoutPath>AviLib_800x480.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -272,8 +272,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_syslib.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_syslib.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -286,8 +286,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SIC\Lib\W55FA92_SIC.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_SIC.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SIC\Lib\W55FA95_SIC.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_SIC.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -300,8 +300,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\NVTFAT\lib\W55FA92_nvtfat.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_nvtfat.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\VPOST\Lib\W55FA95_VPOST.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_VPOST.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -314,8 +314,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\JPEG\LIB\w55fa92_jpeglib.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_jpeglib.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\NVTFAT\lib\W55FA95_nvtfat.lib</PathWithFileName>
+      <FilenameWithoutPath>W55FA95_nvtfat.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -328,8 +328,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\GNAND\Lib\w55fa92_GNAND.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_GNAND.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\JPEG\LIB\w55fa95_jpeglib.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_jpeglib.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -342,8 +342,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\SPU\Lib\w55fa92_spu.lib</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_spu.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\GNAND\Lib\w55fa95_GNAND.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_GNAND.lib</FilenameWithoutPath>
     </File>
     <File>
       <GroupNumber>1</GroupNumber>
@@ -356,22 +356,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\AudioRecord\Lib\AudioRecord.lib</PathWithFileName>
-      <FilenameWithoutPath>AudioRecord.lib</FilenameWithoutPath>
-    </File>
-    <File>
-      <GroupNumber>1</GroupNumber>
-      <FileNumber>14</FileNumber>
-      <FileType>4</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
-      <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\VPOST\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</PathWithFileName>
-      <FilenameWithoutPath>W55FA92_GIANTPLUS_GPM1006D.lib</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\SPU\Lib\w55fa95_spu.lib</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_spu.lib</FilenameWithoutPath>
     </File>
   </Group>
 

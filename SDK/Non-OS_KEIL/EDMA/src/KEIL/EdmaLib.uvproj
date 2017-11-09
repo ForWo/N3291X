@@ -44,7 +44,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\EdmaLib_Data\Release\</OutputDirectory>
-          <OutputName>w55fa92_edma</OutputName>
+          <OutputName>w55fa95_edma</OutputName>
           <CreateExecutable>0</CreateExecutable>
           <CreateLib>1</CreateLib>
           <CreateHexFile>0</CreateHexFile>
@@ -349,7 +349,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\lib;..\..\..\SYSLIB\Lib</IncludePath>
+              <IncludePath>..\..\Lib;..\..\..\SYSLIB\Lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -396,9 +396,9 @@
               <FilePath>..\DrvEDMA.c</FilePath>
             </File>
             <File>
-              <FileName>w55fa92_edma.c</FileName>
+              <FileName>w55fa95_edma.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\w55fa92_edma.c</FilePath>
+              <FilePath>..\w55fa95_edma.c</FilePath>
             </File>
           </Files>
         </Group>

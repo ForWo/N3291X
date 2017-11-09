@@ -19,17 +19,16 @@ ROM_LOAD 0x800000
         anon$$obj.o
         __main.o(!!!)
         * (+RO)
+        * (+RW, +ZI) 
+        
     }
-	
-	RAM 0x0
+    
+    RAM 0x0
     {
         vectors.o(Vect, +First)  
     }
-	
-    RW 0xA00000
-    {           
-        * (+RW, +ZI)         
-    }      
+      
+    
     ;HEAP 0xC00000 UNINIT
     HEAP 0x1000000 UNINIT
     {

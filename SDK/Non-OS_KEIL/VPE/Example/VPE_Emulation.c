@@ -1,13 +1,24 @@
+/*=======================================================
+	VPE Emulation Code 
+	1. Format conversion
+	2. Scaling down				(Quality is important!)
+	3. Scaling up				(Quality is important!)
+	3. On the fly with C&M  		(Important!!!)
+	4. On the fly with JPEG 
+	5. Sorce Offset & dst offset 
+	6. Rotation		  		(Important!!)
+	7. Scatter gather 			(Important!!)
+========================================================*/
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_vpe.h"
+#include "w55fa95_vpe.h"
 #include "VPE_Emulation.h"
 #include "nvtfat.h"
-#include "W55FA92_SIC.h"
-#include "w55fa92_vpost.h"
+#include "W55FA95_SIC.h"
+#include "w55fa95_vpost.h"
 
 #define DBG_PRINTF(...)
 
@@ -51,7 +62,7 @@ void init(void)
 	uart.uiStopBits = WB_STOP_BITS_1;
 	uart.uiParity = WB_PARITY_NONE;
 	uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-	uart.uart_no = WB_UART_1;
+	uart.uart_no = WB_UART_0;
 	sysInitializeUART(&uart);
 	
 	/* Init Timer */
@@ -139,10 +150,9 @@ void vpeInit(void)
 						vpeDmaErrorCallback, 
 						&OldVpeCallback);
 	vpeEnableInt(VPE_INT_COMP);				
-#if 0
 	vpeEnableInt(VPE_INT_PAGE_FAULT);	
 	vpeEnableInt(VPE_INT_PAGE_MISS);	
-
+#if 0			
 	vpeEnableInt(VPE_INT_MB_COMP);	
 	vpeEnableInt(VPE_INT_MB_ERR);
 #endif			
@@ -152,12 +162,9 @@ void vpeInit(void)
 	
 void EnableCache(void)
 {
-	if (! sysGetCacheState ()) {
-		sysInvalidCache ();
-///		sysEnableCache (CACHE_WRITE_THROUGH);
-		sysEnableCache (CACHE_WRITE_BACK);
-		sysFlushCache (I_D_CACHE);
-	}
+	sysDisableCache(); 	
+	sysFlushCache(I_D_CACHE);
+	sysEnableCache(CACHE_WRITE_BACK);
 }			
 INT32 main(void)
 {
@@ -169,7 +176,7 @@ INT32 main(void)
 	{    	
 		sysprintf("================================================================\n");
 		sysprintf("						VPE demo code												\n");
-		sysprintf(" [1] NormalFormatConversionRotationDownscale_TV\n");
+		sysprintf(" [1] MMU enable																\n");
 		sysprintf("================================================================\n");
 		
 				
@@ -179,7 +186,7 @@ INT32 main(void)
 		switch(u32Item)
 		{		
 			case '1':	NormalFormatConversionRotationDownscale_TV();						//MMU
-//					while(1);
+					while(1);
 					break;	
 	
 		}

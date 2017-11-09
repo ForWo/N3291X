@@ -29,7 +29,7 @@
 #include <string.h>
 
 #include "wblib.h"
-#include "w55fa92_gpio.h"
+#include "w55fa95_gpio.h"
 
 // accetiable debounce clock
 static const unsigned int _clk[16] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 2*256, 4*256, 8*256, 16*256, 32*256, 64*256, 128*256};
@@ -49,27 +49,52 @@ void gpio_set_portg2digital(unsigned short num)
 		case 13:
 		case 12:
 			outpw(REG_SHRPIN_TOUCH , inpw(REG_SHRPIN_TOUCH) &~ TP_AEN);
-			break;		
+			break;
+		case 11:
+			outpw(REG_SHRPIN_TOUCH , inpw(REG_SHRPIN_TOUCH) &~ MIC_BIAS_AEN);
+			break;
+		case 10:
 		case 9:
-			outpw(REG_SHRPIN_TOUCH , inpw(REG_SHRPIN_TOUCH) &~ SAR_AHS_AEN);
+			outpw(REG_SHRPIN_AUDIO , inpw(REG_SHRPIN_AUDIO) &~ MIC_AEN);
 			break;
 		case 8:
 			outpw(REG_SHRPIN_AUDIO , inpw(REG_SHRPIN_AUDIO) &~ AIN2_AEN);
 			break;
 		case 7:
 			outpw(REG_SHRPIN_AUDIO , inpw(REG_SHRPIN_AUDIO) &~ AIN3_AEN);
-			break;		
+			break;
+		case 6:
+			outpw(REG_SHRPIN_AUDIO , inpw(REG_SHRPIN_AUDIO) &~ AIN4_AEN);
+			break;
 		case 5:
 		case 4:
 		case 3:
 		case 2:
 			outpw(REG_SHRPIN_TVDAC , inpw(REG_SHRPIN_TVDAC) &~ SMTVDACAEN);
 			break;
-					
+		case 1:
+		case 0:
+			
+			break;			
 		
 		default:
 			;
 
+	}
+}
+
+void gpio_set_porth2digital(unsigned short num)
+{
+	switch (num) {		
+		case 5:
+			outpw(REG_SHRPIN_R_FB , inpw(REG_SHRPIN_R_FB) &~ R_FB_AEN);
+			break;		
+		case 0:
+			outpw(REG_SHRPIN_TOUCH , inpw(REG_SHRPIN_TOUCH) &~ PGC_VREF_AEN);
+			break;				
+		
+		default:
+			;
 	}
 }
 
@@ -79,66 +104,34 @@ int gpio_configure(unsigned char port, unsigned short num)
 	switch (port) {			
 		case GPIO_PORTA:
 			if(num <= 11)
-			{
-				if(num <= 7)
-					outpw(REG_GPAFUN0 , inpw(REG_GPAFUN0) &~ (0xF << (num<<2)));
-				else
-					outpw(REG_GPAFUN1 , inpw(REG_GPAFUN1) &~ (0xF << ((num%8)<<2)));				
-			}
+				outpw(REG_GPAFUN , inpw(REG_GPAFUN) &~ (0x3 << (num<<1)));
 			else
-				outpw(REG_GPAFUN1 , (inpw(REG_GPAFUN1) &~ (0xF << ((num%8)<<2))) | (0x2 << ((num%8)<<2)));
+				outpw(REG_GPAFUN , (inpw(REG_GPAFUN) &~ (0x3 << (num<<1))) | (0x2 << (num<<1)));
 			break;	
-		case GPIO_PORTB:
-			if(num <= 7)
-				outpw(REG_GPBFUN0, inpw(REG_GPBFUN0) &~ (0xF << (num<<2)));
-			else
-				outpw(REG_GPBFUN1, inpw(REG_GPBFUN1) &~ (0xF << ((num%8)<<2)));
+		case GPIO_PORTB:	
+			outpw(REG_GPBFUN, inpw(REG_GPBFUN) &~ (0x3 << (num<<1)));
 			break;
-		case GPIO_PORTC:
-			if(num <= 7)
-				outpw(REG_GPCFUN0, inpw(REG_GPCFUN0) &~ (0xF << (num<<2)));
-			else
-				outpw(REG_GPCFUN1, inpw(REG_GPCFUN1) &~ (0xF << ((num%8)<<2)));			
+		case GPIO_PORTC:	
+			outpw(REG_GPCFUN, inpw(REG_GPCFUN) &~ (0x3 << (num<<1)));
 			break;
 		case GPIO_PORTD:
-			if(num <= 7)
-				outpw(REG_GPDFUN0 , inpw(REG_GPDFUN0) &~ (0xF << (num<<2)));
-			else
-				outpw(REG_GPDFUN1 , inpw(REG_GPDFUN1) &~ (0xF << ((num%8)<<2)));			
+			outpw(REG_GPDFUN , inpw(REG_GPDFUN) &~ (0x3 << (num<<1)));
 			break;
 		case GPIO_PORTE:
 			if(num>11)
 				return(-1);
-			if(num <= 7)
-				outpw(REG_GPEFUN0 , inpw(REG_GPEFUN0) &~ (0xF << (num<<2)));
-			else
-				outpw(REG_GPEFUN1 , inpw(REG_GPEFUN1) &~ (0xF << ((num%8)<<2)));			
+			outpw(REG_GPEFUN , inpw(REG_GPEFUN) &~ (0x3 << (num<<1)));
 			break;	
 		case GPIO_PORTG:
-			if(num>=2 && num<=5)
-			{
-				gpio_set_portg2digital(num);
-				outpw(REG_GPGFUN0 , inpw(REG_GPGFUN0) &~ (0xF << (num<<2)));			
-			}
-			else if(num>=7 && num<=9)
-			{
-				gpio_set_portg2digital(num);
-				if(num == 7)
-					outpw(REG_GPGFUN0 , inpw(REG_GPGFUN0) &~ (0xF << (num<<2)));
-				else
-					outpw(REG_GPGFUN1 , inpw(REG_GPGFUN1) &~ (0xF << ((num%8)<<2)));							
-			}
-			else if(num>=12 && num<=15)
-			{
-				gpio_set_portg2digital(num);
-				outpw(REG_GPGFUN1 , inpw(REG_GPGFUN1) &~ (0xF << ((num%8)<<2)));			
-			}
-			else
-				return(-1);
+			gpio_set_portg2digital(num);
+			outpw(REG_GPGFUN , inpw(REG_GPGFUN) &~ (0x3 << (num<<1)));
 			break;
 		case GPIO_PORTH:
-			if(num<=7)				
-				outpw(REG_GPHFUN , inpw(REG_GPHFUN) &~ (0x3 << (num<<1)));			
+			if( (num == 0) ||(num == 5))
+			{
+				gpio_set_porth2digital(num);
+				outpw(REG_GPHFUN , inpw(REG_GPHFUN) &~ (0x3 << (num<<1)));
+			}
 			else
 				return(-1);
 			break;
@@ -207,9 +200,12 @@ int gpio_setportdir(unsigned char port, unsigned short mask, unsigned short dir)
 			outpw(REG_GPIOE_OMD , inpw(REG_GPIOE_OMD) & ~(mask & (mask ^ dir)));
 			outpw(REG_GPIOE_OMD , inpw(REG_GPIOE_OMD) | (mask & dir));	
 			break;	
-		case GPIO_PORTG:				
-			outpw(REG_GPIOG_OMD , inpw(REG_GPIOG_OMD) & ~(mask & (mask ^ dir)));
-			outpw(REG_GPIOG_OMD , inpw(REG_GPIOG_OMD) | (mask & dir));	
+		case GPIO_PORTG:			
+			if(((mask & 0x3) != 0) && ((dir & 0x3) != 0))
+				return(-1);
+			else
+				outpw(REG_GPIOG_OMD , inpw(REG_GPIOG_OMD) & ~(mask & (mask ^ dir)));
+				outpw(REG_GPIOG_OMD , inpw(REG_GPIOG_OMD) | (mask & dir));	
 			break;
 		case GPIO_PORTH:
 			outpw(REG_GPIOH_OMD , inpw(REG_GPIOH_OMD) & ~(mask & (mask ^ dir)));
@@ -249,6 +245,8 @@ int gpio_setportval(unsigned char port, unsigned short mask, unsigned short val)
 			outpw(REG_GPIOE_DOUT , inpw(REG_GPIOE_DOUT) | (mask & val));
 			break;	
 		case GPIO_PORTG:
+			if((mask & 0x3) != 0)
+				return(-1);
 			outpw(REG_GPIOG_DOUT , inpw(REG_GPIOG_DOUT) & ~(mask & (mask ^ val)));
 			outpw(REG_GPIOG_DOUT , inpw(REG_GPIOG_DOUT) | (mask & val));
 			break;	

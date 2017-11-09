@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>GIANTPLUS_GPM1006D0</TargetName>
+      <TargetName>DebugRel</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -43,14 +43,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\VPOST_example_Data\GIANTPLUS_GPM1006D0\</OutputDirectory>
+          <OutputDirectory>.\VPOST_example_Data\DebugRel\</OutputDirectory>
           <OutputName>VPOST_example</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\VPOST_example_Data\GIANTPLUS_GPM1006D0\</ListingPath>
+          <ListingPath>.\VPOST_example_Data\DebugRel\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -151,7 +151,7 @@
             <CpuDllArguments></CpuDllArguments>
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile>..\..\..\N32926\N32926.ini</InitializationFile>
+            <InitializationFile>..\..\..\N32916\N32916.ini</InitializationFile>
             <Driver>Segger\JLTAgdi.dll</Driver>
           </TargetDlls>
         </DebugOption>
@@ -347,9 +347,9 @@
             <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>__LCD_320x240__</Define>
+              <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\Lib;..\ASIC;..\..\..\SYSLIB\Lib</IncludePath>
+              <IncludePath>..\..\Lib;..\..\..\SYSLIB\Lib;..\ASIC</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -377,10 +377,10 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0xF8002000</DataAddressRange>
-            <ScatterFile>..\..\..\N32926\N32926.sct</ScatterFile>
+            <ScatterFile>..\..\..\N32916\N32916.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc>--entry Reset_Go</Misc>
+            <Misc>--entry 0</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -406,14 +406,14 @@
               <FilePath>..\Src\wb_init.s</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_GIANTPLUS_GPM1006D.lib</FileName>
+              <FileName>W55FA95_VPOST.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\Lib\W55FA92_GIANTPLUS_GPM1006D.lib</FilePath>
+              <FilePath>..\..\Lib\W55FA95_VPOST.lib</FilePath>
             </File>
             <File>
-              <FileName>W55FA92_syslib.lib</FileName>
+              <FileName>W55FA95_syslib.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\..\..\SYSLIB\Lib\W55FA92_syslib.lib</FilePath>
+              <FilePath>..\..\..\SYSLIB\Lib\W55FA95_syslib.lib</FilePath>
             </File>
           </Files>
         </Group>

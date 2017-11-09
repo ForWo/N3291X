@@ -1,0 +1,1 @@
+move .\kpi_Data\kpi_8x1_lcd\w55fa95_kpi_8x1_lcd.lib ..\..\Lib

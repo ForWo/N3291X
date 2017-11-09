@@ -161,10 +161,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>10</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1395</TopLine>
-      <CurrentLine>1421</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\DrvEDMA.c</PathWithFileName>
       <FilenameWithoutPath>DrvEDMA.c</FilenameWithoutPath>
@@ -180,8 +180,8 @@
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\w55fa92_edma.c</PathWithFileName>
-      <FilenameWithoutPath>w55fa92_edma.c</FilenameWithoutPath>
+      <PathWithFileName>..\w55fa95_edma.c</PathWithFileName>
+      <FilenameWithoutPath>w55fa95_edma.c</FilenameWithoutPath>
     </File>
   </Group>
 

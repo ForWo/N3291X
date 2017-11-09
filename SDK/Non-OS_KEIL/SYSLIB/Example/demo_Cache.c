@@ -39,7 +39,7 @@ void DemoAPI_Cache(BOOL bIsCacheOn)
 	{
 		*pUINT8Buf0++ = tmp*123;
 	}	
-	sysSetTimerReferenceClock(TIMER0, sysGetExternalClock()); 		//External Crystal
+	sysSetTimerReferenceClock(TIMER0, 27000000); 		//External Crystal
 	sysStartTimer(TIMER0, 100, PERIODIC_MODE);			/* 100 ticks/per sec ==> 1tick/10ms */
 	
 	sysSetLocalInterrupt(ENABLE_IRQ);	
@@ -74,6 +74,13 @@ void DemoAPI_Cache(BOOL bIsCacheOn)
 #endif	
 	u32Etime = sysGetTicks(TIMER0);
 	DBG_PRINTF("Compare 0x%x bytes memory takes %d ms\n", MEM_SIZE, (u32Etime-u32Btime)*10);
+#if 0
+	{
+		UINT32 i;	
+		for(i=0;i<20480;i=i+1)
+			sysprintf("Virtual addr 0x%x map physical address 0x%x\n", i*4096, sysGetPhyPageAddr(i*4096));
+	}
+#endif	
 	//free(pUINT8Buf0);
 	//free(pUINT8Buf1);
 }

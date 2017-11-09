@@ -5,8 +5,8 @@
  ****************************************************************/
 
 #include "wblib.h"
-#include "w55fa92_i2s.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_i2s.h"
+#include "w55fa95_reg.h"
 
 //#define OPT_FPGA_DEBUG
 
@@ -41,7 +41,7 @@ static VOID DrvI2S_SetDataFormat (E_DRVI2S_FORMAT  eInterface);
 /*                                                                                                         */
 /*---------------------------------------------------------------------------------------------------------*/
 
-UINT32 DrvI2S_GetVersion(void)
+UINT32 DrvI2S_GetVersion(VOID)
 {
 	return (DRVI2S_MAJOR_NUM << 16) | (DRVI2S_MINOR_NUM << 8) | DRVI2S_BUILD_NUM;
 }
@@ -60,7 +60,7 @@ UINT32 DrvI2S_GetVersion(void)
 /*                                                                                                         */
 /*---------------------------------------------------------------------------------------------------------*/
 
-static VOID DrvI2S_IntHandler(void)
+static VOID DrvI2S_IntHandler(VOID)
 {
 
 	if (inp32(REG_I2S_ACTL_CON) &P_DMA_IRQ_EN)
@@ -105,7 +105,6 @@ static VOID DrvI2S_IntHandler(void)
 		}
 	}		
 
-#if 1	
 	if (inp32(REG_I2S_ACTL_CON) &P_PAUSE_IRQ_EN)
 	{
 		if (inp32(REG_I2S_ACTL_PSR)&P_PAUSE_IRQ)
@@ -115,7 +114,6 @@ static VOID DrvI2S_IntHandler(void)
 			g_pfnPauseCallBack((UINT8 *)(g_DrvI2S_u32RecordBufAddr+g_DrvI2S_u32RecordBufSize/2), g_DrvI2S_u32RecordBufSize/2);					
 		}
 	}
-#endif			
 	
 	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON));		// clear IRQ flag
 }
@@ -135,44 +133,28 @@ static VOID DrvI2S_IntHandler(void)
 /*---------------------------------------------------------------------------------------------------------*/
 
 int DrvI2S_Open(
-	void 
+	VOID 
 )
 {
 
 // 	check if there is share pins IP to be enabled
 //	if YES then return ERROR
 
-//#define OPT_I2S_FROM_GPG
-#ifdef OPT_I2S_FROM_GPG
 	// enable I2S pin function
-#define REG_SHRPIN_TVDAC	(GCR_BA+0xF4)	// R/W	Share Pin With TV DAC
-	#define SMTVDACAEN		BIT31	
-
-	outp32(REG_SHRPIN_TVDAC, inp32(REG_SHRPIN_TVDAC)&~SMTVDACAEN);	// TV shared pins to be digital ones
-	outp32(REG_SHRPIN_TOUCH, inp32(REG_SHRPIN_TOUCH)&~SAR_AHS_AEN);	// TV shared pins to be digital ones	
-	outp32(REG_GPGFUN0, (inp32(REG_GPGFUN0)&~(MF_GPB5+MF_GPB4+MF_GPB3+MF_GPB2))|0x00333300);	// GPG0[5:2] to be I2S signals
-	outp32(REG_GPGFUN1, (inp32(REG_GPGFUN1)&~(MF_GPB9))|0x0020);	// GPG1[9] to be I2S signals	
+	outp32(REG_GPBFUN, (inp32(REG_GPBFUN) & (~0x3FF0)) | 0x1550);	// GPB[6:2] to be I2S signals
 	outp32(REG_MISFUN, inp32(REG_MISFUN) & (~0x01));				// I2S interface for I2S, but not SPU
-	
-#else
-	// enable I2S pin function
-	outp32(REG_GPBFUN0, (inp32(REG_GPBFUN0)&~(MF_GPB6+MF_GPB5+MF_GPB4+MF_GPB3+MF_GPB2))|0x01111100);	// GPB0[6:2] to be I2S signals
-	outp32(REG_MISFUN, inp32(REG_MISFUN) & (~0x01));				// I2S interface for I2S, but not SPU
-#endif	
 
 	// enable I2S engine clock 
-//#ifdef OPT_FPGA_DEBUG
-#if 0
+#ifdef OPT_FPGA_DEBUG
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | SD_CKE);
-//	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | SIC_CKE | SD_CKE);			// enable SD engine clock 		
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | ADO_CKE | I2S_CKE);			// enable I2S engine clock 
 #else	
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | ADO_CKE | I2S_CKE | HCLK4_CKE);	// enable I2S engine clock 
 #endif
 
 	// reset I2S engine 
-	outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) | I2S_RST);
-	outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) & ~I2S_RST);	
+	outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) | I2SRST);
+	outp32(REG_AHBIPRST, inp32(REG_AHBIPRST) & ~I2SRST);	
 	outp32(REG_I2S_ACTL_RESET, inp32(REG_I2S_ACTL_RESET) | ACTL_RESET_);		// Reset whole audio controller
 	outp32(REG_I2S_ACTL_RESET, inp32(REG_I2S_ACTL_RESET) & ~ACTL_RESET_);
 	outp32(REG_I2S_ACTL_RESET, inp32(REG_I2S_ACTL_RESET) | I2S_RESET);			// Reset I2S function block
@@ -188,11 +170,11 @@ int DrvI2S_Open(
 //	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) | (0x03 <<12));	// threshold address is the eighth of DMA buffer for playing	
 
 	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) | I2S_EN);					// enable I2S interface
-	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) & ~FIFO_TH);	// FIFO Threshold 8 level
-//	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) |  FIFO_TH);	// FIFO Threshold 4 level	
+//	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) & ~FIFO_TH);	// FIFO Threshold 8 level
+	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) |  FIFO_TH);	// FIFO Threshold 4 level	
 	
-//	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) |  I2S_BITS_16_24);	// 24-bit (Must BCLK_SEL[1:0]=00, and WS_SEL=1, 48ws is selected)
-	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) & ~I2S_BITS_16_24);	// 16-bit 	
+	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) |  I2S_BITS_16_24);	// 24-bit (Must BCLK_SEL[1:0]=00, and WS_SEL=1, 48ws is selected)
+//	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) & ~I2S_BITS_16_24);	// 16-bit 	
 
 	return E_SUCCESS;
 	
@@ -212,13 +194,11 @@ int DrvI2S_Open(
 /*                                                                                                         */
 /*---------------------------------------------------------------------------------------------------------*/
 
-VOID DrvI2S_Close(void)
+VOID DrvI2S_Close(VOID)
 {
-#if 1
 //	outp32(PINFUN, inp32(PINFUN) & ~(I2SEN0 | I2SEN1 | I2SEN2));		// disable IP I/O pins
 //	outp32(CLKMAN, inp32(CLKMAN) & ~AUD_EN);							// disable I2S engine
 	outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) & ~I2S_EN);						// disable I2S interface	
-#endif	
 }	
 
 /*---------------------------------------------------------------------------------------------------------*/
@@ -257,7 +237,7 @@ VOID DrvI2S_EnableInt(
 	else if(u32InterruptFlag & DRVI2S_IRQ_DMA_COUNTER)
 	{
 		outp32(REG_I2S_ACTL_PSR, inp32(REG_I2S_ACTL_PSR));		
-//		outp32(REG_I2S_ACTL_CON, P_DMA_IRQ);		
+		outp32(REG_I2S_ACTL_CON, P_DMA_IRQ);		
 		outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) | IRQ_DMA_CNTER_EN);
 		outp32(REG_I2S_ACTL_RESET, inp32(REG_I2S_ACTL_RESET) | DMA_CNTER_EN);
 		g_pfnDownCounterCallBack = pfnCallBack;					
@@ -265,7 +245,7 @@ VOID DrvI2S_EnableInt(
 	else if(u32InterruptFlag & DRVI2S_IRQ_DMA_DATA_ZERO)
 	{
 		outp32(REG_I2S_ACTL_PSR, inp32(REG_I2S_ACTL_PSR));		
-//		outp32(REG_I2S_ACTL_CON, P_DMA_IRQ);		
+		outp32(REG_I2S_ACTL_CON, P_DMA_IRQ);		
 		outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) | IRQ_DMA_DATA_ZERO_EN);
 		outp32(REG_I2S_ACTL_RESET, inp32(REG_I2S_ACTL_RESET) | DMA_DATA_ZERO_EN);
 		g_pfnDataZeroCallBack = pfnCallBack;					
@@ -274,17 +254,13 @@ VOID DrvI2S_EnableInt(
 	else if(u32InterruptFlag & DRVI2S_IRQ_PAUSE)
 	{
 		outp32(REG_I2S_ACTL_PSR, inp32(REG_I2S_ACTL_PSR));		
-//		outp32(REG_I2S_ACTL_CON, P_DMA_IRQ);				
+		outp32(REG_I2S_ACTL_CON, P_DMA_IRQ);				
 		outp32(REG_I2S_ACTL_PSR, P_PAUSE_IRQ);		
 //		outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) | P_DMA_IRQ_EN);	
 		outp32(REG_I2S_ACTL_CON, inp32(REG_I2S_ACTL_CON) | P_PAUSE_IRQ_EN);
 		g_pfnPauseCallBack = pfnCallBack;					
 	}
-
-//	DrvAIC_InstallISR(eDRVAIC_INT_LEVEL1, eDRVAIC_INT_I2S, (PVOID)DrvI2S_IntHandler, 0);	
 	sysInstallISR(IRQ_LEVEL_7, IRQ_I2S, (PVOID)DrvI2S_IntHandler);	
-//  DrvAIC_EnableInt(INT_I2S);		
-	
 }	
 
 /*---------------------------------------------------------------------------------------------------------*/
@@ -589,7 +565,7 @@ VOID DrvI2S_StartPlay (
 /*---------------------------------------------------------------------------------------------------------*/
 
 VOID DrvI2S_StopPlay (
-	void
+	VOID
 )
 {
 	outp32(REG_I2S_ACTL_RESET, inp32(REG_I2S_ACTL_RESET) & ~I2S_PLAY);						// Enable I2S path
@@ -663,7 +639,7 @@ VOID DrvI2S_StartRecord (
 /*---------------------------------------------------------------------------------------------------------*/
 
 VOID DrvI2S_StopRecord (
-	void
+	VOID
 )
 {
 	outp32(REG_I2S_ACTL_RESET, inp32(REG_I2S_ACTL_RESET) & (~I2S_RECORD));						// Enable I2S path
@@ -688,40 +664,24 @@ int DrvI2S_SetApllClock(unsigned int clock)
 	int ret = 0;
 	
 	/* external clock is forced to 12 MHz */ 
-	int w55fa92_external_clock = 12000000;
+	int w55fa95_external_clock = 12000000;
 
-	if (w55fa92_external_clock == 12000000) {
-		if (clock == 430080) {
-			// for SPU/I2S 16/48KHz * 256 and ADC 16KHz * 16 * 80, TD = 0.0186%
-			outp32(REG_APLLCON, 0x09EB);
+	if (w55fa95_external_clock == 12000000) {
+		if (clock == 348160) {
+			// for SPU/I2S 8/16KHz * 256 and ADC 8/16KHz * 16 * 80, TD = 0.0460%
+			outp32(REG_APLLCON, 0x1174);
 		}
 		else if (clock == 344064) {
-			// for SPU/I2S 32/64/96/192KHz * 256, TD = 0.0186%
+			// for SPU/I2S 32/48/64/96KHz * 256, TD = 0.0186%
 			outp32(REG_APLLCON, 0x09D6);
 		}
 		else if (clock == 254016) {
-			// for SPU/I2S 22.05KHz * 256 and ADC 11.025KHz * 16 * 80, TD = 0.0063%
-			outp32(REG_APLLCON, 0x0B7F);
+			// for SPU/I2S 11.025/22.05KHz * 256 and ADC 11.025KHz * 16 * 80, TD = 0.0063%
+			outp32(REG_APLLCON, 0x11FF);
 		}
-		else if (clock == 225792) {
-			// for SPU/I2S 44.1/88.2/176.4KHz * 256, TD = 0.0850%
-			outp32(REG_APLLCON, 0x0ADE);
-		}
-		else if (clock == 208896) {
-			// for I2S, TD = 0.0498%
-			outp32(REG_APLLCON, 0x11E8);
-		}
-		else if (clock == 123000) {
-			// for I2S, TD = 0.0498%
-			outp32(REG_APLLCON, 0x1952);
-		}
-		else if (clock == 169344) {
-			// for I2S, TD = 0.0921%
-			outp32(REG_APLLCON, 0x1271);
-		}
-		else if (clock == 147456) {
-			// for I2S, TD = 0.0977%
-			outp32(REG_APLLCON, 0x12FB);
+		else if (clock == 158054) {
+			// for SPU/I2S 44.1/88.2KHz * 256, TD = 0.0344%
+			outp32(REG_APLLCON, 0x11CF);
 		}
 		else if (clock == 135000) {
 			// for TV 27MHz, TD = 0%, 8KHz TD = 0.1243%, 11.025KHz TD = 0.3508%
@@ -733,7 +693,7 @@ int DrvI2S_SetApllClock(unsigned int clock)
 		}
 	}
 	else {
-		// printf("%s does not support %d.%dMHz xtal clock!\n", __FUNCTION__, print_mhz(w55fa92_external_clock));
+		// printf("%s does not support %d.%dMHz xtal clock!\n", __FUNCTION__, print_mhz(w55fa95_external_clock));
 		ret = -1;
 	}
 	return ret;
@@ -746,7 +706,7 @@ int DrvI2S_SetApllClock(unsigned int clock)
 /*      eSampleRate - [in], sampling rate selection 		 						                       */
 /*                                                                                                         */
 /* Returns:                                                                                                */
-/*      Success (0) or Fail (-1)					                                                       */
+/*      None					                                                                           */
 /*                                                                                                         */
 /* Description:                                                                                            */
 /*      Select sampling rate 															                   */
@@ -758,86 +718,87 @@ INT DrvI2S_SetSampleRate(
 {
 	UINT32 u32MCLK;
 	UINT32 uData, ApllFreq;
-	UINT32 u32Divider0, u32Divider1, ii;
-	INT ret = 0;
+	UINT32 u32Divider0, u32ClockDivider, ii;
 
 	g_DrvI2S_u32SampleRate = eSampleRate;
-	
-	/* MCLK = 256*WS */
-	switch (eSampleRate)
+	switch (eSampleRate)	//all 16bit, 256fs
 	{
-		case eDRVI2S_FREQ_8000:						// 8 KHz
-			ApllFreq = 123000;			
+		case eDRVI2S_FREQ_8000:				//8KHz
+			ApllFreq = 344064;
 			u32MCLK = 12288/6;									
 			break;
-		case eDRVI2S_FREQ_11025:					// 11.025 KHz
-			ApllFreq = 169344;
+		case eDRVI2S_FREQ_11025:			//11.025KHz
+			ApllFreq = 254016;		
 			u32MCLK = 16934/6;							
 			break;
-		case eDRVI2S_FREQ_12000:
-			ApllFreq = 123000;			
+		case eDRVI2S_FREQ_12000:			//12KHz
+			ApllFreq = 344064;
 			u32MCLK = 12288/4;
 			break;
-		case eDRVI2S_FREQ_16000:					// 16 KHz
-			ApllFreq = 123000;			
+		case eDRVI2S_FREQ_16000:			//16KHz
+			ApllFreq = 344064;
 			u32MCLK = 12288/3;
 			break;
-		case eDRVI2S_FREQ_22050:					// 22.05 KHz
-			ApllFreq = 169344;		
+		case eDRVI2S_FREQ_22050:			//22.05KHz
+			ApllFreq = 254016;
 			u32MCLK = 16934/3;
 			break;
-		case eDRVI2S_FREQ_24000:					// 24 KHz
-			ApllFreq = 123000;			
+		case eDRVI2S_FREQ_24000:			//24KHz
+			ApllFreq = 344064;
 			u32MCLK = 12288/2;
 			break;
-		case eDRVI2S_FREQ_32000:			
-			ApllFreq = 147456;
+		case eDRVI2S_FREQ_32000:			//32KHz
+			ApllFreq = 344064;
 			u32MCLK = 16384/2;									
 			break;
-		case eDRVI2S_FREQ_44100:					// 44.1 KHz
-			ApllFreq = 169344;		
+		case eDRVI2S_FREQ_44100:			//44.1KHz
+			ApllFreq = 158054;
 			u32MCLK = 16934*2/3;
 			break;
-		case eDRVI2S_FREQ_48000:					// 48 KHz
-		default:				
-			ApllFreq = 123000;
+		case eDRVI2S_FREQ_48000:			//48KHz
+			ApllFreq = 344064;
 			u32MCLK = 12288;
 			break;
-		case eDRVI2S_FREQ_64000:					//64KHz
-			ApllFreq = 147456;
+		case eDRVI2S_FREQ_64000:			//64KHz
+			ApllFreq = 344064;
 			u32MCLK = 16384;
 			break;
-		case eDRVI2S_FREQ_88200:					//88.2KHz
-			ApllFreq = 135475;		
+		case eDRVI2S_FREQ_88200:			//88.2KHz
+			ApllFreq = 158054;		
 			u32MCLK = 16934*4/3;
 			break;
-		case eDRVI2S_FREQ_96000:					//96KHz
-			ApllFreq = 147456;
+		case eDRVI2S_FREQ_96000:			//96KHz
+			ApllFreq = 344064;
 			u32MCLK = 12288*2;
 			break;
+		default:							
+			ApllFreq = 344064;
+			u32MCLK = 12288;
+			break;
 	}
+	
 	if (DrvI2S_SetApllClock(ApllFreq))
 		return -1;
 	
 	uData = inp32(REG_I2S_ACTL_I2SCON) & 0x08;	
 	outp32(REG_I2S_ACTL_I2SCON, uData);			
-	u32Divider1 = ApllFreq / u32MCLK;
-	
+	u32ClockDivider = ApllFreq / u32MCLK;	
 	for (ii=8; ii>1; ii--)
 	{
-		if (!(u32Divider1%ii))
+		if (!(u32ClockDivider%ii))
 			break;
 	}			
-	u32Divider0 = ii;
-	u32Divider1 = u32Divider1 / ii;
+	{
+		u32Divider0 = ii;
+		u32ClockDivider = u32ClockDivider / ii;
+	}			
 		
 	u32Divider0 --;				
-	u32Divider1	--;			
-
-	outp32(REG_CLKDIV7, (inp32(REG_CLKDIV7) & (~I2S_S)) | (0x02 << 11) );	// SPU clock from APLL	
-	outp32(REG_CLKDIV7, (inp32(REG_CLKDIV7) & (~I2S_N0)) | (u32Divider0<<8));			
-	outp32(REG_CLKDIV7, (inp32(REG_CLKDIV7) & (~I2S_N1)) | (u32Divider1<<16));		
-	return ret;
+	u32ClockDivider	--;			
+	outp32(REG_CLKDIV1, (inp32(REG_CLKDIV1) & (~ADO_S)) | (0x02 << 19) );	// SPU clock from APLL	
+	outp32(REG_CLKDIV1, (inp32(REG_CLKDIV1) & (~ADO_N0)) | (u32Divider0<<16));			
+	outp32(REG_CLKDIV1, (inp32(REG_CLKDIV1) & (~ADO_N1)) | (u32ClockDivider<<24)) ;
+	return 0;
 }
 
 /*---------------------------------------------------------------------------------------------------------*/
@@ -855,7 +816,7 @@ INT DrvI2S_SetSampleRate(
 /*---------------------------------------------------------------------------------------------------------*/
 
 UINT32 DrvI2S_GetSampleRate(
-	void
+	VOID
 )
 {
 	return g_DrvI2S_u32SampleRate;
@@ -878,6 +839,7 @@ UINT32 DrvI2S_GetSampleRate(
 static VOID DrvI2S_SetDataFormat (
 	E_DRVI2S_FORMAT  eInterface)
 {
+
 	UINT32 uBuf, uData;
 	UINT32 uFormatSel;
 
@@ -898,3 +860,5 @@ static VOID DrvI2S_SetDataFormat (
 	uBuf |= uData;
 	outp32(REG_I2S_ACTL_I2SCON,uBuf);
 }
+
+

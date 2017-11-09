@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "usbd.h"
 
 #define DATA_CODE	"20170606"
@@ -36,15 +36,29 @@ VOID usbdClearAllFlags(void)
 
 VOID udcOpen(void)
 {
-#ifdef __USBD_FULL_SPEED_MODE__    
-	int i;	 
-#endif     
-	sysprintf("N3292 UDC Library (%s)\n",DATA_CODE);
+	UINT32 u32PllOutHz,u32ExtFreq;
+	int i;		
+	
+	sysprintf("N3291 UDC Library (%s)\n",DATA_CODE);
+	
+	u32ExtFreq = sysGetExternalClock(); 	 
+
+    outp32(REG_CLKDIV2, inp32(REG_CLKDIV2) & ~0x0060F0E0);
+    
 #ifdef __USBD_FULL_SPEED_MODE__    
 	outp32(REG_MISCR,0x20300);
 #endif    
-    
-    outp32(REG_CLKDIV2, inp32(REG_CLKDIV2) & ~0x0060F0E0);
+    if(u32ExtFreq == 27000000)
+    {
+        u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);
+        
+        i = (u32PllOutHz / 2) / 12000000 - 1;
+        
+        /* USB Clock source = UPLL / 2 */
+        /* USB Clock = USB Clock source / (i+1) */
+        outp32(REG_CLKDIV2, inp32(REG_CLKDIV2) | 0x00600020 | (i << 12));	
+        
+    }
     
 #ifndef __USBD_FULL_SPEED_MODE__		
 	if(inp32(PHY_CTL) & Vbus_status)
@@ -65,8 +79,8 @@ VOID udcOpen(void)
 	outp32(REG_HC_RH_OP_MODE, inp32(REG_HC_RH_OP_MODE) | (BIT16|BIT17) );
 #endif
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | USBD_CKE | HCLK3_CKE);
-	outpw(REG_AHBIPRST, inpw(REG_AHBIPRST) | UDC_RST);
-	outpw(REG_AHBIPRST, inpw(REG_AHBIPRST) & ~UDC_RST);
+	outpw(REG_AHBIPRST, inpw(REG_AHBIPRST) | UDCRST);
+	outpw(REG_AHBIPRST, inpw(REG_AHBIPRST) & ~UDCRST);
 	
 	outp32(PHY_CTL, (0x20 | Phy_suspend));
 	

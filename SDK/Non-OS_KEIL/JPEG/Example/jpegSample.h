@@ -54,20 +54,20 @@ extern UINT32 g_u32OpwBufferIndex;				/* Decode output Buffer index */
 
 #define PLANAR_DEC_BUFFER_SIZE	0x100000	/* Decode Output Buffer size for Planar */
                	
-#define PANEL_WIDTH		320					/* PANEL Width (Raw data output width for Panel Test) */
-#define PANEL_HEIGHT	240     			/* PANEL Height (Raw data output height for Panel Test) */
+#define PANEL_WIDTH		480					/* PANEL Width (Raw data output width for Panel Test) */
+#define PANEL_HEIGHT	272     			/* PANEL Height (Raw data output height for Panel Test) */
 
-#define TARGET_WIDTH	160					/* JPEG decode output width for __PANEL_TEST__ */
-#define TARGET_HEIGHT	120 				/* JPEG decode output height for __PANEL_TEST__ */
+#define TARGET_WIDTH	320					/* JPEG decode output width for __PANEL_TEST__ */
+#define TARGET_HEIGHT	240 				/* JPEG decode output height for __PANEL_TEST__ */
   
   
-VOID JpegDecTest(void);
-VOID JpegEncTest(void);
+VOID JpegDecTest(VOID);
+VOID JpegEncTest(VOID);
 
 /* Jpeg Output File Name Function */
 CHAR *intToStr(UINT32 u32quotient);
 /*  Header Decode Complete Callback function */
-BOOL JpegDecHeaderComplete(void);
+BOOL JpegDecHeaderComplete(VOID);
 /* Decode Input Wait Callback function */   
 BOOL JpegDecInputWait(UINT32 u32Address,UINT32 u32Size);
 /* Decode Output Wait Callback function */   
@@ -77,5 +77,5 @@ VOID JpedInitDecOutputWaitBuffer(UINT32 u32Width,UINT32 u32Height, UINT32 u32jpe
 
 INT32 ParsingJPEG(PUINT8 JPEG_Buffer,UINT32 Length, PUINT32 pu32Width, PUINT32 pu32Height, PUINT32 u32Format,BOOL bPrimary);
 
-UINT32 GetData(void);
-VOID GetString(void);
+UINT32 GetData(VOID);
+VOID GetString(VOID);

@@ -1,12 +1,8 @@
-/***************************************************************************
- * Copyright (c) 2013 Nuvoton Technology. All rights reserved.
- *
- * FILENAME
- *     main.c
- * DESCRIPTION
- *     The main file for SIC/SD demo code.
- **************************************************************************/
- #include <stdio.h>
+/*-----------------------------------------------------------------------------
+ * 2011/7/7 by CJChen1@nuvoton.com, To run FA95 emulation code with SIC driver default configuration.
+ *---------------------------------------------------------------------------*/
+
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -15,14 +11,15 @@
 #include "wblib.h"
 #include "wbtypes.h"
 
-#include "w55fa92_reg.h"
-#include "w55fa92_sic.h"
-//#include "nvtfat.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_sic.h"
+#include "nvtfat.h"
 #include "fmi.h"
 
 /*-----------------------------------------------------------------------------
  * For system configuration
  *---------------------------------------------------------------------------*/
+
 // Define DBG_PRINTF to sysprintf to show more information about testing
 #define DBG_PRINTF    sysprintf
 //#define DBG_PRINTF(...)
@@ -40,7 +37,9 @@
 __align (32) UINT8 g_ram0[BUF_SIZE];
 __align (32) UINT8 g_ram1[BUF_SIZE];
 
-extern FMI_SD_INFO_T *pSD0, *pSD1, *pSD2; // define in SIC driver
+UINT32  totalSector = 0;
+
+extern FMI_SD_INFO_T *pSD0; // define in SIC driver
 FMI_SD_INFO_T *pSD;
 
 
@@ -104,7 +103,7 @@ void isr_card_remove()
 /*-----------------------------------------------------------------------------
  * To do test for SD card access. Write, read, and compare data on random sectors.
  *---------------------------------------------------------------------------*/
-unsigned int sd_access_test(int sdport)
+unsigned int sd_access_test()
 {
     UINT32 ii, sectorIndex;
     UINT32 result;
@@ -121,64 +120,48 @@ unsigned int sd_access_test(int sdport)
     }
 
     // get information about SD card
-    switch (sdport)
-    {
-        case 0: fmiGet_SD_info(pSD0, &info);    break;
-        case 1: fmiGet_SD_info(pSD1, &info);    break;
-        case 2: fmiGet_SD_info(pSD2, &info);    break;
-        default:
-            sysprintf("ERROR: sd_access_test(): invalid SD port %d !!\n", sdport);
-            return FAIL;
-    }
+    fmiGet_SD_info(pSD0, &info);
 
-    sectorIndex = rand() % info.totalSectorN;
-    u32SecCnt   = rand() % MAX_SECTOR_COUNT;
-    if (u32SecCnt == 0)
-        u32SecCnt = 1;
-    if (sectorIndex + u32SecCnt > info.totalSectorN)
-        sectorIndex = info.totalSectorN - u32SecCnt;
+    while(1)
+    {
+        sectorIndex = rand() % (info.totalSectorN - MAX_SECTOR_COUNT);
+        u32SecCnt = (rand() % MAX_SECTOR_COUNT) + 1;    // cannot be 0!!
 
-    switch (sdport)
-    {
-        case 0: result = sicSdWrite0(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram0);   break;
-        case 1: result = sicSdWrite1(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram0);   break;
-        case 2: result = sicSdWrite2(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram0);   break;
-    }
-    DBG_PRINTF("    Write g_ram0 to SD card, result = 0x%x\n", result);
-    show_hex_data(ptr_g_ram0, 16);
+        result = sicSdWrite0(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram0);
+        // DBG_PRINTF("    Write g_ram0 to SD card, result = 0x%x\n", result);
+        // show_hex_data(ptr_g_ram0, 16);
 
-    memset(ptr_g_ram1, 0x5a, u32SecCnt * SECTOR_SIZE);
-    switch (sdport)
-    {
-        case 0: result = sicSdRead0(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram1);    break;
-        case 1: result = sicSdRead1(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram1);    break;
-        case 2: result = sicSdRead2(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram1);    break;
-    }
-    DBG_PRINTF("    Read g_ram1 to SD card, result = 0x%x\n", result);
-    show_hex_data(ptr_g_ram1, 16);
+        memset(ptr_g_ram1, 0x5a, u32SecCnt * SECTOR_SIZE);
+        result = sicSdRead0(sectorIndex, u32SecCnt, (UINT32)ptr_g_ram1);
+        // DBG_PRINTF("    Read g_ram1 to SD card, result = 0x%x\n", result);
+        // show_hex_data(ptr_g_ram1, 16);
 
-    if(memcmp(ptr_g_ram0, ptr_g_ram1, u32SecCnt * SECTOR_SIZE) == 0)
-    {
-        result = OK;
-        sysprintf("    Data compare OK at sector %d, sector count = %d\n", sectorIndex, u32SecCnt);
-    }
-    else
-    {
-        result = FAIL;
-        sysprintf("    ERROR: Data compare ERROR at sector %d, sector count = %d\n", sectorIndex, u32SecCnt);
+        if(memcmp(ptr_g_ram0, ptr_g_ram1, u32SecCnt * SECTOR_SIZE) == 0)
+        {
+            result = OK;
+            sysprintf("    Data compare OK at sector %d, sector count = %d\n", sectorIndex, u32SecCnt);
+        }
+        else
+        {
+            result = FAIL;
+            sysprintf("    ERROR: Data compare ERROR at sector %d, sector count = %d\n", sectorIndex, u32SecCnt);
+        }
     }
     return result;
 }
 
 
-/*-----------------------------------------------------------------------------
- * Initial UART0.
- *---------------------------------------------------------------------------*/
-void init_UART()
-{
-    UINT32 u32ExtFreq;
-    WB_UART_T uart;
+/*-----------------------------------------------------------------------------*/
 
+int main(void)
+{
+    int result, i;
+
+	UINT32 u32ExtFreq;
+	UINT32 u32PllOutHz;
+	WB_UART_T uart;
+
+    //--- initial UART
     u32ExtFreq = sysGetExternalClock();
     sysUartPort(1);
     uart.uiFreq = u32ExtFreq;   //use APB clock
@@ -187,63 +170,43 @@ void init_UART()
     uart.uiStopBits = WB_STOP_BITS_1;
     uart.uiParity = WB_PARITY_NONE;
     uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-    uart.uart_no = WB_UART_1;
+    uart.uart_no = WB_UART_0;
     sysInitializeUART(&uart);
-}
 
+    sysSetLocalInterrupt(ENABLE_FIQ_IRQ);
+    /*
+    u32ErrCode = sysSetSystemClock(eSYS_UPLL,   //E_SYS_SRC_CLK eSrcClk,
+                            240000000,          //UINT32 u32PllKHz,
+                            120000000);         //UINT32 u32SysKHz,
+    */
+    u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);
+    DBG_PRINTF("PLL out frequency %d Hz\n", u32PllOutHz);
 
-/*-----------------------------------------------------------------------------
- * Initial Timer0 interrupt for system tick.
- *---------------------------------------------------------------------------*/
-void init_timer()
-{
-    sysSetTimerReferenceClock(TIMER0, sysGetExternalClock());   // External Crystal
-    sysStartTimer(TIMER0, 100, PERIODIC_MODE);                  // 100 ticks/per sec ==> 1tick/10ms
-    sysSetLocalInterrupt(ENABLE_IRQ);
-}
-
-
-/*-----------------------------------------------------------------------------*/
-
-int main(void)
-{
-    int result, i, pass, fail;
-    int target_port = 0;
-
-    init_UART();
-    init_timer();
-
-    sysprintf("\n=====> W55FA92 Non-OS SIC/SD Driver Sample Code [tick %d] <=====\n", sysGetTicks(0));
-
-    //sysprintf("REG_CLKDIV4 = 0x%08X\n", inp32(REG_CLKDIV4));    // default HCLK234 should be 0
-    //outp32(REG_CLKDIV4, 0x00000310);                            // set HCLK234 to 1
-    //sysprintf("REG_CLKDIV4 = 0x%08X\n", inp32(REG_CLKDIV4));
+    sysDisableCache();
+    sysFlushCache(I_D_CACHE);
+    sysEnableCache(CACHE_WRITE_BACK);
 
     srand(time(NULL));
 
     //--- Initial system clock
 #ifdef OPT_FPGA_DEBUG
-    sicIoctl(SIC_SET_CLOCK, 27000, 0, 0);   // clock from FPGA clock in
+    sicIoctl(SIC_SET_CLOCK, 27000, 0, 0);               // clock from FPGA clock in
 #else
-    sicIoctl(SIC_SET_CLOCK, sysGetPLLOutputHz(eSYS_UPLL, sysGetExternalClock())/1000, 0, 0);    // clock from PLL
+    sicIoctl(SIC_SET_CLOCK, u32PllOutHz/1000, 0, 0);    // clock from PLL
 #endif
 
     //--- Enable AHB clock for SIC/SD/NAND, interrupt ISR, DMA, and FMI engineer
     sicOpen();
 
     //--- Initial callback function for card detection interrupt
-    //sicIoctl(SIC_SET_CALLBACK, FMI_SD_CARD, (INT32)isr_card_remove, (INT32)isr_card_insert);
+    sicIoctl(SIC_SET_CALLBACK, FMI_SD_CARD, (INT32)isr_card_remove, (INT32)isr_card_insert);
 
     //--- Initial SD card on port 0
-    switch (target_port)
-    {
-        case 0: result = sicSdOpen0();   break;
-        case 1: result = sicSdOpen1();   break;
-        case 2: result = sicSdOpen2();   break;
-    }
+    result = sicSdOpen0();
+
     if (result < 0)
     {
-        sysprintf("ERROR: Open SD card on port %d fail. Return = 0x%x.\n", target_port, result);
+        sysprintf("ERROR: Open SD card on port %d fail. Return = 0x%x.\n", 0, result);
         sicSdClose0();
 
         //--- Example code to enable/disable SD0 Card Detect feature.
@@ -271,37 +234,21 @@ int main(void)
     }
     else
     {
-        sysprintf("Detect SD card on port %d with %d sectors.\n", target_port, result);
-
-        DBG_PRINTF("Do basic SD port %d access test ...\n", target_port);
-        i = 0;
-        pass = 0;
-        fail = 0;
-        while(i<10)
-        {
-            i++;
-            DBG_PRINTF("=== Loop %d ...\n", i);
-            result = sd_access_test(target_port);
-            if (result == OK)
-            {
-                DBG_PRINTF("SD access test is SUCCESSFUL!!!\n");
-                pass++;
-            }
-            else
-            {
-                DBG_PRINTF("SD access test is FAIL!!!\n");
-                fail++;
-            }
-            DBG_PRINTF("=== Pass %d, Fail %d\n", pass, fail);
-        }
-        switch (target_port)
-        {
-            case 0: sicSdClose0();   break;
-            case 1: sicSdClose1();   break;
-            case 2: sicSdClose2();   break;
-        }
+        totalSector = result;
+        sysprintf("    Detect SD card on port 0 with %d sectors.\n", totalSector);
+        fmiSD_Show_info(0);
+    
+        //--- Do test items for SD card on port 0
+        DBG_PRINTF("Do basic SD card access test ...\n");
+        result = sd_access_test();
+        if (result == OK)
+            DBG_PRINTF("SD card access test is SUCCESSFUL!!!\n");
+        else
+            sysprintf("SD card access test is FAIL!!!\n");
+    
+        sicSdClose0();
     }
 
-    sysprintf("\n===== THE END ===== [tick %d]\n", sysGetTicks(0));
+    sysprintf("\n===== THE END =====\n");
     return OK;
 }

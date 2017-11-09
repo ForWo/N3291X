@@ -1,27 +1,28 @@
 /***************************************************************************
- * Copyright (c) 2013 Nuvoton Technology. All rights reserved.
+ * Copyright (c) 2011 Nuvoton Technology. All rights reserved.
  *
  * FILENAME
  *     main.c
  * DESCRIPTION
  *     The main file for SIC/NAND demo code.
+ * FUNCTIONS
+ *     None
  **************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include "wbio.h"
 #include "wblib.h"
 #include "wbtypes.h"
+#include "w55fa95_reg.h"
+#include "w55fa95_sic.h"
 
-#include "w55fa92_reg.h"
-#include "w55fa92_sic.h"
-#include "fmi.h"
 
 /*-----------------------------------------------------------------------------
  * For system configuration
  *---------------------------------------------------------------------------*/
+
 // Define DBG_PRINTF to sysprintf to show more information about testing.
 #define DBG_PRINTF    sysprintf
 //#define DBG_PRINTF(...)
@@ -67,7 +68,7 @@ void show_hex_data(unsigned char *ptr, unsigned int length)
 /*-----------------------------------------------------------------------------
  * To do test for NAND access. Write, read, and compare data.
  *---------------------------------------------------------------------------*/
-int nand_access_test(int nand_port)
+int nand_access_test()
 {
     int ii;
     UINT32  result;
@@ -93,11 +94,7 @@ int nand_access_test(int nand_port)
     page  = rand() % ptMassNDisk->nPagePerBlock;
 
     //--- do write and read back test
-    switch (nand_port)
-    {
-        case 0: result = nand_block_erase0(block);  break;
-        case 1: result = nand_block_erase1(block);  break;
-    }
+    result = nand_block_erase0(block);
     if (result != 0)
     {
         // Erase block fail. Could be bad block. Ignore it.
@@ -105,20 +102,12 @@ int nand_access_test(int nand_port)
         return OK;
     }
 
-    switch (nand_port)
-    {
-        case 0: result = nandpwrite0(block, page, ptr_g_ram0);  break;
-        case 1: result = nandpwrite1(block, page, ptr_g_ram0);  break;
-    }
+    result = nandpwrite0(block, page, ptr_g_ram0);
     DBG_PRINTF("    Write g_ram0 to NAND, result = 0x%x\n", result);
     show_hex_data(ptr_g_ram0, 16);
 
     memset(ptr_g_ram1, 0x5a, BUF_SIZE);
-    switch (nand_port)
-    {
-        case 0: result = nandpread0(block, page, ptr_g_ram1);   break;
-        case 1: result = nandpread1(block, page, ptr_g_ram1);   break;
-    }
+    result = nandpread0(block, page, ptr_g_ram1);
     DBG_PRINTF("    Read NAND to g_ram1,  result = 0x%x\n", result);
     show_hex_data(ptr_g_ram1, 16);
 
@@ -136,15 +125,27 @@ int nand_access_test(int nand_port)
 }
 
 
-/*-----------------------------------------------------------------------------
- * Initial UART0.
- *---------------------------------------------------------------------------*/
-void init_UART()
+/*-----------------------------------------------------------------------------*/
+int main(void)
 {
+    int result;
+
     UINT32 u32ExtFreq;
+    UINT32 u32PllOutHz;
     WB_UART_T uart;
 
-    u32ExtFreq = sysGetExternalClock();
+    //--- initial system clock
+/*
+    // for FA95 syslib. CANNOT RUN on ICE
+    sysSetSystemClock(eSYS_UPLL,    // Specified the system clock come from external clock, APLL or UPLL
+                      192000000,    // Specified the APLL/UPLL clock, unit Hz
+                      192000000);   // Specified the system clock, unit Hz
+    sysSetCPUClock(192000000);      // unit Hz
+    sysSetAPBClock( 48000000);      // unit Hz
+*/
+
+    //--- initial UART
+    u32ExtFreq = sysGetExternalClock();     // KHz unit
     sysUartPort(1);
     uart.uiFreq = u32ExtFreq;   //use APB clock
     uart.uiBaudrate = 115200;
@@ -152,36 +153,13 @@ void init_UART()
     uart.uiStopBits = WB_STOP_BITS_1;
     uart.uiParity = WB_PARITY_NONE;
     uart.uiRxTriggerLevel = LEVEL_1_BYTE;
-    uart.uart_no = WB_UART_1;
+    uart.uart_no = WB_UART_0;
     sysInitializeUART(&uart);
-}
 
+    sysSetLocalInterrupt(ENABLE_FIQ_IRQ);
 
-/*-----------------------------------------------------------------------------
- * Initial Timer0 interrupt for system tick.
- *---------------------------------------------------------------------------*/
-void init_timer()
-{
-    sysSetTimerReferenceClock(TIMER0, sysGetExternalClock()/1000);   // External Crystal
-    sysStartTimer(TIMER0, 100, PERIODIC_MODE);                  // 100 ticks/per sec ==> 1tick/10ms
-    sysSetLocalInterrupt(ENABLE_IRQ);
-}
-
-
-/*-----------------------------------------------------------------------------*/
-int main(void)
-{
-    int result, i, pass, fail;
-    int target_port = 0;
-
-    init_UART();
-    init_timer();
-
-    sysprintf("\n=====> W55FA92 Non-OS SIC/NAND Driver Sample Code [tick %d] <=====\n", sysGetTicks(0));
-
-    //sysprintf("REG_CLKDIV4 = 0x%08X\n", inp32(REG_CLKDIV4));    // default HCLK234 should be 0
-    //outp32(REG_CLKDIV4, 0x00000310);                            // set HCLK234 to 1
-    //sysprintf("REG_CLKDIV4 = 0x%08X\n", inp32(REG_CLKDIV4));
+    u32PllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);
+    DBG_PRINTF("PLL out frequency %d Hz\n", u32PllOutHz);
 
     //--- enable cache feature
     sysDisableCache();
@@ -190,46 +168,34 @@ int main(void)
 
     srand(time(NULL));
 
-    //--- initial SIC/NAND driver for target_port
+    //--- initial system clock
+    sysSetTimerReferenceClock(TIMER0, 12000000);    // External Crystal
+    sysStartTimer(TIMER0, 100, PERIODIC_MODE);      // 100 ticks/per sec ==> 1tick/10ms
+#ifdef OPT_FPGA_DEBUG
+    sicIoctl(SIC_SET_CLOCK, 27000, 0, 0);               // clock from FPGA clock in
+#else
+    sicIoctl(SIC_SET_CLOCK, u32PllOutHz/1000, 0, 0);    // clock from PLL
+#endif
+
+    //--- initial SIC/NAND driver for port 0
     sicOpen();
+
     ptMassNDisk = (NDISK_T*)&MassNDisk;
+    if (nandInit0((NDISK_T *)ptMassNDisk))
+    {
+        sysprintf("ERROR: NAND initial fail !!\n");
+        return FAIL;
+    }
 
-    switch (target_port)
-    {
-        case 0: result = nandInit0((NDISK_T *)ptMassNDisk);   break;
-        case 1: result = nandInit1((NDISK_T *)ptMassNDisk);   break;
-        default: sysprintf("ERRROR: Wrong NAND port number %d\n", target_port); break;
-    }
-    if (result)
-    {
-        sysprintf("ERROR: NAND port %d initial fail !!\n", target_port);
-    }
+    //--- do basic NAND access test
+    DBG_PRINTF("Do basic NAND access test ...\n");
+    result = nand_access_test();
+    if (result == OK)
+        DBG_PRINTF("NAND access test is SUCCESSFUL!!!\n");
     else
-    {
-        //--- do basic NAND access test
-        DBG_PRINTF("Do basic NAND access test on port %d ...\n", target_port);
-        i = 0;
-        pass = 0;
-        fail = 0;
-        while(1)
-        {
-            i++;
-            DBG_PRINTF("=== Loop %d ...\n", i);
-            result = nand_access_test(target_port);
-            if (result == OK)
-            {
-                DBG_PRINTF("NAND access test is SUCCESSFUL!!!\n");
-                pass++;
-            }
-            else
-            {
-                DBG_PRINTF("NAND access test is FAIL!!!\n");
-                fail++;
-            }
-            DBG_PRINTF("=== Pass %d, Fail %d\n", pass, fail);
-        }
-    }
+        DBG_PRINTF("NAND access test is FAIL!!!\n");
 
-    sysprintf("\n===== THE END ===== [tick %d]\n", sysGetTicks(0));
+    sysprintf("\n===== THE END =====\n\n");
     return OK;
 }
+

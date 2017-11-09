@@ -3,11 +3,11 @@
 #include <string.h>
 
 #include "wblib.h"
-#include "w55fa92_edma.h"
-#include "w55fa92_vpost.h"
+#include "w55fa95_edma.h"
+#include "w55fa95_vpost.h"
 
 
-__align(32) UINT8 DestBuffer[320*240*2];
+__align(32) UINT8 DestBuffer[800*480*2];
 #define	DEST_ADDR	((UINT32)DestBuffer | NON_CACHE_BIT)
 
 extern __align(32) UINT8 LoadAddr[];
@@ -38,7 +38,7 @@ void ColorSpaceTransformTest(void)
 	}
 	
 	EDMA_SetupCST(g_VdmaCh, eDRVEDMA_RGB565, eDRVEDMA_YCbCr422);
-	EDMA_SetupSingle(g_VdmaCh, src_addr, dest_addr, 320*240*2);
+	EDMA_SetupSingle(g_VdmaCh, src_addr, dest_addr, 800*480*2);
 	EDMA_SetupHandlers(g_VdmaCh, eDRVEDMA_BLKD_FLAG, EdmaIrqHandler, 0);
 	
 	EDMA_Trigger(g_VdmaCh);
@@ -61,6 +61,9 @@ void TransferLengthTest(void)
 
 	src_addr = (UINT32)LoadAddr | NON_CACHE_BIT;
 	dest_addr = DEST_ADDR;
+
+	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGB565;	
+	vpostLCMInit(&lcdFormat, (UINT32*)LoadAddr);
 	
 	g_VdmaCh = VDMA_FindandRequest();
 	
@@ -70,7 +73,7 @@ void TransferLengthTest(void)
 	       return;
 	}
 
-	EDMA_SetupSingle(g_VdmaCh, src_addr, dest_addr, 320*240*2);
+	EDMA_SetupSingle(g_VdmaCh, src_addr, dest_addr, 800*480*2);
 	EDMA_SetupHandlers(g_VdmaCh, eDRVEDMA_BLKD_FLAG, EdmaIrqHandler, 0);
 
 	EDMA_Trigger(g_VdmaCh);
@@ -79,7 +82,7 @@ void TransferLengthTest(void)
 	
 	g_bVdmaInt = FALSE;
 
-	if(memcmp((UINT8*)src_addr, (UINT8*)dest_addr, 320*240*2) != 0)
+	if(memcmp((UINT8*)src_addr, (UINT8*)dest_addr, 800*480*2) != 0)
 	{
 		sysprintf("\nCompare error\n");
 		while(1);

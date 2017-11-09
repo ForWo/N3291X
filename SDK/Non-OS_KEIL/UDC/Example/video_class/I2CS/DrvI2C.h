@@ -12,8 +12,8 @@
 extern "C"
 {
 #endif
-#ifndef _W55FA92_REG_H
-#include "W55FA92_reg.h"
+#ifndef _W55FA95_REG_H
+#include "W55FA95_reg.h"
 #endif
 
 

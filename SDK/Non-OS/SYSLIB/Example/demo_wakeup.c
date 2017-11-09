@@ -7,11 +7,12 @@
 #include <stdio.h>
 #include "wblib.h"
 #include "demo.h"
-#include "w55fa92_gpio.h"
-
-__align(32) UINT8 u32Array[1024*1024];
+#include "w55fa95_gpio.h"
 
 
+#define BUF_SIZE		(16*1024)
+
+__align(32) UINT8 u32Array[BUF_SIZE];
 
 /* For SPU disable DAC off */
 static void delay(UINT32 kk)
@@ -93,109 +94,49 @@ VOID DrvSPU_WriteDACReg (
  * 	KPI_WE, ADC_WE, UHC_WE, UDC_WE, UART_WE, SDH_WE, RTC_WE, GPIO_WE		     *	
  *	2. Default priority	  													     *
  *---------------------------------------------------------------------------------------------------------*/
- #define REG_DLLMODE_R	0xb0003058	/* Not fix in B version. still read in 3058 */
-
 void Demo_PowerDownWakeUp(void)
 {
 	/* 					*/
-	
-	UINT32 u32Idx;
-	UINT32 reg_AHBCLK, reg_APBCLK;
-	UINT32 u32MPllOutHz,u32UPllOutHz,u32APllOutHz,u32ExtFreq,u32Div,u32clock;	
-	
-	reg_AHBCLK = inp32(REG_AHBCLK);
-	reg_APBCLK = inp32(REG_APBCLK);
-	u32ExtFreq = sysGetExternalClock();    	/* Hz unit */	
+	PUINT8 pu8Buf, pu8Tmp;	
+	UINT32 u32Idx, reg_AHBCLK;
+	UINT32 reg_APBCLK;
+	UINT32 reg_AUDIO_CON, reg_MISCR, reg_POR_LVRD;
 
-	u32UPllOutHz = sysGetPLLOutputHz(eSYS_UPLL, u32ExtFreq);			
-	sysprintf("eSYS_UPLL %d\n",u32UPllOutHz);
-	u32APllOutHz = sysGetPLLOutputHz(eSYS_APLL, u32ExtFreq);		
-	sysprintf("eSYS_APLL %d\n",u32APllOutHz);	
-	u32MPllOutHz = sysGetPLLOutputHz(eSYS_MPLL, u32ExtFreq);	
-	sysprintf("eSYS_MPLL %d\n",u32MPllOutHz);	
-		
-#if 0	
-	{
-		PUINT8 pu8Buf, pu8Tmp;	
-		pu8Buf = u32Array;	
-		sysprintf("Allocate memory address =0x%x\n", pu8Buf);
-		pu8Tmp = pu8Buf;
-		for(u32Idx=0; u32Idx<(1024*1024);u32Idx=u32Idx+1)
-			*pu8Tmp++= (UINT8)((u32Idx>>8) + u32Idx);
-	}	
-#endif 
-	
-#if 0		
+	pu8Buf = u32Array;		
+	DBG_PRINTF("Allocate memory address =0x%x\n", pu8Buf);
+	pu8Tmp = pu8Buf;
+	for(u32Idx=0; u32Idx<(BUF_SIZE);u32Idx=u32Idx+1)
+		*pu8Tmp++= (UINT8)((u32Idx>>8) + u32Idx);
 	gpio_setportpull(GPIO_PORTA, 0x01, 0x01);		/*Set GPIOA-0 to pull high 		*/	
 	gpio_setportdir(GPIO_PORTA, 0x01, 0x00);		/*Correct	Set GPIOA-0 as input port		*/			
 	//gpio_setportdir(GPIO_PORTA, 0x01, 0x01);		/*Wrong Set GPIOA-0 as input port		*/
 	gpio_setsrcgrp(GPIO_PORTA, 0x01, 0x00);		/*Group GPIOA-0 to EXT_GPIO0	*/
 	gpio_setintmode(GPIO_PORTA, 0x01, 0x01, 0x01);	/*Rising/Falling				 	*/
-#else
-	gpio_setportpull(GPIO_PORTB, 0x01, 0x01);		/*Set GPIOB-0 to pull high 		*/	
-	gpio_setportdir(GPIO_PORTB, 0x01, 0x00);		/*Correct	Set GPIOB-0 as input port		*/			
-	//gpio_setportdir(GPIO_PORTA, 0x01, 0x01);		/*Wrong Set GPIOB-0 as input port		*/
-	gpio_setsrcgrp(GPIO_PORTB, 0x01, 0x00);		/*Group GPIOB-0 to EXT_GPIO0	*/
-	gpio_setintmode(GPIO_PORTB, 0x01, 0x01, 0x01);	/*Rising/Falling				 	*/
-#endif	
-	
 	outp32(REG_IRQTGSRC0, 0xFFFFFFFF);
 	outp32(REG_IRQLHSEL, 0x11);
-	/* Set gpio wake up source */
-	
-	sysprintf("Enter power down, GPIO Int status 0x%x\n", inp32(REG_IRQTGSRC0));
+	/* Set gpio wake up source	*/
+	DBG_PRINTF("Enter power down, GPIO Int status 0x%x\n", inp32(REG_IRQTGSRC0));
 
-///////////////////////////////////////
-#if 1
-	outpw(REG_AHBCLK, 0xFFFFFFFF);
-	outpw(REG_AHBCLK, 0xFFFFFFFF);
-	
 	DBG_PRINTF("Disable USB Transceiver\n");
-	/* UPLL */
-	if((u32UPllOutHz != 0) && ((u32UPllOutHz % 48000000) == 0)){
-		u32clock = u32UPllOutHz / 48000000;
-		u32Div = 0x18 | ((u32clock - 1)<<8); 
-		sysprintf("USBH2.0 Clock source is UPLL\n");
-	}
-	else if((u32APllOutHz != 0) && ((u32APllOutHz % 48000000) == 0)){
-		u32clock = u32APllOutHz / 48000000;
-		u32Div = 0x10 | ((u32clock - 1)<<8);
-		sysprintf("USBH2.0 Clock source is APLL\n"); 
-	}
-	else if((u32MPllOutHz != 0) && ((u32MPllOutHz % 48000000) == 0)){
-		u32clock = u32MPllOutHz / 48000000;
-		u32Div = 0x8 | ((u32clock - 1)<<8); 
-		sysprintf("USBH2.0 Clock source is MPLL\n");
-	}	 		
-	outp32(REG_CLKDIV6, u32Div);	
-		
-
-	outp32(REG_CLKDIV2, inp32(REG_CLKDIV2) & ~(U20PHY_SS|U20PHY_N));	
-	outp32(REG_AHBCLK2, inp32(REG_AHBCLK2) | H20PHY_CKE);		//USBH 20 clock
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | USBH_CKE);					//USB Host transceiver disable. 
-	DBG_PRINTF("REG_CLKDIV2 = 0x%d\n", inp32(REG_CLKDIV2));
-	DBG_PRINTF("REG_CLKDIV6 = 0x%d\n", inp32(REG_CLKDIV6));
 	outp32(0xb1009200, 0x08000000);
-	outp32(REG_USBPCR0, inp32(REG_USBPCR0)&~BIT8); 
-	DBG_PRINTF("REG_USBPCR = 0x%d\n", inp32(REG_USBPCR0));
-	
+
 	DBG_PRINTF("Disable Audio ADC and Touch ADC and LVR\n");
-	outp32(REG_APBCLK, inp32(REG_APBCLK) | (ADC_CKE | TOUCH_CKE));			
-
-#if 0		//FA95		
+	outp32(REG_APBCLK, inp32(REG_APBCLK) | (ADC_CKE | TOUCH_CKE));					
 	outp32 (REG_ADC_CON, inp32(REG_ADC_CON) & ~(ADC_CON_ADC_EN | AUDADC_EN)); //ADC touch and ADC audio disable
+
+#if 1	//20170818
+	reg_AUDIO_CON = inp32(REG_AUDIO_CON);
+	reg_MISCR = inp32(REG_MISCR);
 	outp32 (REG_AUDIO_CON, inp32(REG_AUDIO_CON) & ~AUDIO_VOL_EN);
-#else	//FA92
-	outp32(REG_APBCLK, inp32(REG_APBCLK) | (ADC_CKE|TOUCH_CKE));	
-#endif
-	
-
-	outp32(REG_POR_LVRD, inp32(REG_POR_LVRD) | 0x10);					//Disable POR
-
-
+	outp32(REG_MISCR, inp32(REG_MISCR) & ~LVR_EN);	
+	//outp32(REG_POR_LVRD, 0x70);			//Not to change LVR register, otherwise, next pwoer down then wakeup will reboot
+#endif	
 	//sysDelay(1);
-	//outp32(REG_APBCLK, inp32(REG_APBCLK) & ~(ADC_CKE|TOUCH_CKE));
+	outp32(REG_APBCLK, inp32(REG_APBCLK) & ~(ADC_CKE|TOUCH_CKE));
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) & ~USBH_CKE);					//USB Host transceiver disable. 
+
+
 	
 	DBG_PRINTF("Disable SPU and ADO\n");																												
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | (SPU_CKE | ADO_CKE));		//DAC VDD33 power down 															
@@ -217,32 +158,38 @@ void Demo_PowerDownWakeUp(void)
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) | VPOST_CKE);				//TV DAC
 	outp32(REG_LCM_TVCtl, inp32(REG_LCM_TVCtl) | TVCtl_Tvdac);
 	outp32(REG_AHBCLK, inp32(REG_AHBCLK) & ~VPOST_CKE);
-	
-	
 
-	//V
-	//outp32(REG_APBCLK, inp32(REG_APBCLK) | (ADC_CKE|TOUCH_CKE));
-	//outp32(REG_TP_CTL1, inp32(REG_TP_CTL1) | (PD_Power|PD_BUF|LOW_SPEED));						
-	//outp32(REG_DLLMODE,  (inp32(REG_DLLMODE_R)&~0x8) | 0x10);	// Disable DLL of FA92	
+	reg_AHBCLK = inp32(REG_AHBCLK);
+	reg_APBCLK = inp32(REG_APBCLK);
 
 
 	/* change  SD card pin function */
-	outp32(REG_GPAFUN0, 0x0);	
-	//outpw(REG_GPAFUN1, 0x0);	
+	outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA1);	// GPA1 for SD-0 card detection
+	outpw(REG_GPEFUN, inpw(REG_GPEFUN)& ~0x0000FFF0 );	// SD0_CLK/CMD/DAT0_3 pins selected
+	outpw(REG_GPAFUN, inpw(REG_GPAFUN) & ~MF_GPA0);	
+	outp32(REG_GPAFUN, (MF_GPA11 | MF_GPA10));
+	outp32(REG_GPBFUN, 0x0);
+	outp32(REG_GPCFUN, 0x0);
 	
-	outp32(REG_GPBFUN0, 0x0);	
-	outp32(REG_GPBFUN1, 0x0);	
-	
-	outp32(REG_GPCFUN0, 0x0);	
-	outp32(REG_GPCFUN1, 0x0);	
-	
-	outp32(REG_GPEFUN0, 0x0);	
-	outp32(REG_GPEFUN1, 0x0);			
 
-	//Bon suggest
-    	outp32(REG_GPIOG_PUEN, inp32(REG_GPIOG_PUEN)&~(BIT11|BIT12|BIT13|BIT14|BIT15));	
+	//outp32(REG_GPDFUN, (MF_GPD4 | MF_GPD3| MF_GPD2 | MF_GPD1 | MF_GPD0)); //IF USE ICE, enable the line
 	
- 	//outp32(REG_GPAFUN, (MF_GPA11 | MF_GPA10));
+	outp32(REG_GPEFUN, 0x0);
+	outp32(REG_GPGFUN,  0);
+
+
+	/* For IO power  */
+	//outp32(REG_SHRPIN_TVDAC, 0x0);//MARK --> 205uA
+
+	outp32(REG_SHRPIN_AUDIO, 0x0);
+	outp32(REG_SHRPIN_TOUCH, 0x0);
+    //outp32(REG_SHRPIN_R_FB, 0x0);  //X
+	outp32(REG_SHRPIN_R_FB, R_DIV_ENB);
+	
+	//Bon suggest
+    outp32(REG_GPIOG_PUEN, inp32(REG_GPIOG_PUEN)&~(BIT11|BIT12|BIT13|BIT14|BIT15));	
+
+	outp32(REG_GPAFUN, (MF_GPA11 | MF_GPA10));
 	DBG_PRINTF("GPIOA STATUS = 0x%x\n", inp32(REG_GPIOA_PIN));
 	DBG_PRINTF("GPIOB STATUS = 0x%x\n", inp32(REG_GPIOB_PIN));
 	DBG_PRINTF("GPIOC STATUS = 0x%x\n", inp32(REG_GPIOC_PIN));
@@ -268,25 +215,40 @@ void Demo_PowerDownWakeUp(void)
 	outp32(REG_GPIOG_PUEN, ~0xF85C);		//Pull up is inverse !	1.634~1.682mA
 
 	//outp32(REG_GPIOH_PUEN, 0x0);		//Don't set GPIOH. R_FB will consume some power.
-		
-	outp32(REG_APBCLK, inp32(REG_APBCLK) | (ADC_CKE|TOUCH_CKE));
-	outp32(REG_TP_CTL1, inp32(REG_TP_CTL1) | (PD_Power|PD_BUF|LOW_SPEED));											
-	//outp32(REG_SDOPM, inp32(REG_SDOPM) & ~AUTOPDN);
+			
+	outp32(REG_AHBCLK, 0x11F);
+	outp32(REG_APBCLK, ~(KPI_CKE | TIC_CKE | WDCLK_CKE | TOUCH_CKE | TMR1_CKE | TMR0_CKE|\
+						SPIMS1_CKE|SPIMS0_CKE|PWM_CKE|I2C_CKE|ADC_CKE));						
 	
-#endif 	
-	
-	outp32(REG_SHRPIN_TOUCH, 0x0);
-	//outp32(REG_SHRPIN_AUDIO, 0x0); //enable it cause current rising 300uA ~ 400uA
-	outp32(REG_PWRCON, (inp32(REG_PWRCON) & ~(0xFFFF00)) | (0xFF<<8)); /* Wake up time about 40ms */
+	outp32(REG_SDOPM, inp32(REG_SDOPM) & ~AUTOPDN);
 	sysPowerDown(WE_GPIO);
 	
+	
+	outp32(REG_AUDIO_CON, reg_AUDIO_CON);
+	outp32(REG_MISCR, reg_MISCR);
+	//outp32(REG_POR_LVRD, reg_POR_LVRD);	//Not to change LVR register, otherwise, next pwoer down then wakeup will reboot
+	
+	outp32(REG_SDOPM, inp32(REG_SDOPM) | AUTOPDN);
 	outp32(REG_AHBCLK, reg_AHBCLK);
-	outp32(REG_APBCLK, reg_APBCLK);
+	outp32(REG_APBCLK, reg_APBCLK);	
+
+#if 0	
+	 /* For measure the wake up time after event trigger */	
+	outp32(REG_GPIOA_OMD, inp32(REG_GPIOA_OMD) | 0x02);	//GPIOA-1 output. 
+	outp32(REG_GPIOA_DOUT, inp32(REG_GPIOA_DOUT) & ~0x02);	//GPIOA-1 output LOW. 
+#endif 
+#if 1	
+	 /* For measure the wake up time after event trigger */	
+	outp32(REG_GPAFUN, inp32(REG_GPAFUN) & ~MF_GPA3);	 
+	outp32(REG_GPIOA_OMD, inp32(REG_GPIOA_OMD) | 0x08);		//GPIOA-3 output
+	outp32(REG_GPIOA_PUEN, inp32(REG_GPIOA_PUEN) & ~0x08); 
+	outp32(REG_GPIOA_DOUT, inp32(REG_GPIOA_DOUT) & ~0x08);	//GPIOA-3 output LOW. 
+#endif 
+	
 	
 	sysprintf("Exit power down\n");		
-#if 0	
 	pu8Tmp = pu8Buf;
-	for(u32Idx=0; u32Idx<(1024*1024);u32Idx=u32Idx+1)
+	for(u32Idx=0; u32Idx<(BUF_SIZE);u32Idx=u32Idx+1)
 	{
 		if( *pu8Tmp !=  (UINT8)((u32Idx>>8) + u32Idx))
 		{
@@ -298,7 +260,6 @@ void Demo_PowerDownWakeUp(void)
 		pu8Tmp++;
 	}
 	sysprintf("Data is consisient\n");
-#endif	
 	//free(pu8Buf);	
 }
 

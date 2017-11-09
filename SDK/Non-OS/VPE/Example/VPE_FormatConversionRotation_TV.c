@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "w55fa92_reg.h"
+#include "w55fa95_reg.h"
 #include "wblib.h"
-#include "w55fa92_vpe.h"
+#include "w55fa95_vpe.h"
 #include "VPE_Emulation.h"
-#include "w55fa92_vpost.h"
+#include "w55fa95_vpost.h"
 #include "nvtfat.h"
 
 #define DBG_PRINTF(...)
@@ -56,8 +56,8 @@ static VOID VPOST_Init(UINT32 u32FrameBuffer)
 	lcdFormat.nScreenHeight = 480;
 #endif 	
 #ifdef TV_640X480
-	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGB565;
-//	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_YCBYCR;
+//	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGB565;
+	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_YCBYCR;
 //	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGBx888;
 
 	lcdFormat.nScreenWidth = 640;
@@ -71,14 +71,6 @@ static VOID VPOST_Init(UINT32 u32FrameBuffer)
 	lcdFormat.nScreenWidth = 480;
 	lcdFormat.nScreenHeight = 272;
 #endif 	  
-#ifdef LCM_320X240
-	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGB565;
-//	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_YCBYCR;
-//	lcdFormat.ucVASrcFormat = DRVVPOST_FRAME_RGBx888;
-
-	lcdFormat.nScreenWidth = 320;
-	lcdFormat.nScreenHeight = 240;
-#endif
 	vpostLCMInit(&lcdFormat, (UINT32*)u32FrameBuffer);
 	
 	vpostInstallCallBack(eDRVVPOST_VINT,
@@ -92,6 +84,7 @@ static VOID VPOST_Init(UINT32 u32FrameBuffer)
 
 
 
+extern unsigned int _mmuSectionTable[];
 INT8 u8PlanarBuf[2048*1536*3];		//Max Planar Buffer 
 INT8 u8PacketBuf0[640*480*4];		//Max XRGB888	
 INT8 u8PacketBuf1[640*480*4];		//Max XRGB888
@@ -164,7 +157,12 @@ INT32 NormalFormatConversionRotationDownscale_TV(void)
 						};
 	
 	VPOST_Init((UINT32)piDstAddr);	//Only initial TV. 
-
+	
+	vpeIoctl(VPE_IOCTL_SET_MMU_ENTRY,
+			TRUE,					// MMU Enable 
+			(UINT32)_mmuSectionTable,	// TLB Entry
+			0x0);
+							
 	for(u32Idx=0; u32Idx<(sizeof(vpeFc)/sizeof(vpeFc[0]));  u32Idx=u32Idx+1)
 	{//Src format 
 		sysprintf("\n\n==========================================================\n");
@@ -197,7 +195,7 @@ INT32 NormalFormatConversionRotationDownscale_TV(void)
 				sysprintf("Source format %s, Destinationn format f\n", srcFormat[u32Idx],dstFormat[u32Idy]);					
 																																															
 				vpeIoctl(VPE_IOCTL_HOST_OP,
-							VPE_HOST_FRAME_TURBO,
+							VPE_HOST_FRAME,
 							u32Idz,		
 							NULL);
 				/* Only support in on-the-fly mode  			
@@ -263,12 +261,12 @@ INT32 NormalFormatConversionRotationDownscale_TV(void)
 							VPE_SCALE_BILINEAR,		//
 							NULL,
 							NULL);		
-				/* Removed
+				
 				vpeIoctl(VPE_IOCTL_SET_3X3_COEF,
 							0x0,						//Central weight =0 ==> Hardware bulid in coefficience. 
 							0x0,
 							0x0);										
-				*/
+		
 				u32Width = u32TarW;
 				u32Height = u32TarH;
 				while(u32Height>=16)

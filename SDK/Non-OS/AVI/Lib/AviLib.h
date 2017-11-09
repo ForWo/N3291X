@@ -346,9 +346,9 @@ typedef struct mv_cfg_t
 	/* callback	 */
 	VOID (*ap_time)(struct mv_cfg_t *ptMvCfg);
 	INT  (*au_sbc_init)(struct mv_cfg_t *ptMvCfg);
-	VOID (*au_sbc_reset_buff)(void);
+	VOID (*au_sbc_reset_buff)(VOID);
 	INT  (*au_sbc_encode)(struct mv_cfg_t *ptMvCfg, UINT8 *pucPcmBuff, INT nPcmDataLen);
-	BOOL (*au_is_sbc_ready)(void);
+	BOOL (*au_is_sbc_ready)(VOID);
 	INT  (*vid_init_decode)(VID_CODEC_E eDecoder, UINT8 *pucBitStrmBuff, UINT32 uBitStrmSize, BOOL *bIsShortHeader, 
 							UINT16 *usImageWidth, UINT16 *usImageHeight);
 	INT  (*vid_init_encode)(UINT8 *pucM4VHeader, UINT32 *puHeaderSize,
@@ -356,7 +356,7 @@ typedef struct mv_cfg_t
 	INT  (*vid_enc_frame)(PUINT8 *pucFrameBuff, UINT32 *puFrameSize);
 	VOID (*vid_rec_frame_done)(UINT8 *pucFrameBuff);
 	INT  (*vid_dec_frame)(VID_CODEC_E eDecoder, BOOL bIsSilent, UINT8 *pucFrameBuff, UINT32 *puFrameSize);
-	INT  (*vid_dec_state)(void);
+	INT  (*vid_dec_state)(VOID);
 	VOID (*au_on_start)(struct mv_cfg_t *ptMvCfg);
 	VOID (*au_on_stop)(struct mv_cfg_t *ptMvCfg);
 	VOID (*the_end)(struct mv_cfg_t *ptMvCfg);

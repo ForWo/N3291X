@@ -1,1 +1,1 @@
-move .\gpio_Data\Release\w55fa92_gpio.lib ..\..\Lib
+move .\gpio_Data\Release\w55fa95_gpio.lib ..\..\Lib

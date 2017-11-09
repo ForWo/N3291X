@@ -95,7 +95,7 @@ INT32 sysGetSdramSizebyMB()
 	if (totalsize != 0)
 		return totalsize;
 	else
-		return (INT32)WB_MEM_INVALID_MEM_SIZE;	
+		return WB_MEM_INVALID_MEM_SIZE;	
 }
 
 
@@ -107,7 +107,7 @@ INT32 sysEnableCache(UINT32 uCacheOpMode)
 	
 	return Successful;
 }
-#pragma O1
+
 VOID sysDisableCache()
 {
 	int temp;
@@ -139,8 +139,9 @@ VOID sysDisableCache()
 	
 	_sys_IsCacheOn = FALSE;
 	_sys_CacheMode = CACHE_DISABLE;
+	
 }
-#pragma O2
+
 VOID sysFlushCache(INT32 nCacheType)
 {
 	int temp;

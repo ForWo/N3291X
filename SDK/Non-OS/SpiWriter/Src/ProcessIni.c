@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "wblib.h"
-#include "w55fa92_sic.h"
+#include "w55fa95_sic.h"
 #include "nvtfat.h"
 #include "Font.h"
 #include "writer.h"
@@ -379,7 +379,7 @@ NextMark2:
                     break;
                 }
             } while (1);
-        } 
+        }         
 		else if (strcmp(Cmd, "[Write Root]") == 0)
         {
             do {
@@ -458,16 +458,13 @@ NextMark2:
 		                		else
 		                			break;
 			                	
+			                	
 			                	if(level)
 				                	outp32(REG_GPIOA_DOUT + offset * 0x10, inp32(REG_GPIOA_DOUT + offset * 0x10) & ~(1 << pin));
 				                else
 				                	outp32(REG_GPIOA_DOUT + offset * 0x10, inp32(REG_GPIOA_DOUT + offset * 0x10) | (1 << pin));	
 			                	outp32(REG_GPIOA_OMD + offset * 0x10, inp32(REG_GPIOA_OMD + offset * 0x10) | (1 << pin));
-			                	
-			                	if(pin > 7)
-			                		outp32(REG_GPAFUN0 + offset * 0x08 + 4, inp32(REG_GPAFUN0 + offset * 0x08 + 4) & ~(0x0F << (4 * (pin - 8))));
-			                	else			                	
-				                	outp32(REG_GPAFUN0 + offset * 0x08, inp32(REG_GPAFUN0 + offset * 0x08) & ~(0x0F << (4 * pin)));			                			                	
+			                	outp32(REG_GPAFUN + offset * 0x04, inp32(REG_GPAFUN+ offset * 0x04) & ~(0x03 << (2 * pin)));		                			                	
 			                		                
 			                }                    	
                     	}
